@@ -1,0 +1,81 @@
+import {
+  requireAccess,
+  checkOrigin,
+  errorResponse,
+  HttpError,
+  readJsonInput,
+} from "@/modules/crm/server/auth";
+import { readCrm } from "@/modules/crm/server/repository";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { appUrl } from "@/lib/supabase/config";
+export async function POST(request: Request) {
+  try {
+    checkOrigin(request);
+    const { user, access } = await requireAccess(true);
+    const input = await readJsonInput(request);
+    if (
+      (input.kind !== "student" && input.kind !== "admin") ||
+      typeof input.id !== "string"
+    )
+      throw new HttpError(400, "Invito non valido.");
+    if (input.kind === "admin" && access.role !== "owner")
+      throw new HttpError(
+        403,
+        "Solo il proprietario può invitare amministratori.",
+      );
+    const current = await readCrm(user.id);
+    const person =
+      input.kind === "student"
+        ? current.state.students.find((s) => s.id === input.id && !s.archived)
+        : current.state.admins.find(
+            (a) => a.id === input.id && a.role !== "owner",
+          );
+    if (!person) throw new HttpError(404, "Scheda non trovata o archiviata.");
+    const admin = createAdminClient();
+    let generated = await admin.auth.admin.generateLink({
+      type: person.access ? "recovery" : "invite",
+      email: person.email,
+    });
+    if (generated.error && !person.access) {
+      generated = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: person.email,
+      });
+    }
+    if (
+      generated.error ||
+      !generated.data.user ||
+      !generated.data.properties?.hashed_token
+    )
+      throw new HttpError(
+        503,
+        "Impossibile preparare il link di accesso. Riprova tra poco.",
+      );
+    const targetUser = generated.data.user.id;
+    const { error } = await admin.rpc("crm_link_access", {
+      p_actor: user.id,
+      p_user: targetUser,
+      p_role: input.kind,
+      p_record: person.id,
+      p_email: person.email,
+    });
+    if (error)
+      throw new HttpError(
+        409,
+        "L’account è già collegato oppure la scheda è cambiata. Ricarica e verifica l’email.",
+      );
+    const type =
+      generated.data.properties.verification_type === "invite"
+        ? "invite"
+        : "recovery";
+    const link = new URL("/auth/confirm", appUrl());
+    link.searchParams.set("token_hash", generated.data.properties.hashed_token);
+    link.searchParams.set("type", type);
+    return Response.json(
+      { link: link.toString(), email: person.email },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

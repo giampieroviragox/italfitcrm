@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans:
+    "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-heading: var(--font-sans);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #fff;
+  --color-brand: #f62f2f;
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: #c82525;
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+}
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171719;
+  --card: #fff;
+  /* Neutral controls; the brand accent is reserved for the mark. */
+  --primary: #202022;
+  --muted: #f5f5f5;
+  --muted-foreground: #747476;
+  --border: #e8e8e9;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+  a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+  }
+  ::selection {
+    background: #e7e7eb;
+    color: #171719;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Shared rhythm for every CRM editor, including dynamic property fields. */
+.crm-control {
+  min-height: 44px;
+}
+textarea.crm-control {
+  min-height: 112px;
+  resize: vertical;
+}
+.crm-editor [data-slot="sheet-close"] {
+  top: 28px;
+  right: 20px;
+}
+.crm-editor-body {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 24px 120px;
+}
+.crm-editor-form {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 24px;
+}
+.crm-form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding-block: 20px max(20px, env(safe-area-inset-bottom));
+}
+.crm-form-actions [data-slot="button"] {
+  min-height: 44px;
+}
+@media (max-width: 479px) {
+  .crm-form-actions {
+    flex-direction: column-reverse;
+  }
+  .crm-form-actions [data-slot="button"] {
+    width: 100%;
+    white-space: normal;
+    height: auto;
+    padding-block: 10px;
+  }
+}
+
+@media (min-width: 640px) {
+  .crm-editor [data-slot="sheet-close"] {
+    top: 32px;
+    right: 24px;
+  }
+}
+
+@layer base {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: #202022;
+  }
+}
+
+.crm-editor-body[data-validation-error="true"] input:invalid,
+.crm-editor-body[data-validation-error="true"] textarea:invalid {
+  border-color: var(--color-destructive);
+}
+
+label:has(> [data-slot="checkbox-control"]) {
+  min-height: 36px;
+  cursor: pointer;
+}
+@media (max-width: 639px) {
+  [data-slot="select-control"] {
+    min-height: 44px;
+  }
+  label:has(> [data-slot="checkbox-control"]) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 639px) {
+  .crm-control {
+    font-size: 16px;
+  }
+  [data-slot="button"] {
+    min-height: 44px;
+  }
+  [data-slot="button"][data-size^="icon"] {
+    min-width: 44px;
+  }
+}
