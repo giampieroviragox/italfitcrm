@@ -29,9 +29,11 @@ import {
   useRemoteMode,
   useSaving,
   useViewer,
+  useSyncStatus,
 } from "@/modules/crm/store";
 import { signOut } from "@/modules/auth/actions";
 import { CommandSearch } from "./command-search";
+import { SyncNotice } from "./sync-notice";
 const icons = {
   overview: Home,
   students: Users,
@@ -123,6 +125,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const remote = useRemoteMode(),
     saving = useSaving(),
     viewer = useViewer();
+  const sync = useSyncStatus();
   const [collapsed, setCollapsed] = useState(false),
     [mobile, setMobile] = useState(false),
     [info, setInfo] = useState(false);
@@ -187,19 +190,28 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => setInfo(true)}
-              className="hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted sm:flex"
+              aria-label="Stato del workspace"
+              className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted"
             >
               <span
                 className={cn(
                   "size-1.5 rounded-full",
-                  remote ? "bg-emerald-500" : "bg-amber-500",
+                  remote && sync?.online && !sync.error
+                    ? "bg-emerald-600"
+                    : "bg-amber-600",
                 )}
               />
-              <span role="status">
+              <span role="status" className="hidden sm:inline">
                 {saving
                   ? "Salvataggio…"
                   : remote
-                    ? "Workspace online"
+                    ? !sync?.online
+                      ? "Offline"
+                      : sync.error
+                        ? "Da verificare"
+                        : sync.refreshing
+                          ? "Aggiornamento…"
+                          : "Workspace online"
                     : "Demo locale"}
               </span>
             </button>
@@ -270,6 +282,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           id="main-content"
           className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10 lg:py-10"
         >
+          <SyncNotice />
           {children}
         </main>
       </div>

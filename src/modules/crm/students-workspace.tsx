@@ -12,7 +12,6 @@ export function StudentsWorkspace() {
   return (
     <>
       <PageHeading
-        eyebrow="CRM · Persone al centro"
         title="Studenti"
         description="Gestisci anagrafiche, tier e proprietà con viste personalizzate."
         action={
@@ -35,7 +34,7 @@ export function StudentsWorkspace() {
           {message}
         </p>
       )}
-      <StudentsDirectory />
+      <StudentsDirectory onAdd={() => setAdding(true)} />
       {adding && (
         <StudentEditor
           close={() => setAdding(false)}

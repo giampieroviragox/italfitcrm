@@ -557,6 +557,7 @@ export function LessonDetail({ id }: { id: string }) {
         <LessonEditor lesson={lesson} close={() => setEditing(false)} />
       )}
       <ConfirmDialog
+        error={error}
         open={confirm}
         title={
           lesson.cancelled

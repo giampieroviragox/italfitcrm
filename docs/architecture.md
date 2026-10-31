@@ -60,3 +60,11 @@ Senza configurazione Supabase rimane disponibile l’adapter locale per le fixtu
 Prima di un deployment pubblico impostare NEXT_PUBLIC_APP_URL e i redirect Auth sul dominio definitivo, configurare l’email transazionale e verificare backup e conservazione dati secondo il piano scelto. Le abilitazioni dei contenuti per tier non sono inferite dal nome del tier: quelle regole restano da definire.
 
 L’advisor Supabase non segnala errori di RLS o privilegi. Segnala l’assenza del controllo password compromesse: l’attivazione è stata richiesta ma il progetto Free la rifiuta con HTTP 402 perché richiede Pro. Il piano non è stato modificato.
+
+## Affidabilità dell’interfaccia
+
+L’adapter remoto serializza anche le riletture, deduplica gli aggiornamenti simultanei e rifiuta revisioni più vecchie. Una scrittura con esito non verificabile non viene ripetuta automaticamente: occorre prima aggiornare lo snapshot. La bozza del form resta nello stato del componente. Stato della rete, attese ed errori sono esposti nel workspace e negli editor.
+
+`GET /api/prenotazioni` verifica la sessione e restituisce esclusivamente la proiezione del proprio studente. Aggiornare i posti non ricrea il selettore del mese. La prenotazione restituisce la proiezione aggiornata e l’interfaccia annuncia l’esito. L’annullamento richiede conferma.
+
+Il callback Auth risponde con Location relativa, `no-store` e `no-referrer`: il browser conserva l’origine su cui è stato verificato il link, anche dietro un proxy locale.

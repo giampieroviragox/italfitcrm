@@ -14,6 +14,7 @@ import {
 import { FormChangeContext } from "@/components/ui/form-change-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "./confirm-dialog";
+import { SyncNotice } from "@/components/layout/sync-notice";
 const CancelContext = createContext<() => void>(() => {});
 export function EditorCancel() {
   const cancel = useContext(CancelContext);
@@ -35,9 +36,10 @@ import {
   retryStorage,
   downloadBackup,
   useSaving,
+  useRemoteMode,
 } from "./store";
 export const control =
-  "crm-control block w-full min-w-0 rounded-lg border border-input bg-white px-3 py-2.5 text-sm leading-5 outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/15 read-only:bg-muted/40 disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-muted-foreground";
+  "crm-control block w-full min-w-0 rounded-lg border border-input bg-white px-3 py-2.5 text-sm leading-5 outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15 aria-invalid:border-destructive read-only:bg-muted/40 disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-muted-foreground";
 export function Field({
   label,
   children,
@@ -49,24 +51,66 @@ export function Field({
 }) {
   const labelId = useId();
   const hintId = useId();
+  const errorId = useId();
+  const [error, setError] = useState("");
   const input = isValidElement(children)
     ? cloneElement(
         children as ReactElement<{
           "aria-labelledby"?: string;
           "aria-describedby"?: string;
+          "aria-invalid"?: boolean;
         }>,
         {
           "aria-labelledby": labelId,
-          "aria-describedby": hint ? hintId : undefined,
+          "aria-describedby":
+            [hint ? hintId : "", error ? errorId : ""]
+              .filter(Boolean)
+              .join(" ") || undefined,
+          "aria-invalid": error ? true : undefined,
         },
       )
     : children;
   return (
-    <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
+    <label
+      className="flex min-w-0 flex-col gap-2 text-sm font-medium"
+      onChangeCapture={() => setError("")}
+      onInvalidCapture={(event) => {
+        const target = event.target;
+        if (
+          !(
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement
+          ) ||
+          target.getAttribute("aria-hidden") === "true"
+        )
+          return;
+        const validity = target.validity;
+        setError(
+          validity.valueMissing
+            ? "Compila questo campo."
+            : validity.typeMismatch && target.type === "email"
+              ? "Inserisci un indirizzo email valido."
+              : validity.typeMismatch && target.type === "url"
+                ? "Inserisci un link completo, ad esempio https://esempio.it."
+                : validity.rangeUnderflow
+                  ? `Il valore minimo è ${target.getAttribute("min")}.`
+                  : validity.rangeOverflow
+                    ? `Il valore massimo è ${target.getAttribute("max")}.`
+                    : validity.stepMismatch
+                      ? "Inserisci un valore consentito."
+                      : "Controlla il valore inserito.",
+        );
+      }}
+    >
       <span id={labelId} className="block leading-5">
         {label}
       </span>
       {input}
+      {error && (
+        <span id={errorId} className="text-xs font-normal text-destructive">
+          {error}
+        </span>
+      )}
       {hint && (
         <span
           id={hintId}
@@ -93,6 +137,7 @@ export function Editor({
 }) {
   const saving = useSaving();
   const firstInvalid = useRef(false);
+  const previousFocus = useRef<HTMLElement | null>(null);
   const [validationError, setValidationError] = useState("");
   const [localDirty, setDirty] = useState(false);
   const dirty = explicitDirty ?? localDirty;
@@ -130,7 +175,21 @@ export function Editor({
             if (!open) requestClose();
           }}
         >
-          <SheetContent className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[560px]">
+          <SheetContent
+            onOpenAutoFocus={() => {
+              previousFocus.current =
+                document.activeElement instanceof HTMLElement
+                  ? document.activeElement
+                  : null;
+            }}
+            onCloseAutoFocus={(event) => {
+              if (previousFocus.current?.isConnected) {
+                event.preventDefault();
+                previousFocus.current.focus();
+              }
+            }}
+            className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[560px]"
+          >
             <SheetHeader className="shrink-0 gap-3 border-b px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
               <SheetTitle className="pr-10 text-[22px] leading-7 font-semibold tracking-tight">
                 {title}
@@ -165,15 +224,18 @@ export function Editor({
                       : target;
                   (visible ?? target).focus();
                 }
-                queueMicrotask(() => {
+                // Browsers flush microtasks between native invalid events.
+                // Keep the first field focused for the entire validation pass.
+                setTimeout(() => {
                   firstInvalid.current = false;
-                });
+                }, 0);
               }}
               onChangeCapture={() => {
                 setDirty(true);
                 setValidationError("");
               }}
             >
+              <SyncNotice />
               {validationError && (
                 <p
                   role="alert"
@@ -198,7 +260,8 @@ export function Editor({
 }
 export function LocalNotice() {
   const issue = useStorageIssue();
-  return issue ? (
+  const remote = useRemoteMode();
+  return issue && !remote ? (
     <div
       role="alert"
       className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"

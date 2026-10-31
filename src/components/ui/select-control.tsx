@@ -115,7 +115,7 @@ export function SelectControl({
           aria-required={required}
           aria-invalid={invalid || aria["aria-invalid"]}
           className={cn(
-            "flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-white px-3 text-left text-sm outline-none transition-colors hover:bg-muted/30 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-foreground/10 disabled:cursor-not-allowed disabled:bg-muted/40 disabled:opacity-50 [&>span:first-child]:truncate",
+            "flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-white px-3 text-left text-sm outline-none transition-colors hover:bg-muted/30 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-foreground/10 disabled:cursor-not-allowed disabled:bg-muted/40 disabled:opacity-50 aria-invalid:border-destructive [&>span:first-child]:truncate",
             className,
             "flex items-center justify-between",
           )}
@@ -173,9 +173,10 @@ export function SelectControl({
           value={selected}
           onChange={() => {}}
           onInvalid={(e) => {
+            const handled = e.defaultPrevented;
             e.preventDefault();
             setInvalid(true);
-            trigger.current?.focus();
+            if (!handled) trigger.current?.focus();
           }}
         />
       )}

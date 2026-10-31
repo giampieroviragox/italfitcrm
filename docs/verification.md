@@ -46,3 +46,22 @@ Il test concorrente ha evidenziato che usare SQLSTATE 40001 per un conflitto app
 I tipi TypeScript del database sono generati dallo schema reale. L’advisor di sicurezza non segnala errori di RLS/privilegi. Rimane la segnalazione del controllo password compromesse: l’API ne ha rifiutato l’attivazione con HTTP 402 perché il piano Free non include la funzione. Nessun upgrade è stato effettuato.
 
 La chiave Resend è soltanto nell’ambiente locale. Invii automatici tramite Resend e pubblicazione su un dominio definitivo non fanno parte di questo passaggio.
+
+## Revisione UX e affidabilità · 1 novembre 2026
+
+Piano e criteri in [quality-plan.md](quality-plan.md). La suite attuale comprende **52 test**: ai 40 iniziali si aggiungono 10 prove dell’adapter remoto e 2 della proiezione studente.
+
+- Le letture e le scritture sono serializzate. Test riproducibili per aggiornamento durante un salvataggio, scrittura durante una lettura, deduplicazione, conflitto 409, coda dopo un errore, offline, sessione scaduta e risposta obsoleta.
+- Le richieste hanno un timeout esplicito e nessun reinvio automatico. Un esito di scrittura incerto richiede una rilettura prima di un altro salvataggio. Il browser ha mostrato l’errore controllato con il servizio interrotto e il comando di aggiornamento; la rilettura API al ripristino ha restituito 200.
+- Errori dei campi in italiano, stato `aria-invalid` e descrizioni associate. Form vuoto verificato con focus sul nome, anche quando manca un select obbligatorio. Conferma di scarto verificata conservando la bozza e ripristinando il focus al comando del form.
+- Stati iniziali distinti dai risultati vuoti; azioni di creazione o reset contestuali. I menu delle proprietà, filtri, tier e ordinamenti mantengono lo stesso sistema di controllo.
+- Il testo secondario base è `#69696c`: contrasto 5.47:1 sul bianco e 5.02:1 su `#f5f5f5`. Campi mobile a 16px; pulsanti principali, opzioni dei menu, navigazione e righe radio hanno aree touch di almeno 44px su mobile.
+- [Matrice responsive](responsive-verification.json): 44 osservazioni, 11 schermate a 320, 390, 768 e 1440px, con `scrollWidth` della pagina uguale alla viewport. La tabella conserva lo scorrimento orizzontale all’interno del proprio contenitore.
+- Area studente verificata con un account Auth tecnico reale: login, piano assegnato, scelta del mese con frecce e Invio, aggiornamento senza perdere il mese, prenotazione, vista personale, conferma di annullamento, stato vuoto dopo la cancellazione. Quando la riga scompare, il focus torna al filtro delle proprie prenotazioni.
+- Il callback di accesso usava l’origine interna della richiesta e poteva passare da `127.0.0.1` a `localhost`. Ora restituisce un redirect relativo, senza cache e senza referrer. Il browser ha confermato sessione valida sulla stessa origine e ritorno alla Home del proprietario; anche il link non valido torna all’accesso sulla stessa origine.
+
+Sette ulteriori verifiche cloud sono passate: fixture via API CRM, GET disponibilità anonimo 401, GET staff 403, proiezione solo del proprio studente, prenotazione e annullamento rilette dal database, RLS e API CRM ancora isolate. Nessuna email inviata.
+
+Account Auth e record tecnici rimossi. Conteggi finali: 0 studenti, 1 amministratore, 2 tier, 0 proprietà, 0 piani e 0 lezioni. La revisione globale è stata incrementata per impedire a finestre con dati di prova obsoleti di riscriverli. Credenziali tecniche temporanee eliminate.
+
+Screenshot dell’[area studente mobile](screenshots/student-ux-mobile.jpg) acquisito con la fixture prima della pulizia. La documentazione descrive gli esiti e i limiti osservati; non equivale a una certificazione WCAG o a un audit di sicurezza esterno.

@@ -32,7 +32,7 @@ import {
   sanitizeDirectory,
   bulkUpdate,
 } from "@/modules/crm/logic";
-import { useCrm, updateCrm } from "@/modules/crm/store";
+import { useCrm, updateCrm, useSaving } from "@/modules/crm/store";
 import {
   Editor,
   EditorCancel,
@@ -52,8 +52,9 @@ const baseColumns = [
   { id: "coach", name: "Coach" },
   { id: "tags", name: "Tag" },
 ];
-export function StudentsDirectory() {
+export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   const state = useCrm();
+  const saving = useSaving();
   const properties = state.properties.filter((p) => !p.archived);
   const persisted = sanitizeDirectory(
       state.directory ?? defaultDirectory,
@@ -110,6 +111,12 @@ export function StudentsDirectory() {
     config,
     properties,
     state.tiers,
+  );
+  const hasFilters = Boolean(
+    config.query.trim() ||
+    config.status !== "all" ||
+    config.tier !== "all" ||
+    config.filters.length,
   );
   const pages = Math.max(1, Math.ceil(filtered.length / config.pageSize)),
     currentPage = Math.min(page, pages),
@@ -434,7 +441,7 @@ export function StudentsDirectory() {
           </SelectControl>
           <Button
             variant="outline"
-            disabled={!bulkStatus || config.archived}
+            disabled={saving || !bulkStatus || config.archived}
             onClick={() =>
               applyBulk({
                 status: bulkStatus as "active" | "paused" | "invited",
@@ -463,12 +470,16 @@ export function StudentsDirectory() {
           </SelectControl>
           <Button
             variant="outline"
-            disabled={!bulkTier || config.archived}
+            disabled={saving || !bulkTier || config.archived}
             onClick={() => applyBulk({ tierId: bulkTier })}
           >
             Applica tier
           </Button>
-          <Button variant="outline" onClick={() => setConfirmArchive(true)}>
+          <Button
+            variant="outline"
+            disabled={saving}
+            onClick={() => setConfirmArchive(true)}
+          >
             {config.archived
               ? "Ripristina selezionati"
               : "Archivia selezionati"}
@@ -484,21 +495,50 @@ export function StudentsDirectory() {
           <h2 className="font-semibold">
             {config.archived
               ? "Nessuno studente archiviato trovato"
-              : "Nessuno studente trovato"}
+              : hasFilters
+                ? "Nessuno studente trovato"
+                : "Aggiungi il primo studente"}
           </h2>
           <p className="mt-2 text-xs text-muted-foreground">
-            Controlla ricerca e filtri, oppure aggiungi uno studente.
+            {hasFilters
+              ? "Prova una ricerca diversa o rimuovi i filtri per vedere gli altri studenti."
+              : config.archived
+                ? "Le schede archiviate appariranno qui. Potrai ripristinarle in qualsiasi momento."
+                : "Crea la scheda, assegna un tier e prepara l’accesso personale."}
           </p>
-          <Button
-            className="mt-5"
-            variant="outline"
-            onClick={() => {
-              resetSearch("");
-              setConfig({ query: "", status: "all", tier: "all", filters: [] });
-            }}
-          >
-            Azzera filtri
-          </Button>
+          {hasFilters ? (
+            <Button
+              className="mt-5"
+              variant="outline"
+              onClick={() => {
+                resetSearch("");
+                setConfig({
+                  query: "",
+                  status: "all",
+                  tier: "all",
+                  filters: [],
+                });
+              }}
+            >
+              Azzera filtri
+            </Button>
+          ) : config.archived ? (
+            <Button
+              className="mt-5"
+              variant="outline"
+              onClick={() => setConfig({ archived: false })}
+            >
+              Torna agli studenti
+            </Button>
+          ) : onAdd ? (
+            <Button className="mt-5" onClick={onAdd}>
+              Aggiungi studente
+            </Button>
+          ) : (
+            <Button asChild className="mt-5">
+              <Link href="/admin/studenti/nuovo">Aggiungi studente</Link>
+            </Button>
+          )}
         </div>
       ) : config.layout === "table" ? (
         <StudentsTable
@@ -624,6 +664,7 @@ export function StudentsDirectory() {
           close={() => setPanel(null)}
         >
           <div className="crm-editor-form">
+            <FormError message={error} />
             {panel === "filters" ? (
               <DirectoryFilters
                 filters={panelDraft.filters}
@@ -751,6 +792,7 @@ export function StudentsDirectory() {
         />
       )}
       <ConfirmDialog
+        error={error}
         open={deleteView}
         title="Eliminare la vista?"
         description="Gli studenti e le loro proprietà rimangono invariati."
@@ -768,6 +810,7 @@ export function StudentsDirectory() {
         }
       />
       <ConfirmDialog
+        error={error}
         open={confirmArchive}
         title={
           config.archived

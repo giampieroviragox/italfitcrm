@@ -525,6 +525,7 @@ export function StudentProfile({ id }: { id: string }) {
         <StudentEditor student={student} close={() => setEditing(false)} />
       )}
       <ConfirmDialog
+        error={error}
         open={confirm}
         title={
           student.archived

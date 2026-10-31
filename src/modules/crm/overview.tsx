@@ -10,6 +10,7 @@ import { validPropertyValue } from "./model";
 import { todayRome } from "./fitness-logic";
 import { lessonDate } from "./lessons-workspace";
 import { LocalNotice } from "./ui";
+import { formatMonth } from "@/lib/format";
 export default function OverviewPage() {
   const state = useCrm();
   const students = state.students.filter((s) => !s.archived);
@@ -119,7 +120,7 @@ export default function OverviewPage() {
           {
             label: "Senza piano mensile",
             value: unassigned.length,
-            detail: `Studenti attivi · ${month}`,
+            detail: `Studenti attivi · ${formatMonth(month)}`,
           },
         ].map((item) => (
           <div key={item.label} className="rounded-xl border p-5">

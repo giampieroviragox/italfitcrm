@@ -170,3 +170,43 @@ test("server attaches actor information to new notes and activities", () => {
   assert.equal(saved.students[0].history[0].actorName, "Owner");
   assert.notEqual(saved.students[0].notes[0].id, "client-id");
 });
+
+test("student refresh payload rejects malformed responses before render", async () => {
+  const { parseStudentPortalData } =
+    await import("../src/modules/crm/student-portal-model.ts");
+  const valid = studentProjection(state(), "a");
+  assert.deepEqual(parseStudentPortalData(valid), valid);
+  for (const malformed of [
+    null,
+    [],
+    {},
+    { ...valid, lessons: [null] },
+    { ...valid, student: null },
+    { ...valid, assignments: [{ snapshot: {} }] },
+  ]) {
+    assert.throws(() => parseStudentPortalData(malformed), /non validi/);
+  }
+});
+
+test("students retain visibility of their cancelled lessons without other students’ bookings", () => {
+  const s = state();
+  s.lessons = [
+    { id: "own-cancelled", cancelled: true },
+    { id: "other-cancelled", cancelled: true },
+  ];
+  s.bookings = [
+    { id: "own", studentId: "a", lessonId: "own-cancelled", cancelled: true },
+    {
+      id: "other",
+      studentId: "b",
+      lessonId: "other-cancelled",
+      cancelled: false,
+    },
+  ];
+  const data = studentProjection(s, "a");
+  assert.deepEqual(
+    data.lessons.map((l) => l.id),
+    ["own-cancelled"],
+  );
+  assert.equal(data.lessons[0].enrolled, false);
+});

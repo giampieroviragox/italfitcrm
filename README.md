@@ -29,6 +29,8 @@ Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supaba
 - Area studente reale: solo il proprio piano e le lezioni; prenotazione e annullamento. Lo staff dispone anche dell’anteprima con selettore.
 - Home con dati attuali e attività recenti, ricerca globale ⌘K/CtrlK, shortcut N, sidebar riducibile e navigazione mobile.
 - Select, checkbox e radio personalizzati con Radix: tastiera, focus, popup entro viewport, validazione e protezione dei form modificati.
+- Stato di sincronizzazione e recupero dagli errori senza chiudere il form; letture e scritture serializzate per evitare aggiornamenti obsoleti. Nessun reinvio automatico di salvataggi dall’esito incerto.
+- Area studente con mesi assegnati selezionabili, vista delle proprie prenotazioni, disponibilità aggiornabile e conferma prima di annullare un posto.
 - Esportazione JSON del CRM dalle impostazioni.
 
 ## Dati e sicurezza
@@ -57,3 +59,5 @@ pnpm start
 `check` esegue ESLint, TypeScript, unit test e Prettier. Le prove sul database cloud vengono eseguite separatamente con record tecnici, senza invio di email, poi ripuliti.
 
 Vedi [architettura](docs/architecture.md), [design](DESIGN.md) e [verifiche](docs/verification.md).
+
+Il piano di qualità UX e i criteri di accettazione sono in [quality-plan.md](docs/quality-plan.md).

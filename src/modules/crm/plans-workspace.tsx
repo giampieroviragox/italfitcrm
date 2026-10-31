@@ -11,6 +11,7 @@ import { PlanEditor, AssignmentEditor } from "./plan-editor";
 import { LocalNotice, FormError } from "./ui";
 import { ConfirmDialog } from "./confirm-dialog";
 import type { WorkoutPlan, PlanAssignment } from "./fitness-model";
+import { formatMonth } from "@/lib/format";
 const labels = {
   draft: "Bozza",
   published: "Pubblicato",
@@ -122,18 +123,26 @@ export function PlansWorkspace() {
         <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center">
           <Dumbbell className="mb-5 size-7 text-muted-foreground" />
           <h2 className="text-lg font-medium">
-            {query ? "Nessun piano trovato" : "Il primo piano parte da qui"}
+            {query || status !== "all"
+              ? "Nessun piano trovato"
+              : "Crea il primo piano"}
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-            Crea le sessioni, aggiungi gli esercizi e pubblica il piano prima di
-            assegnarlo.
+            {query || status !== "all"
+              ? "Nessun piano corrisponde alla ricerca e allo stato selezionato."
+              : "Crea le sessioni, aggiungi gli esercizi e pubblica il piano prima di assegnarlo."}
           </p>
           <Button
             className="mt-6"
             variant="outline"
-            onClick={() => setEditing("new")}
+            onClick={() => {
+              if (query || status !== "all") {
+                setQuery("");
+                setStatus("all");
+              } else setEditing("new");
+            }}
           >
-            Crea piano
+            {query || status !== "all" ? "Azzera filtri" : "Crea piano"}
           </Button>
         </div>
       ) : (
@@ -276,7 +285,9 @@ export function PlanDetail({ id }: { id: string }) {
                     <span>
                       {s?.firstName} {s?.lastName}
                     </span>
-                    <span className="text-muted-foreground">{a.month}</span>
+                    <span className="text-muted-foreground">
+                      {formatMonth(a.month)}
+                    </span>
                   </Link>
                 );
               })}
@@ -293,6 +304,7 @@ export function PlanDetail({ id }: { id: string }) {
         <AssignmentEditor planId={id} close={() => setAssign(false)} />
       )}
       <ConfirmDialog
+        error={error}
         open={archive}
         title={
           plan.status === "archived"
@@ -331,7 +343,7 @@ export function AssignedPlan({ assignment }: { assignment: PlanAssignment }) {
         <div>
           <h2 className="text-base font-medium">{assignment.snapshot.title}</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Piano mensile · {assignment.month}
+            Piano mensile · {formatMonth(assignment.month)}
           </p>
         </div>
         <span className="rounded-md bg-muted px-2 py-1 text-[11px]">

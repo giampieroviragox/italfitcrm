@@ -432,6 +432,7 @@ export function PropertyManager() {
         valori e possono essere ripristinate.
       </p>
       <ConfirmDialog
+        error={error}
         open={!!pendingArchive}
         title="Archiviare la proprietà?"
         description="I valori nelle schede vengono conservati. Questa proprietà sarà rimossa da colonne, filtri e ordinamento delle viste salvate. Potrai ripristinarla dalle proprietà archiviate."

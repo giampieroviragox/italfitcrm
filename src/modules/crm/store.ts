@@ -78,6 +78,14 @@ export function useViewer() {
 export function useRemoteMode() {
   return useContext(RemoteContext) !== null;
 }
+export function useSyncStatus() {
+  const remote = useContext(RemoteContext);
+  return useSyncExternalStore(
+    remote?.subscribe ?? subscribe,
+    remote?.status ?? (() => null),
+    remote?.status ?? (() => null),
+  );
+}
 export function storageIssue() {
   return issue;
 }

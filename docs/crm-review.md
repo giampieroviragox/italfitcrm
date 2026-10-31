@@ -17,6 +17,6 @@ La suite copre confronti numerici/date, booleani, filtri multiselezione, ricerca
 
 Verificati con Computer Use: creazione e ricaricamento di una vista, filtro multiselezione con colonna personalizzata, cambio massivo dello stato di due studenti e ripristino, note persistenti, archiviazione/ripristino di una scheda, cronologia, conferma di scarto e rilevamento di un conflitto tra due finestre aperte sulla stessa scheda.
 
-## Confine della verifica
+## Evoluzione del progetto
 
-È ancora un prototipo locale senza autenticazione o Supabase. Le revisioni proteggono i form aperti ma non sostituiscono le transazioni e l’autorizzazione di un database. La cronologia delle schede precedenti parte dalla prima modifica effettuata con questa versione. Non sono stati implementati allenamenti, prenotazioni o regole di accesso per tier.
+Questa revisione era stata eseguita sul primo adapter locale. Il progetto è ora collegato a Supabase, con autenticazione, permessi, RLS e transazioni versionate. Piani e prenotazioni sono implementati. Le prove successive sono in [verification.md](verification.md); gli standard della revisione finale sono in [quality-plan.md](quality-plan.md). Le regole di accesso ai contenuti per tier restano da definire esplicitamente.

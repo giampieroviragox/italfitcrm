@@ -46,7 +46,7 @@
   /* Neutral controls; the brand accent is reserved for the mark. */
   --primary: #202022;
   --muted: #f5f5f5;
-  --muted-foreground: #747476;
+  --muted-foreground: #69696c;
   --border: #e8e8e9;
 }
 
@@ -61,7 +61,8 @@
   select {
     cursor: pointer;
   }
-  a:focus-visible {
+  a:focus-visible,
+  button:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 4px;
   }
@@ -161,6 +162,20 @@ label:has(> [data-slot="checkbox-control"]) {
   cursor: pointer;
 }
 @media (max-width: 639px) {
+  nav a,
+  [role="option"],
+  [role="menuitem"],
+  label:has(> [role="radio"]) {
+    min-height: 44px;
+  }
+  button[aria-label="Stato del workspace"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    font-size: 16px;
+  }
   [data-slot="select-control"] {
     min-height: 44px;
   }

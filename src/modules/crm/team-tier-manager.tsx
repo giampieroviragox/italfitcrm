@@ -26,8 +26,7 @@ export function TierManager() {
   return (
     <>
       <PageHeading
-        eyebrow="Impostazioni · Percorsi"
-        title="Tier su misura."
+        title="Tier studenti"
         description="Crea e organizza i tier da assegnare agli studenti."
         action={<Button onClick={() => setEditing("new")}>Crea tier</Button>}
       />

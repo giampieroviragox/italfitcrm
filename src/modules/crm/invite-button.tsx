@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Editor, EditorCancel, Field, control, FormError } from "./ui";
 import { activeRemoteStore } from "./remote-store";
 import { useRemoteMode } from "./store";
+import { requestJson } from "@/lib/request-json";
 export function InviteButton({
   id,
   kind,
@@ -86,14 +87,22 @@ export function InviteButton({
                   onClick={async () => {
                     setPending(true);
                     try {
-                      const response = await fetch("/api/inviti", {
+                      const data = await requestJson("/api/inviti", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ id, kind }),
                       });
-                      const data = await response.json();
-                      if (!response.ok)
-                        throw new Error(data.error ?? "Invito non riuscito.");
+                      if (
+                        !data ||
+                        typeof data !== "object" ||
+                        !("link" in data) ||
+                        typeof data.link !== "string" ||
+                        !("email" in data) ||
+                        typeof data.email !== "string"
+                      )
+                        throw new Error(
+                          "Invito non verificato. Aggiorna i dati prima di generarlo di nuovo.",
+                        );
                       setLink(data.link);
                       setEmail(data.email);
                       await activeRemoteStore?.refresh();

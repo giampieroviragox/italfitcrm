@@ -8,6 +8,19 @@ import {
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
 import { prepareTransition } from "@/modules/crm/transition";
+export async function GET() {
+  try {
+    const { user, access } = await requireAccess();
+    if (access.role !== "student")
+      throw new HttpError(403, "Usa l’anteprima studente dell’admin.");
+    const current = await readCrm(user.id);
+    return Response.json(studentProjection(current.state, access.record_id), {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
 export async function POST(request: Request) {
   try {
     checkOrigin(request);

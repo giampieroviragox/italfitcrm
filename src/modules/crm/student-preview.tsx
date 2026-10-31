@@ -11,6 +11,7 @@ import { Field, control, FormError, LocalNotice } from "./ui";
 import { todayRome } from "./fitness-logic";
 import { AssignedPlan } from "./plans-workspace";
 import { changeBooking, lessonDate } from "./lessons-workspace";
+import { PlanMonthSelect } from "./plan-month-select";
 export function StudentPreview() {
   const now = useClock();
   const state = useCrm(),
@@ -66,12 +67,12 @@ export function StudentPreview() {
                 </SelectControl>
               </Field>
               <Field label="Mese del piano">
-                <input
-                  className={control}
-                  type="month"
-                  required
+                <PlanMonthSelect
                   value={month}
-                  onChange={(e) => setMonth(e.target.value)}
+                  months={(state.assignments ?? [])
+                    .filter((assignment) => assignment.studentId === student.id)
+                    .map((assignment) => assignment.month)}
+                  onChange={setMonth}
                 />
               </Field>
             </div>

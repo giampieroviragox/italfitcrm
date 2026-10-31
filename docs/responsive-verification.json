@@ -1,0 +1,266 @@
+[
+  {
+    "path": "/admin",
+    "scroll": 320,
+    "title": "Home",
+    "width": 320
+  },
+  {
+    "path": "/admin/studenti",
+    "scroll": 320,
+    "title": "Studenti",
+    "width": 320
+  },
+  {
+    "path": "/admin/piani",
+    "scroll": 320,
+    "title": "Piani e percorsi",
+    "width": 320
+  },
+  {
+    "path": "/admin/lezioni",
+    "scroll": 320,
+    "title": "Lezioni in sede",
+    "width": 320
+  },
+  {
+    "path": "/admin/impostazioni",
+    "scroll": 320,
+    "title": "Amministratori",
+    "width": 320
+  },
+  {
+    "path": "/admin",
+    "scroll": 390,
+    "title": "Home",
+    "width": 390
+  },
+  {
+    "path": "/admin/studenti",
+    "scroll": 390,
+    "title": "Studenti",
+    "width": 390
+  },
+  {
+    "path": "/admin/piani",
+    "scroll": 390,
+    "title": "Piani e percorsi",
+    "width": 390
+  },
+  {
+    "path": "/admin/lezioni",
+    "scroll": 390,
+    "title": "Lezioni in sede",
+    "width": 390
+  },
+  {
+    "path": "/admin/impostazioni",
+    "scroll": 390,
+    "title": "Amministratori",
+    "width": 390
+  },
+  {
+    "path": "/admin",
+    "scroll": 768,
+    "title": "Home",
+    "width": 768
+  },
+  {
+    "path": "/admin/studenti",
+    "scroll": 768,
+    "title": "Studenti",
+    "width": 768
+  },
+  {
+    "path": "/admin/piani",
+    "scroll": 768,
+    "title": "Piani e percorsi",
+    "width": 768
+  },
+  {
+    "path": "/admin/lezioni",
+    "scroll": 768,
+    "title": "Lezioni in sede",
+    "width": 768
+  },
+  {
+    "path": "/admin/impostazioni",
+    "scroll": 768,
+    "title": "Amministratori",
+    "width": 768
+  },
+  {
+    "path": "/admin",
+    "scroll": 1440,
+    "title": "Home",
+    "width": 1440
+  },
+  {
+    "path": "/admin/studenti",
+    "scroll": 1440,
+    "title": "Studenti",
+    "width": 1440
+  },
+  {
+    "path": "/admin/piani",
+    "scroll": 1440,
+    "title": "Piani e percorsi",
+    "width": 1440
+  },
+  {
+    "path": "/admin/lezioni",
+    "scroll": 1440,
+    "title": "Lezioni in sede",
+    "width": 1440
+  },
+  {
+    "path": "/admin/impostazioni",
+    "scroll": 1440,
+    "title": "Amministratori",
+    "width": 1440
+  },
+  {
+    "path": "/admin/impostazioni/proprieta",
+    "scroll": 320,
+    "title": "Proprietà CRM",
+    "width": 320
+  },
+  {
+    "path": "/admin/impostazioni/tier",
+    "scroll": 320,
+    "title": "Tier studenti",
+    "width": 320
+  },
+  {
+    "path": "/admin/studenti/[id]",
+    "scroll": 320,
+    "title": "Scheda studente",
+    "width": 320
+  },
+  {
+    "path": "/admin/piani/[id]",
+    "scroll": 320,
+    "title": "Verifica UX · Allenamento",
+    "width": 320
+  },
+  {
+    "path": "/admin/lezioni/[id]",
+    "scroll": 320,
+    "title": "Functional · Verifica UX",
+    "width": 320
+  },
+  {
+    "path": "/admin/impostazioni/proprieta",
+    "scroll": 390,
+    "title": "Proprietà CRM",
+    "width": 390
+  },
+  {
+    "path": "/admin/impostazioni/tier",
+    "scroll": 390,
+    "title": "Tier studenti",
+    "width": 390
+  },
+  {
+    "path": "/admin/studenti/[id]",
+    "scroll": 390,
+    "title": "Scheda studente",
+    "width": 390
+  },
+  {
+    "path": "/admin/piani/[id]",
+    "scroll": 390,
+    "title": "Verifica UX · Allenamento",
+    "width": 390
+  },
+  {
+    "path": "/admin/lezioni/[id]",
+    "scroll": 390,
+    "title": "Functional · Verifica UX",
+    "width": 390
+  },
+  {
+    "path": "/admin/impostazioni/proprieta",
+    "scroll": 768,
+    "title": "Proprietà CRM",
+    "width": 768
+  },
+  {
+    "path": "/admin/impostazioni/tier",
+    "scroll": 768,
+    "title": "Tier studenti",
+    "width": 768
+  },
+  {
+    "path": "/admin/studenti/[id]",
+    "scroll": 768,
+    "title": "Scheda studente",
+    "width": 768
+  },
+  {
+    "path": "/admin/piani/[id]",
+    "scroll": 768,
+    "title": "Verifica UX · Allenamento",
+    "width": 768
+  },
+  {
+    "path": "/admin/lezioni/[id]",
+    "scroll": 768,
+    "title": "Functional · Verifica UX",
+    "width": 768
+  },
+  {
+    "path": "/admin/impostazioni/proprieta",
+    "scroll": 1440,
+    "title": "Proprietà CRM",
+    "width": 1440
+  },
+  {
+    "path": "/admin/impostazioni/tier",
+    "scroll": 1440,
+    "title": "Tier studenti",
+    "width": 1440
+  },
+  {
+    "path": "/admin/studenti/[id]",
+    "scroll": 1440,
+    "title": "Scheda studente",
+    "width": 1440
+  },
+  {
+    "path": "/admin/piani/[id]",
+    "scroll": 1440,
+    "title": "Verifica UX · Allenamento",
+    "width": 1440
+  },
+  {
+    "path": "/admin/lezioni/[id]",
+    "scroll": 1440,
+    "title": "Functional · Verifica UX",
+    "width": 1440
+  },
+  {
+    "path": "/area-studente",
+    "scroll": 320,
+    "title": "Ciao, Verifica",
+    "width": 320
+  },
+  {
+    "path": "/area-studente",
+    "scroll": 390,
+    "title": "Ciao, Verifica",
+    "width": 390
+  },
+  {
+    "path": "/area-studente",
+    "scroll": 768,
+    "title": "Ciao, Verifica",
+    "width": 768
+  },
+  {
+    "path": "/area-studente",
+    "scroll": 1440,
+    "title": "Ciao, Verifica",
+    "width": 1440
+  }
+]
