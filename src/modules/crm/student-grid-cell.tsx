@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Popover } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { SelectControl } from "@/components/ui/select-control";
@@ -16,6 +16,8 @@ export function StudentGridCell({
   property,
   tiers,
   children,
+  open,
+  onOpenChange,
 }: {
   student: CrmStudent;
   column: string;
@@ -23,16 +25,23 @@ export function StudentGridCell({
   property?: CrmProperty;
   tiers: readonly CrmTier[];
   children: ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const close = () => {
+    onOpenChange(false);
+    trigger.current?.focus();
+  };
   const readOnly =
     student.archived ||
     column === "joinedAt" ||
     (column === "email" && !!student.access);
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
         <button
+          ref={trigger}
           type="button"
           disabled={!!readOnly}
           aria-label={`${readOnly ? "Visualizza" : "Modifica"} ${label} di ${student.firstName} ${student.lastName}`}
@@ -53,9 +62,10 @@ export function StudentGridCell({
           align="start"
           sideOffset={-1}
           collisionPadding={12}
-          className="z-50 w-80 max-w-[calc(100vw-24px)] rounded-xl border bg-white p-4 shadow-xl outline-none"
+          className="z-50 max-h-[var(--radix-popover-content-available-height)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto rounded-xl border bg-white p-4 shadow-xl outline-none"
           aria-label={`Modifica ${label}`}
-          onInteractOutside={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          onEscapeKeyDown={() => trigger.current?.focus()}
         >
           <CellForm
             student={student}
@@ -63,7 +73,7 @@ export function StudentGridCell({
             label={label}
             property={property}
             tiers={tiers}
-            close={() => setOpen(false)}
+            close={close}
           />
         </Popover.Content>
       </Popover.Portal>

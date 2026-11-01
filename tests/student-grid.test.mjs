@@ -187,3 +187,133 @@ test("l’ordinamento per email funziona e il CSV non duplica l’email visibile
     '\uFEFF"Nome","Cognome","Email","Telefono","Tier"',
   );
 });
+
+test("il raggruppamento preserva l’ordine degli studenti e distingue No, zero e campi vuoti", async () => {
+  const { groupStudents } = await import("../src/modules/crm/student-grid.ts");
+  const current = state();
+  const a = current.students[0];
+  const properties = [
+    { ...current.properties[0], type: "boolean", id: "flag" },
+  ];
+  const students = [
+    { ...a, id: "empty", properties: {} },
+    { ...a, id: "false-1", properties: { flag: false } },
+    { ...a, id: "true", properties: { flag: true } },
+    { ...a, id: "false-2", properties: { flag: false } },
+  ];
+  const groups = groupStudents(
+    students,
+    "property:flag",
+    properties,
+    current.tiers,
+  );
+  assert.deepEqual(
+    groups.map((g) => [g.label, g.total]),
+    [
+      ["No", 2],
+      ["Sì", 1],
+      ["Non compilato", 1],
+    ],
+  );
+  assert.deepEqual(
+    groups[0].students.map((s) => s.id),
+    ["false-1", "false-2"],
+  );
+  const numbers = groupStudents(
+    [
+      { ...a, properties: { flag: 0 } },
+      { ...a, id: "empty", properties: {} },
+    ],
+    "property:flag",
+    [{ ...properties[0], type: "number" }],
+    current.tiers,
+  );
+  assert.deepEqual(
+    numbers.map((g) => g.label),
+    ["0", "Non compilato"],
+  );
+  assert.equal(students[0].id, "empty");
+});
+
+test("la paginazione attraversa i gruppi senza perdere o duplicare studenti e conserva i totali", async () => {
+  const { groupStudents, pageStudentGroups } =
+    await import("../src/modules/crm/student-grid.ts");
+  const current = state();
+  const a = current.students[0];
+  const students = Array.from({ length: 7 }, (_, index) => ({
+    ...a,
+    id: String(index),
+    coach: index < 3 ? "A" : "B",
+  }));
+  const groups = groupStudents(students, "coach", [], current.tiers);
+  const first = pageStudentGroups(groups, 0, 4);
+  const second = pageStudentGroups(groups, 4, 4);
+  assert.deepEqual(
+    first.map((g) => [g.label, g.students.length, g.total]),
+    [
+      ["A", 3, 3],
+      ["B", 1, 4],
+    ],
+  );
+  assert.deepEqual(
+    second.map((g) => [g.label, g.students.length, g.total]),
+    [["B", 3, 4]],
+  );
+  assert.deepEqual(
+    [...first, ...second].flatMap((g) => g.students.map((s) => s.id)),
+    students.map((s) => s.id),
+  );
+  assert.equal(groups[1].students.length, 4);
+});
+
+test("il raggruppamento è compatibile con le vecchie viste e viene rimosso per proprietà archiviate", async () => {
+  const { groupStudents } = await import("../src/modules/crm/student-grid.ts");
+  const current = state();
+  assert.equal(
+    groupStudents(current.students, undefined, [], current.tiers)[0].students
+      .length,
+    1,
+  );
+  const grouped = { ...defaultDirectory, groupBy: "property:objective" };
+  assert.equal(isCrmState({ ...current, directory: grouped }), true);
+  current.properties[0].archived = true;
+  assert.equal(sanitizeDirectory(grouped, current).groupBy, "");
+  assert.equal(
+    isCrmState({ ...current, directory: { ...grouped, groupBy: 123 } }),
+    false,
+  );
+});
+
+test("i gruppi numerici e le date seguono il valore, con etichette italiane", async () => {
+  const { groupStudents } = await import("../src/modules/crm/student-grid.ts");
+  const current = state();
+  const student = current.students[0];
+  const property = { ...current.properties[0], id: "amount", type: "number" };
+  const groups = groupStudents(
+    [
+      { ...student, id: "large", properties: { amount: 1000 } },
+      { ...student, id: "small", properties: { amount: 2 } },
+    ],
+    "property:amount",
+    [property],
+    current.tiers,
+  );
+  assert.deepEqual(
+    groups.map((g) => g.students[0].id),
+    ["small", "large"],
+  );
+  const dates = groupStudents(
+    [
+      { ...student, id: "later", joinedAt: "2026-12-01" },
+      { ...student, id: "earlier", joinedAt: "2026-01-31" },
+    ],
+    "joinedAt",
+    [],
+    current.tiers,
+  );
+  assert.deepEqual(
+    dates.map((g) => g.students[0].id),
+    ["earlier", "later"],
+  );
+  assert.equal(dates[0].label, "31 gen 2026");
+});

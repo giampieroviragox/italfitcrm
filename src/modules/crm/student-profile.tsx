@@ -61,7 +61,13 @@ function PropertyDisplay({
     );
   return formatPropertyValue(p, value);
 }
-export function StudentProfile({ id }: { id: string }) {
+export function StudentProfile({
+  id,
+  embedded = false,
+}: {
+  id: string;
+  embedded?: boolean;
+}) {
   const state = useCrm(),
     hydrated = useHydrated();
   const commentLock = useRef(false);
@@ -109,12 +115,14 @@ export function StudentProfile({ id }: { id: string }) {
   };
   return (
     <>
-      <Link
-        className="mb-6 inline-block text-xs text-muted-foreground"
-        href="/admin/studenti"
-      >
-        ← Tutti gli studenti
-      </Link>
+      {!embedded && (
+        <Link
+          className="mb-6 inline-block text-xs text-muted-foreground"
+          href="/admin/studenti"
+        >
+          ← Tutti gli studenti
+        </Link>
+      )}
       <LocalNotice />
       <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
         <StudentIdentity student={student} large />
@@ -143,7 +151,9 @@ export function StudentProfile({ id }: { id: string }) {
           {missing.map((p) => p.name).join(", ")}.
         </p>
       )}
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
+      <div
+        className={`grid items-start gap-6 ${embedded ? "" : "xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]"}`}
+      >
         <div className="min-w-0 space-y-5">
           <Card className="gap-4 p-6 shadow-none">
             <h1 className="text-lg font-semibold">Scheda studente</h1>

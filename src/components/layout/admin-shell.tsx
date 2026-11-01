@@ -6,7 +6,7 @@ import {
 } from "@/modules/crm/use-unsaved-changes";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Dialog, DropdownMenu } from "radix-ui";
+import { DropdownMenu } from "radix-ui";
 import {
   CalendarDays,
   Dumbbell,
@@ -16,7 +16,6 @@ import {
   PanelLeft,
   ChevronDown,
   ExternalLink,
-  Info,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -139,8 +138,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
     viewer = useViewer();
   const sync = useSyncStatus();
   const [collapsed, setCollapsed] = useState(false),
-    [mobile, setMobile] = useState(false),
-    [info, setInfo] = useState(false);
+    [mobile, setMobile] = useState(false);
   const current = navigation.find(
     (i) => i.href !== "/admin" && pathname.startsWith(i.href),
   );
@@ -200,10 +198,9 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
             <CommandSearch />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              onClick={() => setInfo(true)}
+            <div
               aria-label="Stato del workspace"
-              className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted"
+              className="flex min-h-9 items-center gap-1.5 px-2 py-1.5 text-[11px] text-muted-foreground"
             >
               <span
                 className={cn(
@@ -226,7 +223,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                           : "Workspace online"
                     : "Demo locale"}
               </span>
-            </button>
+            </div>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button
@@ -279,12 +276,6 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                       Esci
                     </DropdownMenu.Item>
                   )}
-                  <DropdownMenu.Item
-                    className="rounded-lg px-3 py-2.5 text-sm outline-none focus:bg-muted"
-                    onSelect={() => setInfo(true)}
-                  >
-                    Informazioni workspace
-                  </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
@@ -307,25 +298,6 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
           <SidebarContent onNavigate={() => setMobile(false)} />
         </SheetContent>
       </Sheet>
-      <Dialog.Root open={info} onOpenChange={setInfo}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/20" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 z-[71] w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-white p-6 shadow-xl">
-            <Info className="mb-4 size-5 text-muted-foreground" />
-            <Dialog.Title className="text-lg font-medium">
-              {remote ? "Workspace condiviso" : "Workspace locale"}
-            </Dialog.Title>
-            <Dialog.Description className="mt-3 text-sm leading-6 text-muted-foreground">
-              {remote
-                ? "Le modifiche sono condivise con gli amministratori del team. Ogni studente accede al proprio piano e alle lezioni con un account personale."
-                : "I dati restano in questo browser. Account e inviti non sono attivi nella demo."}
-            </Dialog.Description>
-            <Dialog.Close asChild>
-              <Button className="mt-6 w-full">Ho capito</Button>
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
     </div>
   );
 }

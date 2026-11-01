@@ -19,6 +19,7 @@ function validDirectory(c: unknown): boolean {
     typeof c.tier === "string" &&
     typeof c.archived === "boolean" &&
     strings(c.columns) &&
+    (c.groupBy === undefined || typeof c.groupBy === "string") &&
     (c.columnWidths === undefined ||
       (isObject(c.columnWidths) &&
         Object.values(c.columnWidths).every(

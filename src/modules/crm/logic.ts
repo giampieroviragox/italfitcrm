@@ -139,6 +139,18 @@ export function sanitizeDirectory(
           ),
         }
       : {}),
+    ...(config.groupBy !== undefined
+      ? {
+          groupBy:
+            ["tier", "status", "coach", "email", "phone", "joinedAt"].includes(
+              config.groupBy,
+            ) ||
+            (config.groupBy.startsWith("property:") &&
+              ids.has(config.groupBy.slice(9)))
+              ? config.groupBy
+              : "",
+        }
+      : {}),
     filters: config.filters.filter((f) => ids.has(f.propertyId)),
     sortKey:
       config.sortKey.startsWith("property:") &&

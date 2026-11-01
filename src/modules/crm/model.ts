@@ -162,6 +162,7 @@ export interface DirectoryConfig {
   archived: boolean;
   columns: string[];
   columnWidths?: Record<string, number>;
+  groupBy?: string;
   layout: "table" | "grid";
   sortKey: string;
   sortDirection: "asc" | "desc";

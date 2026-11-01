@@ -1,11 +1,9 @@
 "use client";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { DropdownMenu } from "radix-ui";
 import {
   ArrowDown,
   ArrowUp,
-  ArrowUpRight,
   CalendarDays,
   CheckSquare,
   ChevronDown,
@@ -21,11 +19,14 @@ import {
   WrapText,
   type LucideIcon,
 } from "lucide-react";
-import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
 import { StudentGridCell } from "@/modules/crm/student-grid-cell";
-import { studentColumns, moveColumn } from "@/modules/crm/student-grid";
+import {
+  studentColumns,
+  moveColumn,
+  type StudentGroup,
+} from "@/modules/crm/student-grid";
 import {
   formatPropertyValue,
   propertyTypes,
@@ -59,7 +60,10 @@ export function StudentDataGrid({
   config,
   saving,
   offset,
-  selection,
+  groups,
+  activeCell,
+  onCellChange,
+  onOpenStudent,
   onConfig,
   onAddField,
   onEditField,
@@ -72,11 +76,10 @@ export function StudentDataGrid({
   config: DirectoryConfig;
   saving: boolean;
   offset: number;
-  selection: {
-    selectedIds: string[];
-    onToggle: (id: string, checked: boolean) => void;
-    onTogglePage: (checked: boolean) => void;
-  };
+  groups: readonly StudentGroup[];
+  activeCell: { studentId: string; column: string } | null;
+  onCellChange: (studentId: string, column: string, open: boolean) => void;
+  onOpenStudent: (id: string) => void;
   onConfig: (patch: Partial<DirectoryConfig>) => void;
   onAddField: () => void;
   onEditField: (p: CrmProperty) => void;
@@ -89,13 +92,9 @@ export function StudentDataGrid({
     id: string;
     width: number;
   } | null>(null);
+  const menuOpensPanel = useRef(false);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const columns = ["name", ...config.columns];
-  const checked =
-    students.length > 0 &&
-    students.every((s) => selection.selectedIds.includes(s.id));
-  const mixed =
-    !checked && students.some((s) => selection.selectedIds.includes(s.id));
   const propertyFor = (id: string) =>
     properties.find((p) => `property:${p.id}` === id);
   const labelFor = (id: string) =>
@@ -110,10 +109,6 @@ export function StudentDataGrid({
       : (config.columnWidths?.[id] ?? (id === "name" ? 260 : 200));
   return (
     <div className="overflow-hidden">
-      <p className="border-b bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground">
-        Fai clic su una cella per modificarla. Trascina le colonne per
-        riordinarle o il bordo per ridimensionarle.
-      </p>
       <div
         className="max-h-[65vh] min-h-60 overflow-auto overscroll-x-contain"
         role="region"
@@ -126,7 +121,7 @@ export function StudentDataGrid({
             filtrare e gestire i campi.
           </caption>
           <colgroup>
-            <col style={{ width: 72 }} />
+            <col style={{ width: 44 }} />
             {columns.map((id) => (
               <col key={id} style={{ width: widthFor(id) }} />
             ))}
@@ -134,13 +129,8 @@ export function StudentDataGrid({
           </colgroup>
           <thead className="sticky top-0 z-20">
             <tr>
-              <th className="sticky left-0 z-30 h-11 w-[72px] border-r border-b bg-[#f6f7f8] px-3">
-                <CheckboxControl
-                  aria-label="Seleziona pagina"
-                  aria-checked={mixed ? "mixed" : checked}
-                  checked={checked}
-                  onChange={(e) => selection.onTogglePage(e.target.checked)}
-                />
+              <th className="sticky left-0 z-30 h-11 w-[44px] border-r border-b bg-[#f6f7f8] px-3">
+                <span className="sr-only">Numero riga</span>
               </th>
               {columns.map((id) => {
                 const property = propertyFor(id);
@@ -167,7 +157,7 @@ export function StudentDataGrid({
                           : "descending"
                         : "none"
                     }
-                    className={`relative h-11 border-r border-b bg-[#f6f7f8] text-left font-medium ${id === "name" ? "z-30 sm:sticky sm:left-[72px]" : ""} ${dropTarget === id ? "shadow-[inset_3px_0_0_var(--primary)]" : ""} ${dragging === id ? "opacity-50" : ""}`}
+                    className={`relative h-11 border-r border-b bg-[#f6f7f8] text-left font-medium ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget === id ? "shadow-[inset_3px_0_0_var(--primary)]" : ""} ${dragging === id ? "opacity-50" : ""}`}
                     onDragOver={(e) => {
                       if (dragging && id !== "name") {
                         e.preventDefault();
@@ -229,6 +219,12 @@ export function StudentDataGrid({
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
                           <DropdownMenu.Content
+                            onCloseAutoFocus={(event) => {
+                              if (menuOpensPanel.current) {
+                                event.preventDefault();
+                                menuOpensPanel.current = false;
+                              }
+                            }}
                             align="start"
                             sideOffset={4}
                             className="z-50 min-w-56 rounded-xl border bg-white p-1.5 shadow-xl"
@@ -239,7 +235,10 @@ export function StudentDataGrid({
                             {property && (
                               <DropdownMenu.Item
                                 className={menuItem}
-                                onSelect={() => onEditField(property)}
+                                onSelect={() => {
+                                  menuOpensPanel.current = true;
+                                  onEditField(property);
+                                }}
                               >
                                 Modifica campo
                               </DropdownMenu.Item>
@@ -267,11 +266,23 @@ export function StudentDataGrid({
                             {property && (
                               <DropdownMenu.Item
                                 className={menuItem}
-                                onSelect={() => onFilter(property)}
+                                onSelect={() => {
+                                  menuOpensPanel.current = true;
+                                  onFilter(property);
+                                }}
                               >
                                 Filtra per questo campo
                               </DropdownMenu.Item>
                             )}
+                            {id !== "name" &&
+                              !["multiselect", "textarea"].includes(type) && (
+                                <DropdownMenu.Item
+                                  className={menuItem}
+                                  onSelect={() => onConfig({ groupBy: id })}
+                                >
+                                  Raggruppa per questo campo
+                                </DropdownMenu.Item>
+                              )}
                             {id !== "name" && (
                               <>
                                 <DropdownMenu.Separator className="my-1 border-t" />
@@ -422,8 +433,8 @@ export function StudentDataGrid({
               </th>
             </tr>
           </thead>
-          <tbody>
-            {!students.length && (
+          {!students.length && (
+            <tbody>
               <tr>
                 <td
                   colSpan={columns.length + 2}
@@ -433,105 +444,130 @@ export function StudentDataGrid({
                   modifica i filtri.
                 </td>
               </tr>
-            )}
-            {students.map((student, index) => (
-              <tr
-                key={student.id}
-                className={`group ${selection.selectedIds.includes(student.id) ? "bg-primary/5" : "bg-white"}`}
-              >
-                <td className="sticky left-0 z-10 border-r border-b bg-inherit px-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-right text-[10px] tabular-nums text-muted-foreground">
-                      {offset + index + 1}
+            </tbody>
+          )}
+          {groups.map((group) => (
+            <tbody
+              key={group.key}
+              aria-label={config.groupBy ? group.label : undefined}
+            >
+              {config.groupBy && (
+                <tr>
+                  <th
+                    scope="rowgroup"
+                    colSpan={columns.length + 2}
+                    className="border-b bg-muted/40 px-3 py-3 text-left font-medium"
+                  >
+                    <span className="sticky left-3 inline-flex items-center gap-2">
+                      {group.label}
+                      <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+                        {group.total}
+                      </span>
                     </span>
-                    <CheckboxControl
-                      aria-label={`Seleziona ${student.firstName} ${student.lastName}`}
-                      checked={selection.selectedIds.includes(student.id)}
-                      onChange={(e) =>
-                        selection.onToggle(student.id, e.target.checked)
-                      }
-                    />
-                  </div>
-                </td>
-                {columns.map((id) => {
-                  const property = propertyFor(id);
-                  let value;
-                  if (property) {
-                    const raw = student.properties[property.id];
-                    value =
-                      property.type === "select" ||
-                      property.type === "radio" ||
-                      property.type === "multiselect" ? (
-                        <span className="inline-flex gap-1">
-                          {(Array.isArray(raw)
-                            ? raw
-                            : typeof raw === "string" && raw
-                              ? [raw]
-                              : []
-                          ).map((v) => (
-                            <span
-                              key={v}
-                              className="rounded bg-sky-100 px-2 py-1 text-[11px] text-sky-900"
-                            >
-                              {v}
-                            </span>
-                          ))}
+                  </th>
+                </tr>
+              )}
+              {group.students.map((student) => (
+                <tr key={student.id} className="group bg-white">
+                  <td className="sticky left-0 z-10 border-r border-b bg-inherit px-2 text-center text-[10px] tabular-nums text-muted-foreground">
+                    {offset +
+                      students.findIndex((s) => s.id === student.id) +
+                      1}
+                  </td>
+                  {columns.map((id) => {
+                    const property = propertyFor(id);
+                    let value;
+                    if (property) {
+                      const raw = student.properties[property.id];
+                      value =
+                        property.type === "select" ||
+                        property.type === "radio" ||
+                        property.type === "multiselect" ? (
+                          <span className="inline-flex gap-1">
+                            {(Array.isArray(raw)
+                              ? raw
+                              : typeof raw === "string" && raw
+                                ? [raw]
+                                : []
+                            ).map((v) => (
+                              <span
+                                key={v}
+                                className="rounded bg-sky-100 px-2 py-1 text-[11px] text-sky-900"
+                              >
+                                {v}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          formatPropertyValue(property, raw)
+                        );
+                    } else if (id === "name")
+                      value = (
+                        <span className="font-medium">
+                          {student.firstName} {student.lastName}
                         </span>
-                      ) : (
-                        formatPropertyValue(property, raw)
                       );
-                  } else if (id === "name")
-                    value = (
-                      <span className="font-medium">
-                        {student.firstName} {student.lastName}
-                      </span>
+                    else if (id === "tier")
+                      value = (
+                        <span className="rounded bg-violet-50 px-2 py-1 text-[11px] text-violet-800">
+                          {tiers.find((t) => t.id === student.tierId)?.name ??
+                            "—"}
+                        </span>
+                      );
+                    else if (id === "status")
+                      value = <StatusBadge status={student.status} />;
+                    else if (id === "joinedAt")
+                      value = formatDate(student.joinedAt);
+                    else
+                      value = student[id as "email" | "phone" | "coach"] || "—";
+                    return (
+                      <td
+                        key={id}
+                        style={{
+                          width: widthFor(id),
+                          maxWidth: widthFor(id),
+                        }}
+                        className={`overflow-hidden border-r border-b group-hover:bg-muted/20 ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
+                      >
+                        <div className="flex items-center">
+                          {id === "name" ? (
+                            <button
+                              type="button"
+                              onClick={() => onOpenStudent(student.id)}
+                              aria-label={`Apri scheda di ${student.firstName} ${student.lastName}`}
+                              className="h-11 w-full truncate px-3 text-left text-xs font-medium outline-none hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                            >
+                              {value}
+                            </button>
+                          ) : (
+                            <StudentGridCell
+                              student={student}
+                              column={id}
+                              label={labelFor(id)}
+                              property={property}
+                              tiers={tiers}
+                              open={
+                                activeCell?.studentId === student.id &&
+                                activeCell.column === id
+                              }
+                              onOpenChange={(open) =>
+                                onCellChange(student.id, id, open)
+                              }
+                            >
+                              {value}
+                            </StudentGridCell>
+                          )}
+                        </div>
+                      </td>
                     );
-                  else if (id === "tier")
-                    value = (
-                      <span className="rounded bg-violet-50 px-2 py-1 text-[11px] text-violet-800">
-                        {tiers.find((t) => t.id === student.tierId)?.name ??
-                          "—"}
-                      </span>
-                    );
-                  else if (id === "status")
-                    value = <StatusBadge status={student.status} />;
-                  else if (id === "joinedAt")
-                    value = formatDate(student.joinedAt);
-                  else
-                    value = student[id as "email" | "phone" | "coach"] || "—";
-                  return (
-                    <td
-                      key={id}
-                      style={{ width: widthFor(id), maxWidth: widthFor(id) }}
-                      className={`overflow-hidden border-r border-b group-hover:bg-muted/20 ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[72px]" : ""}`}
-                    >
-                      <div className="flex items-center">
-                        <StudentGridCell
-                          student={student}
-                          column={id}
-                          label={labelFor(id)}
-                          property={property}
-                          tiers={tiers}
-                        >
-                          {value}
-                        </StudentGridCell>
-                        {id === "name" && (
-                          <Link
-                            href={`/admin/studenti/${encodeURIComponent(student.id)}`}
-                            aria-label={`Apri scheda di ${student.firstName} ${student.lastName}`}
-                            className="mr-2 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <ArrowUpRight className="size-3.5" />
-                          </Link>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-                <td className="border-b bg-muted/10" />
-              </tr>
-            ))}
-            {onAdd && !config.archived && (
+                  })}
+                  <td className="border-b bg-muted/10" />
+                </tr>
+              ))}
+            </tbody>
+          ))}
+          {onAdd && !config.archived && (
+            <tbody>
               <tr>
                 <td className="border-b px-3 text-center text-muted-foreground">
                   <Plus className="mx-auto size-3.5" />
@@ -545,8 +581,8 @@ export function StudentDataGrid({
                   </button>
                 </td>
               </tr>
-            )}
-          </tbody>
+            </tbody>
+          )}
         </table>
       </div>
     </div>
