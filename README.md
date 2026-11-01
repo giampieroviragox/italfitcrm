@@ -18,7 +18,7 @@ Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supaba
 ## Funzioni
 
 - Login email/password, sessioni SSR, logout e recupero password. Registrazione pubblica disattivata. Ruoli owner/admin/student verificati sul server.
-- CRM studenti: creazione in una modale con nome, cognome, email, telefono con prefisso, tier, inizio percorso e data di creazione automatica; nuovi studenti attivi. Stato, coach e proprietà personalizzate si gestiscono dalla modifica della scheda; archiviazione e ripristino.
+- CRM studenti: creazione in una modale con nome, cognome, email, telefono con prefisso, tier e data di creazione automatica; nuovi studenti attivi. Stato, coach e proprietà personalizzate si gestiscono dalla modifica della scheda. Le proprietà vengono create soltanto esplicitamente dall’admin; dalla scheda si attiva e disattiva l’accesso personale senza eliminare lo studente.
 - Undici tipi di proprietà: testo, multiriga, numero, data, dropdown, radio, scelta multipla, booleano, link, email e telefono. Dalle impostazioni si scelgono nome e tipo (più le opzioni per i campi a scelta); archiviazione senza perdita dei valori.
 - Viste per account: ricerca, filtri tipizzati in AND, colonne riordinabili, ordinamento, tabella/schede, paginazione e modifiche massive. Ricerca con aggiornamento immediato e persistenza delle preferenze con debounce. CSV dei risultati filtrati con neutralizzazione delle formule.
 - Commenti interni permanenti con autore, data e lista scorrevole; cronologia generata dal server con valori prima/dopo per anagrafica, proprietà, tier, piani, prenotazioni, lezioni e accessi. Errori e modifiche concorrenti non generano conferme di salvataggio false.

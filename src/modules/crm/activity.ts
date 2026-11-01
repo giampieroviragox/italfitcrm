@@ -52,6 +52,12 @@ export function studentChanges(
           ? "Studente archiviato"
           : "Studente ripristinato",
       });
+    if (Boolean(old.accessDisabled) !== Boolean(student.accessDisabled))
+      changes.push({
+        text: student.accessDisabled
+          ? "Accesso alla piattaforma disattivato"
+          : "Accesso alla piattaforma riattivato",
+      });
     const fields = {
       firstName: "Nome",
       lastName: "Cognome",

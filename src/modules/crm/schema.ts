@@ -106,6 +106,7 @@ export function isCrmState(v: unknown): v is CrmState {
         Object.hasOwn(propertyTypes, p.type) &&
         typeof p.required === "boolean" &&
         typeof p.archived === "boolean" &&
+        (p.deleted === undefined || typeof p.deleted === "boolean") &&
         strings(p.options),
     ) &&
     v.students.every(
@@ -123,6 +124,15 @@ export function isCrmState(v: unknown): v is CrmState {
         ["active", "invited", "paused"].includes(String(s.status)) &&
         (s.phone === undefined || typeof s.phone === "string") &&
         (s.archived === undefined || typeof s.archived === "boolean") &&
+        (s.accessDisabled === undefined ||
+          typeof s.accessDisabled === "boolean") &&
+        (s.access === undefined ||
+          s.access === null ||
+          (isObject(s.access) &&
+            ["active", "invited"].includes(String(s.access.status)) &&
+            typeof s.access.invitedAt === "string" &&
+            (s.access.enabled === undefined ||
+              typeof s.access.enabled === "boolean"))) &&
         (s.revision === undefined ||
           (Number.isSafeInteger(s.revision) && Number(s.revision) >= 0)) &&
         ["notes", "history"].every(

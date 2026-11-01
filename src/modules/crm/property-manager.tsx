@@ -97,6 +97,7 @@ export function PropertyEditor({
                 ].includes(next.name.toLowerCase()) ||
                 s.properties.some(
                   (p) =>
+                    !p.deleted &&
                     p.id !== next.id &&
                     p.name.toLowerCase() === next.name.toLowerCase(),
                 )
@@ -264,38 +265,40 @@ export function PropertyManager() {
       <LocalNotice />
       <FormError message={error} />
       <div className="space-y-3">
-        {state.properties.map((p) => (
-          <article
-            className="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-5"
-            key={p.id}
-          >
-            <div className="min-w-[180px] flex-1 break-words">
-              <h2 className="text-sm font-semibold">{p.name}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {propertyTypes[p.type]}
-                {p.archived ? " · Archiviata" : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                disabled={p.archived}
-                onClick={() => setEditing(p)}
-              >
-                Modifica
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  p.archived ? toggleArchive(p) : setPendingArchive(p)
-                }
-              >
-                {p.archived ? "Ripristina" : "Archivia"}
-              </Button>
-            </div>
-          </article>
-        ))}
-        {!state.properties.length && (
+        {state.properties
+          .filter((p) => !p.deleted)
+          .map((p) => (
+            <article
+              className="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-5"
+              key={p.id}
+            >
+              <div className="min-w-[180px] flex-1 break-words">
+                <h2 className="text-sm font-semibold">{p.name}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {propertyTypes[p.type]}
+                  {p.archived ? " · Archiviata" : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  disabled={p.archived}
+                  onClick={() => setEditing(p)}
+                >
+                  Modifica
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    p.archived ? toggleArchive(p) : setPendingArchive(p)
+                  }
+                >
+                  {p.archived ? "Ripristina" : "Archivia"}
+                </Button>
+              </div>
+            </article>
+          ))}
+        {!state.properties.some((p) => !p.deleted) && (
           <div className="rounded-xl border border-dashed bg-white px-6 py-16 text-center">
             <h2 className="text-lg font-semibold">Nessuna proprietà</h2>
             <p className="mt-3 text-sm text-muted-foreground">

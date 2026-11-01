@@ -6,8 +6,6 @@ import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
 import { statusLabels } from "@/modules/students/config";
 import { useCrm, updateCrm, useRemoteMode } from "./store";
 import {
-  normalize,
-  type CrmProperty,
   type CrmStudent,
   type PropertyValue,
   validPropertyValue,
@@ -18,8 +16,7 @@ import { InviteDialog } from "./invite-button";
 import { PhoneField } from "./phone-field";
 import { formatDate } from "@/lib/format";
 const recordOnly = "Solo scheda",
-  recordWithAccess = "Scheda e accesso",
-  startPropertyName = "Inizio percorso";
+  recordWithAccess = "Scheda e accesso";
 const today = () =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(
     new Date(),
@@ -38,19 +35,13 @@ export function StudentCreateDialog({
     [email, setEmail] = useState(""),
     [phone, setPhone] = useState(""),
     [tierId, setTierId] = useState(""),
-    [startDate, setStartDate] = useState(""),
     [joinedAt] = useState(today),
     [properties, setProperties] = useState<Record<string, PropertyValue>>({}),
     [accessChoice, setAccessChoice] = useState(recordOnly),
     [error, setError] = useState(""),
     [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const giveAccess = remote && accessChoice === recordWithAccess;
-  const isStartProperty = (p: CrmProperty) =>
-    normalize(p.name) === normalize(startPropertyName);
-  // Required fields configured before names and types became the only settings.
-  const required = state.properties.filter(
-    (p) => p.required && !p.archived && !isStartProperty(p),
-  );
+  const required = state.properties.filter((p) => p.required && !p.archived);
   if (created)
     return (
       <InviteDialog
@@ -75,7 +66,6 @@ export function StudentCreateDialog({
         onSubmit={async (e) => {
           e.preventDefault();
           const id = crypto.randomUUID(),
-            newPropertyId = crypto.randomUUID(),
             first = firstName.trim(),
             last = lastName.trim(),
             address = email.trim().toLowerCase();
@@ -93,28 +83,8 @@ export function StudentCreateDialog({
                 throw new Error("Esiste già uno studente con questa email.");
               if (!current.tiers.some((t) => t.id === tierId && !t.archived))
                 throw new Error("Seleziona un tier disponibile.");
-              const existing = current.properties.find(isStartProperty);
-              const startProperty: CrmProperty = existing
-                ? { ...existing, archived: false }
-                : {
-                    id: newPropertyId,
-                    name: startPropertyName,
-                    type: "date",
-                    description: "",
-                    group: "Informazioni studente",
-                    required: false,
-                    options: [],
-                    archived: false,
-                  };
-              if (startDate && !validPropertyValue(startProperty, startDate))
-                throw new Error("Controlla la data di inizio percorso.");
               return {
                 ...current,
-                properties: existing
-                  ? current.properties.map((p) =>
-                      p.id === existing.id ? startProperty : p,
-                    )
-                  : [...current.properties, startProperty],
                 students: [
                   {
                     id,
@@ -127,10 +97,7 @@ export function StudentCreateDialog({
                     status: "active",
                     tierId,
                     joinedAt,
-                    properties: {
-                      ...properties,
-                      ...(startDate ? { [startProperty.id]: startDate } : {}),
-                    },
+                    properties: { ...properties },
                   },
                   ...current.students,
                 ],
@@ -197,19 +164,9 @@ export function StudentCreateDialog({
               ))}
           </SelectControl>
         </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={startPropertyName}>
-            <input
-              className={control}
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </Field>
-          <Field label="Data di creazione" hint="Compilata automaticamente.">
-            <input className={control} readOnly value={formatDate(joinedAt)} />
-          </Field>
-        </div>
+        <Field label="Data di creazione" hint="Compilata automaticamente.">
+          <input className={control} readOnly value={formatDate(joinedAt)} />
+        </Field>
         {required.map((p) => (
           <PropertyField
             key={p.id}

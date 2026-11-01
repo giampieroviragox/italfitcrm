@@ -1,5 +1,4 @@
 "use client";
-import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,14 +13,14 @@ import {
   type CrmProperty,
   type PropertyValue,
 } from "./model";
-import { useCrm, updateCrm, useHydrated, addStudentComment } from "./store";
+import { useCrm, useHydrated, addStudentComment } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
 import { StudentEditor } from "./student-editor";
-import { ConfirmDialog } from "./confirm-dialog";
 import { AssignmentEditor } from "./plan-editor";
 import { AssignedPlan } from "./plans-workspace";
 import { lessonDate } from "./lessons-workspace";
-import { InviteButton } from "./invite-button";
+import { StudentAccessControl } from "./student-access-control";
+import { studentAccessLabel } from "./student-access";
 const timestamp = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -78,9 +77,7 @@ export function StudentProfile({
   const [editing, setEditing] = useState(false),
     [tab, setTab] = useState("properties"),
     [note, setNote] = useState(""),
-    [error, setError] = useState(""),
-    [confirm, setConfirm] = useState(false),
-    [restoreTier, setRestoreTier] = useState("");
+    [error, setError] = useState("");
   const student = state.students.find((s) => s.id === id);
   if (!hydrated)
     return (
@@ -134,11 +131,7 @@ export function StudentProfile({
           ) : (
             <StatusBadge status={student.status} />
           )}
-          <InviteButton
-            id={student.id}
-            kind="student"
-            disabled={student.archived}
-          />
+          <StudentAccessControl student={student} />
           <Button disabled={student.archived} onClick={() => setEditing(true)}>
             Modifica studente
           </Button>
@@ -161,14 +154,7 @@ export function StudentProfile({
               {[
                 ["Email", student.email],
                 ["Telefono", student.phone || "Non compilato"],
-                [
-                  "Accesso",
-                  student.access?.status === "active"
-                    ? "Account attivo"
-                    : student.access
-                      ? "Invito preparato"
-                      : "Non creato",
-                ],
+                ["Accesso", studentAccessLabel(student)],
                 ["Coach", student.coach || "Non assegnato"],
                 ["Aggiunto il", formatDate(student.joinedAt)],
               ].map(([label, value]) => (
@@ -549,35 +535,6 @@ export function StudentProfile({
               Cambia tier
             </Button>
           </Card>
-          <Card className="gap-4 p-6 shadow-none">
-            <h2 className="text-sm font-semibold">Gestione scheda</h2>
-            <p className="text-xs leading-6 text-muted-foreground">
-              {student.archived
-                ? "Il ripristino riporta lo studente nelle viste normali."
-                : "Archivia uno studente per rimuoverlo dalle viste operative mantenendo scheda, proprietà e commenti."}
-            </p>
-            {student.archived && tier?.archived && (
-              <Field label="Tier per il ripristino">
-                <SelectControl
-                  className={control}
-                  value={restoreTier}
-                  onChange={(e) => setRestoreTier(e.target.value)}
-                >
-                  <option value="">Seleziona un tier…</option>
-                  {state.tiers
-                    .filter((t) => !t.archived)
-                    .map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                </SelectControl>
-              </Field>
-            )}
-            <Button variant="outline" onClick={() => setConfirm(true)}>
-              {student.archived ? "Ripristina studente" : "Archivia studente"}
-            </Button>
-          </Card>
         </aside>
       </div>
       {assigning && (
@@ -586,40 +543,6 @@ export function StudentProfile({
       {editing && (
         <StudentEditor student={student} close={() => setEditing(false)} />
       )}
-      <ConfirmDialog
-        error={error}
-        open={confirm}
-        title={
-          student.archived
-            ? "Ripristinare lo studente?"
-            : "Archiviare lo studente?"
-        }
-        description={
-          student.archived
-            ? "La scheda tornerà disponibile nelle viste operative."
-            : "La scheda viene conservata. Le iscrizioni alle lezioni saranno annullate e potranno essere ricreate dopo il ripristino."
-        }
-        confirmLabel={student.archived ? "Ripristina" : "Archivia"}
-        onCancel={() => setConfirm(false)}
-        onConfirm={() =>
-          run(async () => {
-            await updateCrm((s) => ({
-              ...s,
-              students: s.students.map((x) =>
-                x.id === id
-                  ? {
-                      ...x,
-                      archived: !x.archived,
-                      tierId:
-                        x.archived && tier?.archived ? restoreTier : x.tierId,
-                    }
-                  : x,
-              ),
-            }));
-            setConfirm(false);
-          })
-        }
-      />
     </>
   );
 }

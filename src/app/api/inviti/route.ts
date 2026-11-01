@@ -52,6 +52,11 @@ export async function POST(request: Request) {
             (a) => a.id === input.id && a.role !== "owner",
           );
     if (!person) throw new HttpError(404, "Scheda non trovata o archiviata.");
+    if ("accessDisabled" in person && person.accessDisabled)
+      throw new HttpError(
+        409,
+        "Riattiva l’accesso dalla scheda prima di generare un nuovo link.",
+      );
     const admin = createAdminClient();
     let generated = await admin.auth.admin.generateLink({
       type: person.access ? "recovery" : "invite",

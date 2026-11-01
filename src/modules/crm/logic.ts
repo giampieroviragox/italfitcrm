@@ -268,7 +268,7 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
     "Nome tier",
   );
   unique(
-    next.properties,
+    next.properties.filter((p) => !p.deleted),
     (p) => normalize((p as CrmProperty).name),
     "Nome proprietà",
   );
@@ -286,6 +286,8 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
     if (!member.name.trim() || !email(member.email))
       throw new Error("Nome ed email amministratore non validi.");
   for (const p of next.properties) {
+    if (p.deleted && !p.archived)
+      throw new Error("Una proprietà rimossa non può essere visibile.");
     if (!p.name.trim() || !p.group.trim())
       throw new Error("Nome e gruppo della proprietà sono obbligatori.");
     if (

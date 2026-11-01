@@ -16,6 +16,7 @@ export const propertyTypes = {
 export type PropertyType = keyof typeof propertyTypes;
 export type PropertyValue = string | number | boolean | string[];
 export interface CrmProperty {
+  deleted?: boolean;
   id: string;
   name: string;
   type: PropertyType;
@@ -38,6 +39,7 @@ export interface TierAccess {
   monthlyBookingLimit: number | null;
 }
 export interface AccountAccess {
+  enabled?: boolean;
   status: "invited" | "active";
   invitedAt: string;
 }
@@ -46,6 +48,7 @@ export interface CrmStudent extends Omit<Student, "tierId"> {
   tierId: string;
   properties: Record<string, PropertyValue>;
   archived?: boolean;
+  accessDisabled?: boolean;
   notes?: CrmNote[];
   history?: CrmActivity[];
   revision?: number;

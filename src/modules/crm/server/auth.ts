@@ -26,6 +26,27 @@ export async function requireAccess(staff = false) {
   const access = data as Access | null;
   if (accessError || !access?.active)
     throw new HttpError(403, "Questo account non ha accesso al workspace.");
+  if (access.role === "student") {
+    const { data: student, error: studentError } = await createAdminClient()
+      .from("crm_students")
+      .select("payload")
+      .eq("id", access.record_id)
+      .maybeSingle();
+    if (studentError)
+      throw new HttpError(503, "Impossibile verificare l’accesso studente.");
+    const payload = student?.payload;
+    if (
+      !payload ||
+      typeof payload !== "object" ||
+      Array.isArray(payload) ||
+      payload.accessDisabled ||
+      payload.archived
+    )
+      throw new HttpError(
+        403,
+        "L’accesso alla piattaforma è disattivato. Contatta il team.",
+      );
+  }
   if (staff && access.role === "student")
     throw new HttpError(403, "Accesso riservato agli amministratori.");
   if (!access.accepted_at) {
