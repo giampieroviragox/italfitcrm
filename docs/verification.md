@@ -73,3 +73,9 @@ L’utente ha confermato piani per Coaching online e lezioni per Allenamento in 
 La suite comprende ora **62 test**. Le dieci prove aggiuntive coprono le policy dei tier, i limiti e il calendario di Roma, la conservazione dello storico, la validazione dei payload, il template email e gli esiti del provider. Sette verifiche end-to-end sul database reale hanno confermato le policy, il limite con due richieste simultanee, l’annullamento dopo la riduzione dei servizi e la conferma degli inviti tramite POST. Aperture GET ripetute della pagina invito non consumano il token.
 
 Verificati dal browser: checkbox dei servizi e limite riletti e salvati dal form; generazione del link dalla scheda; assenza del pulsante email quando non configurato; recupero dell’accesso con istruzioni per ottenere un nuovo link dal team. Nessuna promessa di email automatica nella modalità manuale. La configurazione senza Supabase non può attivare il workspace dimostrativo su Vercel.
+
+## Invito e reinvito con email precompilata · 1 novembre 2026
+
+Inviti e reinviti aprono direttamente il form con email non modificabile, password e conferma. Il contesto del link è firmato sul server; email, token e tipo non possono essere sostituiti. Il token viene verificato soltanto nel POST di salvataggio. I link precedenti restano compatibili.
+
+Verificati sul servizio Auth reale con account tecnici poi eliminati: primo invito e recupero, apertura GET senza consumo del token, email in sola lettura, password discordanti respinte prima dell’attivazione, salvataggio con redirect all’area studente, login con la nuova password e rifiuto del riutilizzo senza sessione. `pnpm check`: 68 test superati, lint, TypeScript e formattazione corretti. La build Turbopack resta bloccata dal runtime locale durante l’avvio del processo di compilazione CSS.

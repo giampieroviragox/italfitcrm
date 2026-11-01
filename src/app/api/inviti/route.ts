@@ -7,6 +7,7 @@ import {
 } from "@/modules/crm/server/auth";
 import { readCrm } from "@/modules/crm/server/repository";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { signInvite } from "@/modules/auth/invite-context";
 import { appUrl } from "@/lib/supabase/config";
 import {
   emailConfiguration,
@@ -89,8 +90,17 @@ export async function POST(request: Request) {
         ? "invite"
         : "recovery";
     const link = new URL("/invito", appUrl());
-    link.searchParams.set("token_hash", generated.data.properties.hashed_token);
-    link.searchParams.set("type", type);
+    link.searchParams.set(
+      "access",
+      signInvite(
+        {
+          email: generated.data.user.email ?? person.email,
+          token_hash: generated.data.properties.hashed_token,
+          type,
+        },
+        process.env.SUPABASE_SECRET_KEY ?? "",
+      ),
+    );
     let emailSent = false,
       emailError = "";
     if (input.delivery === "email") {

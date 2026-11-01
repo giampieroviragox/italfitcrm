@@ -1,3 +1,5 @@
+import { PasswordForm } from "@/modules/auth/password-form";
+import { readInvite } from "@/modules/auth/invite-context";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
@@ -10,9 +12,30 @@ export const metadata: Metadata = {
 export default async function InvitePage({
   searchParams,
 }: {
-  searchParams: Promise<{ token_hash?: string; type?: string }>;
+  searchParams: Promise<{
+    access?: string;
+    token_hash?: string;
+    type?: string;
+  }>;
 }) {
   const params = await searchParams;
+  const invite = params.access
+    ? readInvite(params.access, process.env.SUPABASE_SECRET_KEY ?? "")
+    : null;
+  if (params.access) {
+    if (!invite) redirect("/login?link=scaduto");
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+        <Brand />
+        <h1 className="mt-9 text-2xl font-medium">Imposta la password</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Il tuo account è già pronto. Scegli una password di almeno 8 caratteri
+          e confermala per accedere a Team Italfit.
+        </p>
+        <PasswordForm ready email={invite.email} invite={params.access} />
+      </main>
+    );
+  }
   if (
     !params.token_hash ||
     !/^[a-zA-Z0-9_-]{32,256}$/.test(params.token_hash) ||

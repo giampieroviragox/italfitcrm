@@ -7,7 +7,12 @@ import { LoginForm } from "@/modules/auth/login-form";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { requireAccess } from "@/modules/crm/server/auth";
 export const metadata: Metadata = { title: "Accedi" };
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ link?: string }>;
+}) {
+  const params = await searchParams;
   let destination: string | null = null;
   if (supabaseConfigured) {
     try {
@@ -30,6 +35,16 @@ export default async function LoginPage() {
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Usa le credenziali del tuo account. Gli accessi sono gestiti dal team.
         </p>
+        {params.link === "scaduto" && (
+          <p
+            role="alert"
+            className="mt-5 rounded-xl bg-destructive/5 p-4 text-sm text-destructive"
+          >
+            Il link di accesso è scaduto o è già stato usato. Chiedi al team un
+            nuovo link per impostare la password: il solo invito non crea una
+            password per accedere.
+          </p>
+        )}
         <LoginForm enabled={supabaseConfigured} />
         {!supabaseConfigured ? (
           <>

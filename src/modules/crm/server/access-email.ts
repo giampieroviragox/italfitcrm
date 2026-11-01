@@ -33,7 +33,7 @@ export const escapeHtml = (text: string) =>
 export function accessEmail(name: string, link: string) {
   const intro = `Ciao ${name}, il team ha preparato il tuo accesso a Team Italfit.`;
   const explanation =
-    "Apri il link, conferma l’accesso e scegli la tua password. Il link è personale, temporaneo e utilizzabile una sola volta.";
+    "Apri il link e scegli la tua password per l’email già indicata. Il link è personale, temporaneo e utilizzabile una sola volta.";
   return {
     subject: "Il tuo accesso a Team Italfit",
     text: `${intro}\n\n${explanation}\n\n${link}\n\nSe non ti aspettavi questo invito, ignora questa email.`,

@@ -1,50 +1,33 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createBrowserSessionClient } from "@/lib/supabase/client";
+import { useActionState } from "react";
+import { savePassword } from "./password-actions";
 import { Button } from "@/components/ui/button";
 import { Field, control, FormError } from "@/modules/crm/ui";
-export function PasswordForm() {
-  const router = useRouter();
-  const [ready, setReady] = useState(false),
-    [pending, setPending] = useState(false),
-    [error, setError] = useState("");
-  useEffect(() => {
-    const client = createBrowserSessionClient();
-    void client.auth.getUser().then(({ data }) => setReady(Boolean(data.user)));
-    const {
-      data: { subscription },
-    } = client.auth.onAuthStateChange((_event, session) =>
-      setReady(Boolean(session)),
-    );
-    return () => subscription.unsubscribe();
-  }, []);
+export function PasswordForm({
+  ready,
+  email = "",
+  invite,
+}: {
+  ready: boolean;
+  email?: string;
+  invite?: string;
+}) {
+  const [state, action, pending] = useActionState(savePassword, { error: "" });
   return (
-    <form
-      className="mt-7 space-y-5"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const data = new FormData(e.currentTarget),
-          password = String(data.get("password"));
-        if (password !== data.get("confirm")) {
-          setError("Le password non coincidono.");
-          return;
-        }
-        setPending(true);
-        const { error } = await createBrowserSessionClient().auth.updateUser({
-          password,
-        });
-        if (error) {
-          setError(
-            "Impossibile impostare la password. Verifica il link e scegli almeno 8 caratteri.",
-          );
-          setPending(false);
-        } else {
-          router.replace("/login");
-          router.refresh();
-        }
-      }}
-    >
+    <form action={action} className="mt-7 space-y-5">
+      {invite && <input type="hidden" name="invite" value={invite} />}
+      {email && (
+        <Field label="Email">
+          <input
+            className={control}
+            type="email"
+            name="email"
+            autoComplete="username"
+            value={email}
+            readOnly
+          />
+        </Field>
+      )}
       <Field label="Nuova password">
         <input
           className={control}
@@ -67,13 +50,15 @@ export function PasswordForm() {
           disabled={!ready || pending}
         />
       </Field>
-      <FormError message={error} />
+      <FormError message={state.error} />
       <Button type="submit" className="w-full" disabled={!ready || pending}>
-        {pending ? "Salvataggio…" : "Salva password"}
+        {pending ? "Salvataggio…" : "Salva password e accedi"}
       </Button>
       {!ready && (
-        <p className="text-xs leading-6 text-muted-foreground">
-          Apri questa pagina dal link di invito o recupero ricevuto via email.
+        <p role="alert" className="text-sm leading-6 text-destructive">
+          Sessione di attivazione assente o scaduta. Apri il link personale
+          ricevuto dal team e premi “Continua e imposta la password”. Se il link
+          è già stato usato, chiedi al team di generarne uno nuovo.
         </p>
       )}
     </form>

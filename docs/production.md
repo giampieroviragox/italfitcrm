@@ -25,7 +25,7 @@ Il limite delle lezioni è facoltativo e segue il mese della lezione in Europe/R
 
 ## Modalità senza Resend
 
-La versione corrente non richiede un dominio email. L’admin prepara il link personale, lo copia e lo condivide direttamente. Il destinatario apre `/invito`, preme il pulsante di conferma e sceglie la password. Il token non viene consumato dalle normali scansioni GET delle email o dei servizi di anteprima.
+La versione corrente non richiede un dominio email. L’admin prepara il link personale, lo copia e lo condivide direttamente. Il destinatario apre `/invito`, trova l’email già compilata e non modificabile e inserisce e conferma la password. Al salvataggio il server verifica il token e i permessi CRM, salva la password e apre l’area corretta. Email, tipo di invito e token sono protetti da una firma server. I link precedenti restano compatibili con il passaggio di conferma. Il token non viene consumato dalle normali scansioni GET delle email o dei servizi di anteprima.
 
 Per il recupero dell’accesso lo studente contatta il team: l’admin genera un nuovo link dalla scheda. La pagina pubblica non promette un’email che il servizio non è configurato per inviare.
 
