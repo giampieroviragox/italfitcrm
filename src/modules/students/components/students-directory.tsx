@@ -16,21 +16,26 @@ import {
   ChevronDown,
   ArrowUp,
   ArrowDown,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StudentsTable } from "./students-table";
+import { StudentDataGrid } from "./student-data-grid";
+import { PropertyEditor } from "@/modules/crm/property-manager";
+import { studentColumns } from "@/modules/crm/student-grid";
 import { StudentIdentity } from "./student-identity";
 import { StatusBadge } from "./status-badge";
 import {
   defaultDirectory,
   type DirectoryConfig,
   type CrmView,
+  type CrmProperty,
 } from "@/modules/crm/model";
 import {
   selectStudents,
   sanitizeDirectory,
   bulkUpdate,
+  operatorsFor,
 } from "@/modules/crm/logic";
 import { useCrm, updateCrm, useSaving } from "@/modules/crm/store";
 import {
@@ -44,13 +49,6 @@ import { ConfirmDialog } from "@/modules/crm/confirm-dialog";
 import { DirectoryFilters } from "@/modules/crm/directory-filters";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { studentsCsv } from "@/modules/crm/csv";
-const baseColumns = [
-  { id: "tier", name: "Tier" },
-  { id: "status", name: "Stato" },
-  { id: "joinedAt", name: "Aggiunto il" },
-  { id: "phone", name: "Telefono" },
-  { id: "coach", name: "Coach" },
-];
 export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   const state = useCrm();
   const saving = useSaving();
@@ -60,7 +58,8 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
       state,
     ),
     views = state.views ?? [];
-  const [query, setQuery] = useState(persisted.query);
+  const [queryDraft, setQuery] = useState<string | null>(null);
+  const query = queryDraft ?? persisted.query;
   const config = { ...persisted, query };
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -73,6 +72,9 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     setQuery(value);
   };
+  const [fieldEditor, setFieldEditor] = useState<CrmProperty | "new" | null>(
+    null,
+  );
   const [panel, setPanel] = useState<"filters" | "columns" | null>(null);
   const [panelDraft, setPanelDraft] = useState<DirectoryConfig>(config);
   const [page, setPage] = useState(1),
@@ -135,13 +137,13 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
       setConfirmArchive(false);
     });
   const columnOptions = [
-    ...baseColumns,
+    ...studentColumns,
     ...properties.map((p) => ({ id: `property:${p.id}`, name: p.name })),
   ];
   return (
     <section
       aria-label="Elenco studenti"
-      className="min-w-0 rounded-xl border bg-white"
+      className="min-w-0 overflow-hidden rounded-xl border bg-white"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 sm:p-5">
         <div
@@ -324,7 +326,15 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
             }}
           >
             <Columns3 className="size-3.5" />
-            Colonne
+            Campi
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFieldEditor("new")}
+          >
+            <Plus className="size-3.5" />
+            Aggiungi campo
           </Button>
           <Button
             variant="ghost"
@@ -370,6 +380,8 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
               <option value="tier">Tier</option>
               <option value="status">Stato</option>
               <option value="coach">Coach</option>
+              <option value="email">Email</option>
+              <option value="phone">Telefono</option>
               {properties
                 .filter((p) => p.type !== "multiselect")
                 .map((p) => (
@@ -488,7 +500,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           </Button>
         </div>
       )}
-      {!filtered.length ? (
+      {!filtered.length && config.layout !== "table" ? (
         <div className="px-6 py-14 text-center">
           <Users className="mx-auto mb-4 size-7 text-muted-foreground" />
           <h2 className="font-semibold">
@@ -540,14 +552,35 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           )}
         </div>
       ) : config.layout === "table" ? (
-        <StudentsTable
+        <StudentDataGrid
           students={shown}
-          availableTiers={state.tiers}
-          columnKeys={config.columns}
-          propertyColumns={config.columns.flatMap((id) => {
-            const p = properties.find((p) => `property:${p.id}` === id);
-            return p ? [p] : [];
-          })}
+          tiers={state.tiers}
+          properties={properties}
+          config={config}
+          saving={saving}
+          offset={(currentPage - 1) * config.pageSize}
+          onConfig={(patch) => {
+            void setConfig(patch);
+          }}
+          onAdd={onAdd}
+          onAddField={() => setFieldEditor("new")}
+          onEditField={setFieldEditor}
+          onFilter={(property) => {
+            setPanelDraft({
+              ...structuredClone(config),
+              filters: [
+                ...config.filters,
+                {
+                  id: crypto.randomUUID(),
+                  propertyId: property.id,
+                  operator: operatorsFor(property)[0]!.value,
+                  value: "",
+                  values: [],
+                },
+              ],
+            });
+            setPanel("filters");
+          }}
           selection={{
             selectedIds,
             onToggle: (id, checked) =>
@@ -657,7 +690,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           description={
             panel === "filters"
               ? "Filtra gli studenti usando le proprietà del CRM."
-              : "Scegli le informazioni e il loro ordine nella tabella. La colonna studente rimane sempre visibile."
+              : "Scegli le informazioni e il loro ordine nella tabella. Su desktop la colonna studente resta fissa durante lo scorrimento."
           }
           dirty={JSON.stringify(panelDraft) !== JSON.stringify(config)}
           close={() => setPanel(null)}
@@ -757,6 +790,13 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
             </div>
           </div>
         </Editor>
+      )}
+      {fieldEditor && (
+        <PropertyEditor
+          property={fieldEditor === "new" ? undefined : fieldEditor}
+          showInDirectory
+          close={() => setFieldEditor(null)}
+        />
       )}
       {viewEditor && (
         <ViewEditor

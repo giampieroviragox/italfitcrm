@@ -32,7 +32,7 @@ export function studentsCsv(
     "Email",
     "Telefono",
     ...columns
-      .filter((c) => c !== "phone" && c !== "tags")
+      .filter((c) => c !== "phone" && c !== "email" && c !== "tags")
       .map((c) =>
         c.startsWith("property:")
           ? (properties.find((p) => `property:${p.id}` === c)?.name ?? c)
@@ -50,7 +50,7 @@ export function studentsCsv(
     s.email,
     s.phone ?? "",
     ...columns
-      .filter((c) => c !== "phone" && c !== "tags")
+      .filter((c) => c !== "phone" && c !== "email" && c !== "tags")
       .map((c) => {
         const p = properties.find((p) => `property:${p.id}` === c);
         if (p) return formatPropertyValue(p, s.properties?.[p.id]);

@@ -161,6 +161,7 @@ export interface DirectoryConfig {
   tier: string;
   archived: boolean;
   columns: string[];
+  columnWidths?: Record<string, number>;
   layout: "table" | "grid";
   sortKey: string;
   sortDirection: "asc" | "desc";
@@ -177,7 +178,7 @@ export const defaultDirectory: DirectoryConfig = {
   status: "all",
   tier: "all",
   archived: false,
-  columns: ["tier", "status", "joinedAt"],
+  columns: ["email", "tier", "status", "joinedAt"],
   layout: "table",
   sortKey: "joinedAt",
   sortDirection: "desc",

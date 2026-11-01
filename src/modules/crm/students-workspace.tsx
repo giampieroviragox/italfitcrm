@@ -12,7 +12,7 @@ export function StudentsWorkspace() {
     <>
       <PageHeading
         title="Studenti"
-        description="Gestisci anagrafiche, tier e proprietà con viste personalizzate."
+        description="Tutti gli studenti in un’unica griglia. Modifica i dati, crea campi e organizza le tue viste."
         action={
           <Button onClick={() => setAdding(true)}>Aggiungi studente</Button>
         }

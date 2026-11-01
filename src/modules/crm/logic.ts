@@ -115,9 +115,30 @@ export function sanitizeDirectory(
         : "all",
     columns: config.columns.filter(
       (id) =>
-        ["tier", "status", "joinedAt", "phone", "coach"].includes(id) ||
+        ["email", "tier", "status", "joinedAt", "phone", "coach"].includes(
+          id,
+        ) ||
         (id.startsWith("property:") && ids.has(id.slice(9))),
     ),
+    ...(config.columnWidths
+      ? {
+          columnWidths: Object.fromEntries(
+            Object.entries(config.columnWidths).filter(
+              ([id]) =>
+                [
+                  "name",
+                  "email",
+                  "tier",
+                  "status",
+                  "joinedAt",
+                  "phone",
+                  "coach",
+                ].includes(id) ||
+                (id.startsWith("property:") && ids.has(id.slice(9))),
+            ),
+          ),
+        }
+      : {}),
     filters: config.filters.filter((f) => ids.has(f.propertyId)),
     sortKey:
       config.sortKey.startsWith("property:") &&
@@ -177,7 +198,11 @@ export function selectStudents(
             ? s.coach
             : config.sortKey === "status"
               ? s.status
-              : s.joinedAt;
+              : config.sortKey === "email"
+                ? s.email
+                : config.sortKey === "phone"
+                  ? s.phone
+                  : s.joinedAt;
   const collator = new Intl.Collator("it", {
     numeric: true,
     sensitivity: "base",

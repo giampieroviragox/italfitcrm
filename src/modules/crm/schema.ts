@@ -19,6 +19,15 @@ function validDirectory(c: unknown): boolean {
     typeof c.tier === "string" &&
     typeof c.archived === "boolean" &&
     strings(c.columns) &&
+    (c.columnWidths === undefined ||
+      (isObject(c.columnWidths) &&
+        Object.values(c.columnWidths).every(
+          (width) =>
+            typeof width === "number" &&
+            Number.isFinite(width) &&
+            width >= 140 &&
+            width <= 560,
+        ))) &&
     ["table", "grid"].includes(String(c.layout)) &&
     typeof c.sortKey === "string" &&
     ["asc", "desc"].includes(String(c.sortDirection)) &&

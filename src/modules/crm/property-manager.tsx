@@ -1,5 +1,4 @@
 "use client";
-import { SelectControl } from "@/components/ui/select-control";
 import { useState } from "react";
 import { ConfirmDialog } from "./confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import {
   choiceTypes,
   propertyTypes,
   uniqueOptions,
+  defaultDirectory,
   type CrmProperty,
 } from "./model";
 import {
@@ -19,12 +19,14 @@ import {
   FormError,
   LocalNotice,
 } from "./ui";
-function PropertyEditor({
+export function PropertyEditor({
   property,
   close,
+  showInDirectory = false,
 }: {
   property?: CrmProperty;
   close: () => void;
+  showInDirectory?: boolean;
 }) {
   const [draft, setDraft] = useState<CrmProperty>(() =>
     property
@@ -40,6 +42,7 @@ function PropertyEditor({
           archived: false,
         },
   );
+  const [typeQuery, setTypeQuery] = useState("");
   const [original] = useState(JSON.stringify(property));
   const [options, setOptions] = useState(draft.options.join("\n"));
   const [error, setError] = useState("");
@@ -122,6 +125,17 @@ function PropertyEditor({
                 }
               return {
                 ...s,
+                ...(!property && showInDirectory
+                  ? {
+                      directory: {
+                        ...(s.directory ?? defaultDirectory),
+                        columns: [
+                          ...(s.directory ?? defaultDirectory).columns,
+                          `property:${next.id}`,
+                        ],
+                      },
+                    }
+                  : {}),
                 properties: property
                   ? s.properties.map((p) => (p.id === next.id ? next : p))
                   : [...s.properties, next],
@@ -144,32 +158,54 @@ function PropertyEditor({
             placeholder="Es. Obiettivo principale"
           />
         </Field>
-        <Field
-          label="Tipo di campo"
-          hint={
-            property
-              ? "Il tipo resta fisso per preservare i dati esistenti."
-              : undefined
-          }
-        >
-          <SelectControl
-            className={control}
-            disabled={!!property}
-            value={draft.type}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                type: e.target.value as CrmProperty["type"],
-              })
-            }
+        {property ? (
+          <Field
+            label="Tipo di campo"
+            hint="Il tipo resta fisso per preservare i dati esistenti."
           >
-            {Object.entries(propertyTypes).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </SelectControl>
-        </Field>
+            <input
+              className={control}
+              readOnly
+              value={propertyTypes[draft.type]}
+            />
+          </Field>
+        ) : (
+          <fieldset className="space-y-3">
+            <legend className="mb-3 text-sm font-medium">Tipo di campo</legend>
+            <input
+              className={control}
+              aria-label="Cerca tipo di campo"
+              placeholder="Cerca un tipo di campo…"
+              value={typeQuery}
+              onChange={(e) => setTypeQuery(e.target.value)}
+            />
+            <div
+              className="grid gap-2 sm:grid-cols-2"
+              role="group"
+              aria-label="Tipi di campo"
+            >
+              {Object.entries(propertyTypes)
+                .filter(([, label]) =>
+                  label
+                    .toLocaleLowerCase("it")
+                    .includes(typeQuery.toLocaleLowerCase("it")),
+                )
+                .map(([type, label]) => (
+                  <button
+                    type="button"
+                    key={type}
+                    aria-pressed={draft.type === type}
+                    className={`rounded-lg border px-3 py-3 text-left text-xs transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary ${draft.type === type ? "border-primary bg-primary/5 font-semibold text-primary" : "border-input"}`}
+                    onClick={() =>
+                      setDraft({ ...draft, type: type as CrmProperty["type"] })
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+            </div>
+          </fieldset>
+        )}
         {choiceTypes.includes(draft.type) && (
           <Field
             label="Opzioni *"
