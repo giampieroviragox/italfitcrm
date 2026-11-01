@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const sections = [
-  { href: "/admin/impostazioni", label: "Amministratori" },
-  { href: "/admin/impostazioni/proprieta", label: "Proprietà CRM" },
-  { href: "/admin/impostazioni/tier", label: "Tier studenti" },
+  { href: "/admin/impostazioni", label: "Utenti" },
+  { href: "/admin/impostazioni/proprieta", label: "Proprietà" },
 ];
 
 export function SettingsNavigation() {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { TeamManager } from "@/modules/crm/team-tier-manager";
-export const metadata: Metadata = { title: "Impostazioni · Amministratori" };
+import { UsersManager } from "@/modules/crm/users-manager";
+export const metadata: Metadata = { title: "Impostazioni · Utenti" };
 export default function SettingsPage() {
-  return <TeamManager />;
+  return <UsersManager />;
 }

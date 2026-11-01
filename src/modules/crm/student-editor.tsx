@@ -2,11 +2,15 @@
 import { SelectControl } from "@/components/ui/select-control";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
 import { statusLabels } from "@/modules/students/config";
-import { useCrm, updateCrm } from "./store";
+import { useCrm, updateCrm, useRemoteMode } from "./store";
 import { type CrmStudent, validPropertyValue } from "./model";
 import { EditorCancel, Editor, Field, control, FormError } from "./ui";
 import { PropertyField } from "./property-fields";
+import { InviteDialog } from "./invite-button";
+const recordOnly = "Solo scheda",
+  recordWithAccess = "Scheda e accesso";
 export function StudentEditor({
   student,
   close,
@@ -14,9 +18,10 @@ export function StudentEditor({
 }: {
   student?: CrmStudent;
   close: () => void;
-  saved?: (id: string) => void;
+  saved?: (id: string, accessRequested: boolean) => void;
 }) {
-  const state = useCrm();
+  const state = useCrm(),
+    remote = useRemoteMode();
   const [draft, setDraft] = useState<CrmStudent>(() =>
     student
       ? { ...student, properties: { ...student.properties } }
@@ -38,12 +43,34 @@ export function StudentEditor({
   );
   const [baseRevision] = useState(student?.revision ?? 0);
   const [error, setError] = useState("");
+  const [accessChoice, setAccessChoice] = useState(recordOnly);
+  const [created, setCreated] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const canChooseAccess = remote && !student;
+  const giveAccess = canChooseAccess && accessChoice === recordWithAccess;
   const set = <K extends keyof CrmStudent>(key: K, value: CrmStudent[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
+  if (created)
+    return (
+      <InviteDialog
+        id={created.id}
+        kind="student"
+        createdName={created.name}
+        close={() => {
+          saved?.(created.id, true);
+          close();
+        }}
+      />
+    );
   return (
     <Editor
       title={student ? "Modifica studente" : "Aggiungi studente"}
-      description="Anagrafica, tier e proprietà CRM. Dopo il salvataggio puoi preparare l’accesso dalla scheda."
+      description={
+        canChooseAccess
+          ? "Anagrafica, tier e proprietà CRM. In fondo scegli se dare subito l’accesso all’area studente."
+          : "Anagrafica, tier e proprietà CRM. Dopo il salvataggio puoi preparare l’accesso dalla scheda."
+      }
       close={close}
     >
       <form
@@ -105,7 +132,14 @@ export function StudentEditor({
                   : [item, ...current.students],
               };
             });
-            saved?.(item.id);
+            if (giveAccess) {
+              setCreated({
+                id: item.id,
+                name: `${item.firstName} ${item.lastName}`,
+              });
+              return;
+            }
+            saved?.(item.id, false);
             close();
           } catch (err) {
             setError(
@@ -242,11 +276,34 @@ export function StudentEditor({
               ))}
           </section>
         ))}
+        {canChooseAccess && (
+          <fieldset className="space-y-3 rounded-lg border p-4">
+            <legend className="px-1 text-xs font-medium">
+              Accesso all’area studente
+            </legend>
+            <RadioChoiceGroup
+              label="Accesso all’area studente"
+              name="student-access"
+              options={[recordOnly, recordWithAccess]}
+              value={accessChoice}
+              onChange={setAccessChoice}
+            />
+            <p className="text-[11px] leading-5 text-muted-foreground">
+              {giveAccess
+                ? "Dopo la creazione prepari il link personale o l’invito via email."
+                : "Lo studente non potrà accedere. Potrai invitarlo in seguito dalla scheda."}
+            </p>
+          </fieldset>
+        )}
         <FormError message={error} />
         <div className="crm-form-actions">
           <EditorCancel />
           <Button type="submit">
-            {student ? "Salva modifiche" : "Crea studente"}
+            {student
+              ? "Salva modifiche"
+              : giveAccess
+                ? "Crea e prepara l’accesso"
+                : "Crea studente"}
           </Button>
         </div>
       </form>

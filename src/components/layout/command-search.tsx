@@ -12,17 +12,12 @@ const actions = [
   { label: "Piani e percorsi", hint: "Navigazione", href: "/admin/piani" },
   { label: "Lezioni in sede", hint: "Navigazione", href: "/admin/lezioni" },
   {
-    label: "Proprietà CRM",
+    label: "Proprietà",
     hint: "Impostazioni",
     href: "/admin/impostazioni/proprieta",
   },
   {
-    label: "Tier studenti",
-    hint: "Impostazioni",
-    href: "/admin/impostazioni/tier",
-  },
-  {
-    label: "Amministratori",
+    label: "Utenti",
     hint: "Impostazioni",
     href: "/admin/impostazioni",
   },

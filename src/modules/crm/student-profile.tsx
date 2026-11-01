@@ -250,12 +250,6 @@ export function StudentProfile({ id }: { id: string }) {
                       Configura i campi nelle impostazioni per completare le
                       schede del team.
                     </p>
-                    <Link
-                      href="/admin/impostazioni/proprieta"
-                      className="text-xs underline"
-                    >
-                      Gestisci proprietà
-                    </Link>
                   </Card>
                 )}
                 {Array.from(new Set(properties.map((p) => p.group))).map(
@@ -509,12 +503,6 @@ export function StudentProfile({ id }: { id: string }) {
             <Button variant="outline" onClick={() => setConfirm(true)}>
               {student.archived ? "Ripristina studente" : "Archivia studente"}
             </Button>
-            <Link
-              href="/admin/impostazioni/proprieta"
-              className="text-xs underline"
-            >
-              Gestisci proprietà CRM
-            </Link>
           </Card>
         </aside>
       </div>

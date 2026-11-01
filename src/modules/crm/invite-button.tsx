@@ -9,14 +9,44 @@ export function InviteButton({
   id,
   kind,
   disabled = false,
+  label,
 }: {
   id: string;
   kind: "student" | "admin";
   disabled?: boolean;
+  label?: string;
 }) {
   const remote = useRemoteMode();
-  const [open, setOpen] = useState(false),
-    [pending, setPending] = useState(false),
+  const [open, setOpen] = useState(false);
+  if (!remote) return null;
+  return (
+    <>
+      <Button
+        variant="outline"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
+        {label ??
+          `Invita ${kind === "student" ? "studente" : "amministratore"}`}
+      </Button>
+      {open && (
+        <InviteDialog id={id} kind={kind} close={() => setOpen(false)} />
+      )}
+    </>
+  );
+}
+export function InviteDialog({
+  id,
+  kind,
+  close,
+  createdName,
+}: {
+  id: string;
+  kind: "student" | "admin";
+  close: () => void;
+  createdName?: string;
+}) {
+  const [pending, setPending] = useState(false),
     [link, setLink] = useState(""),
     [email, setEmail] = useState(""),
     [error, setError] = useState(""),
@@ -27,7 +57,6 @@ export function InviteButton({
       reason: string;
     } | null>(null);
   useEffect(() => {
-    if (!open) return;
     let active = true;
     void requestJson("/api/inviti")
       .then((value) => {
@@ -49,7 +78,7 @@ export function InviteButton({
     return () => {
       active = false;
     };
-  }, [open]);
+  }, []);
   const prepare = async (delivery: "link" | "email") => {
     setPending(true);
     setError("");
@@ -82,96 +111,79 @@ export function InviteButton({
       setPending(false);
     }
   };
-  if (!remote) return null;
   return (
-    <>
-      <Button
-        variant="outline"
-        disabled={disabled}
-        onClick={() => {
-          setOpen(true);
-          setLink("");
-          setError("");
-          setCopied(false);
-          setEmailSent(false);
-          setEmailConfig(null);
-        }}
-      >
-        Invita {kind === "student" ? "studente" : "amministratore"}
-      </Button>
-      {open && (
-        <Editor
-          title="Invita con un accesso personale"
-          description={
-            emailConfig?.enabled
-              ? "Invia l’invito via email o prepara un link da condividere direttamente con il destinatario."
-              : "Prepara un link personale da condividere direttamente con il destinatario."
-          }
-          close={() => {
-            if (!pending) setOpen(false);
-          }}
-        >
-          {link ? (
-            <div className="crm-editor-form">
-              <p role="status" className="text-sm leading-6">
-                {emailSent
-                  ? "Invito inviato via email a"
-                  : "Link di accesso preparato per"}{" "}
-                <strong>{email}</strong>.
-              </p>
-              <Field
-                label="Link di accesso"
-                hint="Il link è personale, temporaneo e utilizzabile una sola volta. Condividilo solo con il destinatario."
-              >
-                <textarea readOnly rows={4} className={control} value={link} />
-              </Field>
-              <Button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(link);
-                    setCopied(true);
-                  } catch {
-                    setError("Copia il link selezionando il campo.");
-                  }
-                }}
-              >
-                {copied ? "Link copiato" : "Copia link"}
+    <Editor
+      title="Invita con un accesso personale"
+      description={`${createdName ? `Scheda di ${createdName} creata. ` : ""}${
+        emailConfig?.enabled
+          ? "Invia l’invito via email o prepara un link da condividere direttamente con il destinatario."
+          : "Prepara un link personale da condividere direttamente con il destinatario."
+      }`}
+      close={() => {
+        if (!pending) close();
+      }}
+    >
+      {link ? (
+        <div className="crm-editor-form">
+          <p role="status" className="text-sm leading-6">
+            {emailSent
+              ? "Invito inviato via email a"
+              : "Link di accesso preparato per"}{" "}
+            <strong>{email}</strong>.
+          </p>
+          <Field
+            label="Link di accesso"
+            hint="Il link è personale, temporaneo e utilizzabile una sola volta. Condividilo solo con il destinatario."
+          >
+            <textarea readOnly rows={4} className={control} value={link} />
+          </Field>
+          <Button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(link);
+                setCopied(true);
+              } catch {
+                setError("Copia il link selezionando il campo.");
+              }
+            }}
+          >
+            {copied ? "Link copiato" : "Copia link"}
+          </Button>
+          <FormError message={error} />
+          <div className="crm-form-actions">
+            <Button onClick={close}>Chiudi</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="crm-editor-form">
+          <p className="text-sm leading-6 text-muted-foreground">
+            Il destinatario potrà scegliere la propria password. Generare un
+            nuovo link per un account esistente apre il recupero dell’accesso.
+          </p>
+          <FormError message={error} />
+          <div className="crm-form-actions">
+            {createdName ? (
+              <Button variant="outline" disabled={pending} onClick={close}>
+                Invita più tardi
               </Button>
-              <FormError message={error} />
-              <div className="crm-form-actions">
-                <Button onClick={() => setOpen(false)}>Chiudi</Button>
-              </div>
-            </div>
-          ) : (
-            <div className="crm-editor-form">
-              <p className="text-sm leading-6 text-muted-foreground">
-                Il destinatario potrà scegliere la propria password. Generare un
-                nuovo link per un account esistente apre il recupero
-                dell’accesso.
-              </p>
-              <FormError message={error} />
-              <div className="crm-form-actions">
-                <EditorCancel />
-                <Button
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => void prepare("link")}
-                >
-                  {pending ? "Preparazione…" : "Genera link"}
-                </Button>
-                {emailConfig?.enabled && (
-                  <Button
-                    disabled={pending}
-                    onClick={() => void prepare("email")}
-                  >
-                    {pending ? "Preparazione…" : "Invia invito via email"}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </Editor>
+            ) : (
+              <EditorCancel />
+            )}
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => void prepare("link")}
+            >
+              {pending ? "Preparazione…" : "Genera link"}
+            </Button>
+            {emailConfig?.enabled && (
+              <Button disabled={pending} onClick={() => void prepare("email")}>
+                {pending ? "Preparazione…" : "Invia invito via email"}
+              </Button>
+            )}
+          </div>
+        </div>
       )}
-    </>
+    </Editor>
   );
 }

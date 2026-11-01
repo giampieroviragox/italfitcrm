@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
@@ -15,14 +14,7 @@ export function StudentsWorkspace() {
         title="Studenti"
         description="Gestisci anagrafiche, tier e proprietà con viste personalizzate."
         action={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link href="/admin/impostazioni/proprieta">
-                Gestisci proprietà
-              </Link>
-            </Button>
-            <Button onClick={() => setAdding(true)}>Aggiungi studente</Button>
-          </div>
+          <Button onClick={() => setAdding(true)}>Aggiungi studente</Button>
         }
       />
       <LocalNotice />
@@ -38,9 +30,11 @@ export function StudentsWorkspace() {
       {adding && (
         <StudentEditor
           close={() => setAdding(false)}
-          saved={() =>
+          saved={(_, accessRequested) =>
             setMessage(
-              "Studente creato. Apri la scheda per preparare l’accesso personale.",
+              accessRequested
+                ? "Studente creato. Lo stato dell’accesso è indicato nella scheda."
+                : "Studente creato senza accesso. Puoi invitarlo dalla scheda quando serve.",
             )
           }
         />
