@@ -113,8 +113,8 @@ export function AvailabilityCalendar() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <WeekNavigation week={week} onChange={setWeek} />
         <p className="text-xs text-muted-foreground">
-          Trascina sul calendario per aggiungere le tue disponibilità; trascina
-          su uno slot per toglierlo.
+          Ogni slot dura un’ora. Trascina sul calendario per aggiungere le tue
+          disponibilità; trascina su uno slot per toglierlo.
         </p>
       </div>
       <FormError message={error} />
@@ -139,9 +139,9 @@ export function AvailabilityCalendar() {
             {cellTimes.map((label) => (
               <div
                 key={label}
-                className="h-6 pr-2 text-right text-[10px] leading-none text-muted-foreground"
+                className="h-10 pr-2 text-right text-[10px] leading-none text-muted-foreground"
               >
-                {label.endsWith(":00") ? label : ""}
+                {label}
               </div>
             ))}
           </div>
@@ -168,7 +168,7 @@ export function AvailabilityCalendar() {
                     type="button"
                     disabled={past}
                     aria-pressed={on}
-                    aria-label={`${dayLabel(day, { weekday: "long", day: "numeric", month: "long" })}, ${label}`}
+                    aria-label={`${dayLabel(day, { weekday: "long", day: "numeric", month: "long" })}, ${label}–${endOf(index)}`}
                     onPointerDown={(e) => {
                       if (e.button === 0)
                         setDrag({
@@ -184,9 +184,16 @@ export function AvailabilityCalendar() {
                     onClick={(e) => {
                       if (e.detail === 0) void save([at], !saved.has(at));
                     }}
-                    className={`block h-6 w-full touch-manipulation overflow-visible border-l px-1 text-left text-[10px] leading-none whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-inset border-t ${on ? "border-t-transparent" : label.endsWith(":00") ? "" : "border-t-border/40"} ${on ? (past ? "bg-primary/30 text-primary" : "bg-primary text-primary-foreground") : past ? "cursor-not-allowed bg-muted/40" : "cursor-pointer hover:bg-muted"}`}
+                    className={`block h-10 w-full touch-manipulation overflow-visible border-l px-1 text-left text-[10px] leading-tight whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-inset border-t ${startsRun ? "border-t-transparent" : on ? "border-t-primary-foreground/30" : ""} ${on ? (past ? "bg-primary/30 text-primary" : "bg-primary text-primary-foreground") : past ? "cursor-not-allowed bg-muted/40" : "cursor-pointer hover:bg-muted"}`}
                   >
-                    {startsRun ? `${label}–${endOf(last)}` : ""}
+                    {startsRun ? (
+                      <>
+                        <span className="block">{`${label}–${endOf(last)}`}</span>
+                        <span className="block">{`${last - index + 1} slot`}</span>
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </button>
                 );
               })}

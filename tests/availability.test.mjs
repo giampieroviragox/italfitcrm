@@ -10,11 +10,11 @@ import { validateStaffUpdate } from "../src/modules/crm/server/validation.ts";
 const at = (time) => Date.parse(`2026-11-02T${time}:00Z`);
 const iso = (time) => new Date(at(time)).toISOString();
 test("contiguous cells merge into one slot and a removal splits it", () => {
-  const slots = paintCells([], [at("09:00"), at("09:30"), at("10:00")], true);
-  assert.deepEqual(slots, [{ start: iso("09:00"), end: iso("10:30") }]);
-  assert.deepEqual(paintCells(slots, [at("09:30")], false), [
-    { start: iso("09:00"), end: iso("09:30") },
-    { start: iso("10:00"), end: iso("10:30") },
+  const slots = paintCells([], [at("09:00"), at("10:00"), at("11:00")], true);
+  assert.deepEqual(slots, [{ start: iso("09:00"), end: iso("12:00") }]);
+  assert.deepEqual(paintCells(slots, [at("10:00")], false), [
+    { start: iso("09:00"), end: iso("10:00") },
+    { start: iso("11:00"), end: iso("12:00") },
   ]);
   assert.equal(slotCells(slots).size, 3);
   assert.deepEqual(cellsToSlots([]), []);
@@ -28,10 +28,11 @@ test("malformed or overlapping availability is rejected", () => {
     "x",
     [{ start: "no", end: iso("10:00") }],
     [{ start: iso("10:00"), end: iso("09:00") }],
-    [{ start: iso("09:00"), end: iso("09:10") }],
+    [{ start: iso("09:00"), end: iso("09:30") }],
+    [{ start: iso("09:30"), end: iso("10:30") }],
     [
-      { start: iso("09:00"), end: iso("10:00") },
-      { start: iso("09:30"), end: iso("11:00") },
+      { start: iso("09:00"), end: iso("11:00") },
+      { start: iso("10:00"), end: iso("12:00") },
     ],
   ])
     assert.equal(isAvailability(bad), false);

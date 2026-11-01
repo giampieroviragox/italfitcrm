@@ -2,7 +2,11 @@ export const supabaseConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
-if (process.env.VERCEL && !supabaseConfigured) {
+if (
+  process.env.VERCEL &&
+  process.env.VERCEL_ENV !== "preview" &&
+  !supabaseConfigured
+) {
   throw new Error(
     "Configura Supabase nell’ambiente di deployment prima di pubblicare Italfit.",
   );

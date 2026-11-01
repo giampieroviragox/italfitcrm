@@ -2,7 +2,7 @@ export interface AvailabilitySlot {
   start: string;
   end: string;
 }
-export const cellMinutes = 30;
+export const cellMinutes = 60;
 const cellMs = cellMinutes * 60000;
 export function isAvailability(value: unknown): value is AvailabilitySlot[] {
   if (!Array.isArray(value) || value.length > 5000) return false;
@@ -17,7 +17,8 @@ export function isAvailability(value: unknown): value is AvailabilitySlot[] {
       !Number.isFinite(from) ||
       !Number.isFinite(to) ||
       to <= from ||
-      (to - from) % cellMs !== 0 ||
+      from % cellMs !== 0 ||
+      to % cellMs !== 0 ||
       from <= previousEnd
     )
       return false;
