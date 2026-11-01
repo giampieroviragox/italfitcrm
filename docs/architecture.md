@@ -72,3 +72,11 @@ Il callback Auth risponde con Location relativa, `no-store` e `no-referrer`: il 
 La cronologia conserva i valori precedenti e nuovi, le assegnazioni dei piani con la prescrizione degli esercizi e le modifiche alle lezioni degli iscritti. Include prenotazioni e annullamenti fatti dagli studenti, con autore ricavato dalla sessione. I commenti precedenti restano leggibili; se manca l’autore storico la UI lo segnala senza inventarlo.
 
 La migrazione `20261101113825_italfit_comment_history.sql` registra preparazione e rigenerazione degli inviti e attivazione dell’accesso nella stessa transazione della modifica, usando il lock su `crm_meta`. Applicarla prima di distribuire il codice che chiama `crm_accept_access`; la funzione è riservata a `service_role`, viene chiamata dopo la verifica della sessione SSR e non registra due volte la stessa attivazione.
+
+## Calendario e prenotazione delle disponibilità
+
+Le disponibilità degli amministratori conservano inizio e fine in UTC e un `slotCount` esplicito. Il numero divide la fascia in slot di uguale durata, con precisione al minuto; i dati precedenti senza conteggio mantengono la durata di un’ora. Le fasce adiacenti restano distinte. La griglia visualizza tutta la giornata in Europe/Rome e permette di raggiungere un’ora specifica.
+
+L’area studente proietta gli slot futuri degli amministratori attivi come orari prenotabili con un posto, coach dell’amministratore e Sala principale. Le lezioni manuali e le prenotazioni già presenti bloccano gli orari in conflitto. Alla prima prenotazione, il server materializza la lezione e l’iscrizione nella stessa transazione versionata; i successivi tentativi ricontrollano disponibilità e capienza. Identità dello studente e permessi provengono dalla sessione SSR. Si applicano anche stato attivo, servizi del tier, limite mensile e sovrapposizioni dello studente. La modifica di una fascia conserva le prenotazioni esistenti e consente l’annullamento; gli orari già prenotati conservano la propria origine e durata.
+
+Anteprima amministratore e portale autenticato usano lo stesso componente di calendario: settimana su desktop, giorno selezionabile su mobile e conferma esplicita prima della prenotazione. I metadati aggiunti usano i payload JSON già esistenti; non occorre una migrazione del database.

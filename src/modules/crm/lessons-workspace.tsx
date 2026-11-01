@@ -73,6 +73,9 @@ function LessonEditor({
             const f = new FormData(e.currentTarget);
             const item: Lesson = {
               id: lesson?.id ?? crypto.randomUUID(),
+              ...(lesson?.availability
+                ? { availability: lesson.availability }
+                : {}),
               title: String(f.get("title")).trim(),
               startsAt: romeToIso(String(f.get("date"))),
               durationMinutes: Number(f.get("duration")),
@@ -240,9 +243,11 @@ export function LessonDetail({ id }: { id: string }) {
         description={lessonDate(lesson.startsAt)}
         action={
           <>
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              Modifica
-            </Button>
+            {!lesson.availability && (
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                Modifica
+              </Button>
+            )}
             <Button
               variant="outline"
               disabled={lesson.cancelled && !future}

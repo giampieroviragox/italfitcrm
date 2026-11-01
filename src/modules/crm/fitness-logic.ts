@@ -1,3 +1,7 @@
+import {
+  availabilityIsPublished,
+  availabilityBlocksTime,
+} from "./availability-lessons.ts";
 import { normalize, validDate, type CrmState } from "./model.ts";
 import type { WorkoutPlan, Lesson } from "./fitness-model.ts";
 import { studentAccess, bookingRestriction } from "./tier-access.ts";
@@ -108,7 +112,10 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             ) &&
             typeof l.durationMinutes === "number" &&
             typeof l.capacity === "number" &&
-            typeof l.cancelled === "boolean",
+            typeof l.cancelled === "boolean" &&
+            (l.availability === undefined ||
+              (obj(l.availability) &&
+                typeof l.availability.adminId === "string")),
         ))) &&
     (v.bookings === undefined ||
       (list(v.bookings) &&
@@ -239,8 +246,8 @@ export function assertFitnessTransition(
       !l.location.trim() ||
       !Number.isFinite(Date.parse(l.startsAt)) ||
       !Number.isInteger(l.durationMinutes) ||
-      l.durationMinutes < 15 ||
-      l.durationMinutes > 240 ||
+      l.durationMinutes < (l.availability ? 1 : 15) ||
+      l.durationMinutes > (l.availability ? 1440 : 240) ||
       !Number.isInteger(l.capacity) ||
       l.capacity < 1 ||
       l.capacity > 200
@@ -250,6 +257,28 @@ export function assertFitnessTransition(
       );
     const old = previous.lessons?.find((x) => x.id === l.id);
     if (
+      old?.availability &&
+      (JSON.stringify(l.availability) !== JSON.stringify(old.availability) ||
+        old.startsAt !== l.startsAt ||
+        old.durationMinutes !== l.durationMinutes)
+    )
+      throw new Error(
+        "L’origine dello slot prenotato non può essere modificata.",
+      );
+    if (
+      l.availability &&
+      (!old ||
+        old.startsAt !== l.startsAt ||
+        old.durationMinutes !== l.durationMinutes ||
+        old.capacity !== l.capacity ||
+        (old.cancelled && !l.cancelled)) &&
+      (l.capacity !== 1 || !availabilityIsPublished(next, l))
+    )
+      throw new Error(
+        "Lo slot non corrisponde a una disponibilità pubblicata.",
+      );
+
+    if (
       (!old ||
         old.startsAt !== l.startsAt ||
         (old.cancelled && !l.cancelled)) &&
@@ -257,11 +286,11 @@ export function assertFitnessTransition(
     )
       throw new Error("Scegli una data e un orario futuri.");
     if (
-      !l.cancelled &&
+      availabilityBlocksTime(next, l) &&
       lessons.some(
         (x) =>
           x.id !== l.id &&
-          !x.cancelled &&
+          availabilityBlocksTime(next, x) &&
           overlaps(x, l) &&
           (normalize(x.coach) === normalize(l.coach) ||
             normalize(x.location) === normalize(l.location)),

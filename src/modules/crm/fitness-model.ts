@@ -28,6 +28,7 @@ export interface PlanAssignment {
   snapshot: { title: string; description: string; sessions: WorkoutSession[] };
 }
 export interface Lesson {
+  availability?: { adminId: string };
   id: string;
   title: string;
   startsAt: string;

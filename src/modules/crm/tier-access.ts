@@ -1,3 +1,4 @@
+import { availabilityIsPublished } from "./availability-lessons.ts";
 import type { CrmState, CrmStudent, TierAccess } from "./model.ts";
 
 export function isTierAccess(value: unknown): value is TierAccess {
@@ -48,6 +49,8 @@ export function bookingRestriction(
   const student = state.students.find((item) => item.id === studentId);
   const lesson = state.lessons?.find((item) => item.id === lessonId);
   if (!student || !lesson) return "Studente o lezione non disponibile.";
+  if (!availabilityIsPublished(state, lesson))
+    return "La fascia non è più disponibile. Puoi annullare una prenotazione esistente.";
   const access = studentAccess(state, student);
   if (!access.lessons)
     return "Le lezioni in sede non sono incluse in questo tier.";

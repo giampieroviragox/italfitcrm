@@ -1,7 +1,6 @@
 "use client";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
-import { useClock } from "./use-clock";
 import { useState } from "react";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -10,15 +9,19 @@ import { useCrm, useHydrated } from "./store";
 import { Field, control, FormError, LocalNotice } from "./ui";
 import { todayRome } from "./fitness-logic";
 import { AssignedPlan } from "./plans-workspace";
-import { changeBooking, lessonDate } from "./lessons-workspace";
-import { studentAccess, bookingRestriction } from "./tier-access";
+import { updateCrm } from "./store";
+import { prepareStudentBooking } from "./student-booking";
+import { StudentCalendar } from "./student-calendar";
+import { studentProjection } from "./student-portal-model";
+import { studentAccess } from "./tier-access";
 import { PlanMonthSelect } from "./plan-month-select";
 export function StudentPreview() {
-  const now = useClock();
   const state = useCrm(),
     hydrated = useHydrated();
   const [selected, setSelected] = useState(""),
     [month, setMonth] = useState(todayRome().slice(0, 7)),
+    [pending, setPending] = useState<string | null>(null),
+    [message, setMessage] = useState(""),
     [error, setError] = useState("");
   const students = state.students.filter((s) => !s.archived);
   const student = students.find((s) => s.id === selected) ?? students[0];
@@ -26,29 +29,16 @@ export function StudentPreview() {
   const assignment = state.assignments?.find(
     (a) => a.studentId === student?.id && a.month === month,
   );
-  const lessons = (state.lessons ?? [])
-    .filter(
-      (l) =>
-        !l.cancelled &&
-        Date.parse(l.startsAt) > now &&
-        (services?.lessons ||
-          state.bookings?.some(
-            (booking) =>
-              booking.studentId === student?.id &&
-              booking.lessonId === l.id &&
-              !booking.cancelled,
-          )),
-    )
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const data = student ? studentProjection(state, student.id) : null;
   return (
-    <div className="min-h-dvh bg-white">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4 sm:px-8">
+    <div className="min-h-dvh bg-[#fafafa]">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-white px-5 py-4 sm:px-8">
         <Brand />
         <Button asChild variant="outline">
           <Link href="/admin">Torna all’admin</Link>
         </Button>
       </header>
-      <main className="mx-auto max-w-5xl px-5 py-9 sm:px-8">
+      <main className="mx-auto max-w-7xl px-5 py-9 sm:px-8">
         <PageHeading
           title="Anteprima studente"
           description="Seleziona uno studente. Le modifiche vengono salvate sul workspace."
@@ -67,9 +57,11 @@ export function StudentPreview() {
                 <SelectControl
                   className={control}
                   value={student.id}
+                  disabled={Boolean(pending)}
                   onChange={(e) => {
                     setSelected(e.target.value);
                     setError("");
+                    setMessage("");
                   }}
                 >
                   {students.map((s) => (
@@ -89,6 +81,50 @@ export function StudentPreview() {
                 />
               </Field>
             </div>
+            {message && (
+              <p
+                role="status"
+                className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"
+              >
+                {message}
+              </p>
+            )}
+            <FormError message={error} />
+            {data && (services?.lessons || data.lessons.length > 0) && (
+              <div className="mb-10">
+                <StudentCalendar
+                  data={data}
+                  pending={pending}
+                  error={error}
+                  onChange={async (lessonId, cancelled) => {
+                    if (pending) return false;
+                    setPending(lessonId);
+                    setError("");
+                    try {
+                      await updateCrm((current) =>
+                        prepareStudentBooking(
+                          current,
+                          student.id,
+                          lessonId,
+                          cancelled,
+                        ),
+                      );
+                      setMessage(
+                        cancelled
+                          ? "Prenotazione annullata."
+                          : "Prenotazione confermata.",
+                      );
+                      return true;
+                    } catch (e) {
+                      setError((e as Error).message);
+                      return false;
+                    } finally {
+                      setPending(null);
+                    }
+                  }}
+                />
+              </div>
+            )}
             {services?.plans && (
               <>
                 <h2 className="mb-4 text-lg font-medium">Il tuo piano</h2>
@@ -100,88 +136,6 @@ export function StudentPreview() {
                   </p>
                 )}
               </>
-            )}
-            {(services?.lessons || lessons.length > 0) && (
-              <section className="mt-10">
-                <h2 className="text-lg font-medium">Lezioni in sede</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Orari di Roma. Prenota tra i posti disponibili.
-                </p>
-                <FormError message={error} />
-                <div className="mt-5 divide-y rounded-xl border">
-                  {lessons.map((l) => {
-                    const booking = state.bookings?.find(
-                        (b) =>
-                          b.studentId === student.id &&
-                          b.lessonId === l.id &&
-                          !b.cancelled,
-                      ),
-                      count =
-                        state.bookings?.filter(
-                          (b) => b.lessonId === l.id && !b.cancelled,
-                        ).length ?? 0;
-                    return (
-                      <article
-                        key={l.id}
-                        className="flex flex-wrap items-center justify-between gap-4 p-5"
-                      >
-                        <div>
-                          <h3 className="text-sm font-medium">{l.title}</h3>
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            {lessonDate(l.startsAt)} · {l.durationMinutes} min
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {l.coach} · {l.location} · {count}/{l.capacity}{" "}
-                            posti
-                          </p>
-                        </div>
-                        <Button
-                          variant={booking ? "outline" : "default"}
-                          disabled={
-                            !booking &&
-                            (count >= l.capacity ||
-                              student.status !== "active" ||
-                              Boolean(
-                                bookingRestriction(state, student.id, l.id),
-                              ))
-                          }
-                          onClick={async () => {
-                            try {
-                              await changeBooking(
-                                l.id,
-                                student.id,
-                                Boolean(booking),
-                              );
-                              setError("");
-                            } catch (e) {
-                              setError((e as Error).message);
-                            }
-                          }}
-                        >
-                          {booking
-                            ? "Annulla prenotazione"
-                            : count >= l.capacity
-                              ? "Completa"
-                              : bookingRestriction(state, student.id, l.id)
-                                ? "Limite del tier"
-                                : "Prenota"}
-                        </Button>
-                      </article>
-                    );
-                  })}
-                  {!lessons.length && (
-                    <p className="p-6 text-sm text-muted-foreground">
-                      Nessuna lezione disponibile.
-                    </p>
-                  )}
-                </div>
-                {student.status !== "active" && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Le prenotazioni sono disponibili per gli studenti con stato
-                    attivo.
-                  </p>
-                )}
-              </section>
             )}
             {!services?.plans && !services?.lessons && (
               <p className="rounded-xl border p-6 text-sm text-muted-foreground">

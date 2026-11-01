@@ -10,7 +10,7 @@ export function WeekNavigation({
   onChange: (week: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
       <Button
         variant="outline"
         size="icon"
@@ -27,7 +27,7 @@ export function WeekNavigation({
       >
         <ChevronRight className="size-4" />
       </Button>
-      <span className="mx-2 text-sm font-medium">
+      <span className="order-first w-full text-sm font-medium sm:order-none sm:mx-2 sm:w-auto">
         {new Intl.DateTimeFormat("it-IT", {
           day: "numeric",
           month: "short",

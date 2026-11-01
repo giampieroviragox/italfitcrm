@@ -1,3 +1,4 @@
+import { availabilityLessons } from "./availability-lessons.ts";
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
 import type { CrmState, TierAccess } from "./model.ts";
 import { isFitnessData } from "./fitness-logic.ts";
@@ -55,6 +56,13 @@ export function studentProjection(
   const student = state.students.find((s) => s.id === id && !s.archived);
   if (!student) throw new Error("Studente non disponibile.");
   const services = studentAccess(state, student);
+  const projectedState = {
+    ...state,
+    lessons: [
+      ...(state.lessons ?? []),
+      ...(services.lessons ? availabilityLessons(state) : []),
+    ],
+  };
   const own = (state.bookings ?? []).filter(
     (booking) => booking.studentId === id,
   );
@@ -69,7 +77,7 @@ export function studentProjection(
     assignments: services.plans
       ? (state.assignments ?? []).filter((a) => a.studentId === id)
       : [],
-    lessons: (state.lessons ?? [])
+    lessons: (projectedState.lessons ?? [])
       .filter(
         (l) =>
           (services.lessons && !l.cancelled) ||
@@ -77,7 +85,13 @@ export function studentProjection(
       )
       .map((l) => ({
         ...l,
-        restriction: bookingRestriction(state, id, l.id),
+        restriction: bookingRestriction(
+          state.lessons?.some((item) => item.id === l.id)
+            ? state
+            : { ...state, lessons: [...(state.lessons ?? []), l] },
+          id,
+          l.id,
+        ),
         enrolled: (state.bookings ?? []).some(
           (b) => b.lessonId === l.id && b.studentId === id && !b.cancelled,
         ),
