@@ -9,7 +9,7 @@ export function StudentsWorkspace() {
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeading
         title="Studenti"
         action={
@@ -38,6 +38,6 @@ export function StudentsWorkspace() {
           }
         />
       )}
-    </>
+    </div>
   );
 }

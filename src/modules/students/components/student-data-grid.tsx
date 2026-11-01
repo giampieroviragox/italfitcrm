@@ -108,9 +108,9 @@ export function StudentDataGrid({
       ? resizing.width
       : (config.columnWidths?.[id] ?? (id === "name" ? 260 : 200));
   return (
-    <div className="overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
-        className="max-h-[65vh] min-h-60 overflow-auto overscroll-x-contain"
+        className="min-h-0 flex-1 overflow-auto overscroll-x-contain"
         role="region"
         aria-label="Griglia studenti"
         tabIndex={0}

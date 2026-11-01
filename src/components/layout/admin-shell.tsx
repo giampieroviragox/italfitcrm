@@ -283,7 +283,11 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         </header>
         <main
           id="main-content"
-          className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10 lg:py-10"
+          className={cn(
+            "mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-10 lg:py-10",
+            pathname === "/admin/studenti" &&
+              "flex h-[calc(100dvh-4rem)] min-h-[480px] flex-col",
+          )}
         >
           <SyncNotice />
           {children}

@@ -129,9 +129,9 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   return (
     <section
       aria-label="Elenco studenti"
-      className="min-w-0 overflow-hidden rounded-xl border bg-white"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-white"
     >
-      <div className="flex flex-wrap items-center gap-2 border-b p-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b p-3">
         <div className="relative min-w-48 flex-1">
           <Search
             className="absolute top-3 left-3 size-4 text-muted-foreground"
@@ -463,7 +463,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
             : undefined
         }
       />
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
         <p role="status" className="text-xs text-muted-foreground">
           {filtered.length} {filtered.length === 1 ? "studente" : "studenti"}
         </p>
