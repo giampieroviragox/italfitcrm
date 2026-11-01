@@ -14,7 +14,7 @@ export const navigation = [
   },
   {
     href: "/admin/lezioni",
-    label: "Lezioni in sede",
+    label: "Calendario",
     icon: "calendar",
   },
 ] as const;

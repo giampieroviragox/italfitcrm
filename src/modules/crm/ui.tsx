@@ -7,7 +7,6 @@ import {
   type ReactElement,
   createContext,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -15,6 +14,7 @@ import { FormChangeContext } from "@/components/ui/form-change-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "./confirm-dialog";
 import { SyncNotice } from "@/components/layout/sync-notice";
+import { useUnsavedChanges } from "./use-unsaved-changes";
 const CancelContext = createContext<() => void>(() => {});
 export function EditorCancel() {
   const cancel = useContext(CancelContext);
@@ -149,14 +149,7 @@ export function Editor({
     if (dirty) setConfirm(true);
     else close();
   };
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
+  useUnsavedChanges(dirty, close);
   return (
     <CancelContext.Provider value={requestClose}>
       <FormChangeContext.Provider value={() => setDirty(true)}>

@@ -1,5 +1,9 @@
 "use client";
 import Link from "next/link";
+import {
+  UnsavedChangesProvider,
+  useNavigationRequest,
+} from "@/modules/crm/use-unsaved-changes";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Dialog, DropdownMenu } from "radix-ui";
@@ -120,6 +124,14 @@ function SidebarContent({
   );
 }
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  return (
+    <UnsavedChangesProvider>
+      <AdminShellContent>{children}</AdminShellContent>
+    </UnsavedChangesProvider>
+  );
+}
+function AdminShellContent({ children }: { children: React.ReactNode }) {
+  const requestNavigation = useNavigationRequest();
   const pathname = usePathname(),
     state = useCrm();
   const remote = useRemoteMode(),
@@ -261,7 +273,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     <DropdownMenu.Item
                       className="rounded-lg px-3 py-2.5 text-sm outline-none focus:bg-muted"
                       onSelect={() => {
-                        void signOut();
+                        requestNavigation(() => void signOut());
                       }}
                     >
                       Esci

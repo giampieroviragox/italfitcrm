@@ -1,14 +1,11 @@
 "use client";
-import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useClock } from "./use-clock";
 import { useState } from "react";
-import { CalendarDays, Plus, MapPin, Users, Clock } from "lucide-react";
+import { Plus, MapPin, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
-import { ActionMenu } from "@/components/ui/action-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Editor,
   EditorCancel,
@@ -18,28 +15,15 @@ import {
   LocalNotice,
 } from "./ui";
 import { useCrm, updateCrm, useHydrated } from "./store";
-import {
-  todayRome,
-  addDays,
-  weekStart,
-  romeLocal,
-  romeToIso,
-} from "./fitness-logic";
+import { todayRome, addDays, romeLocal, romeToIso } from "./fitness-logic";
 import { ConfirmDialog } from "./confirm-dialog";
 import type { Lesson } from "./fitness-model";
 import { bookingRestriction } from "./tier-access";
 import { AvailabilityCalendar } from "./availability-calendar";
-import { WeekNavigation } from "./week-navigation";
 export const lessonDate = (iso: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "full",
     timeStyle: "short",
-    timeZone: "Europe/Rome",
-  }).format(new Date(iso));
-const time = (iso: string) =>
-  new Intl.DateTimeFormat("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
     timeZone: "Europe/Rome",
   }).format(new Date(iso));
 export async function changeBooking(
@@ -190,171 +174,22 @@ function LessonEditor({
   );
 }
 export function LessonsWorkspace() {
-  const state = useCrm();
-  const [week, setWeek] = useState(() => weekStart(todayRome())),
-    [editing, setEditing] = useState<Lesson | "new" | null>(null),
-    [cancelled, setCancelled] = useState(false);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
-  const lessons = (state.lessons ?? [])
-    .filter(
-      (l) =>
-        (cancelled || !l.cancelled) &&
-        days.includes(romeLocal(l.startsAt).slice(0, 10)),
-    )
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const [editing, setEditing] = useState(false);
   return (
     <>
       <PageHeading
-        title="Lezioni in sede"
-        description="Organizza gli orari e gestisci gli iscritti."
+        title="Calendario"
+        description="Imposta le tue disponibilità e organizza le lezioni in sede."
         action={
-          <Button onClick={() => setEditing("new")}>
+          <Button onClick={() => setEditing(true)}>
             <Plus className="size-4" />
-            Nuova lezione
+            Aggiungi lezione
           </Button>
         }
       />
       <LocalNotice />
-      <Tabs defaultValue="lessons" className="gap-6">
-        <TabsList className="group-data-horizontal/tabs:h-10">
-          <TabsTrigger className="px-4" value="lessons">
-            Lezioni
-          </TabsTrigger>
-          <TabsTrigger className="px-4" value="availability">
-            Disponibilità
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent
-          forceMount
-          value="availability"
-          className="data-[state=inactive]:hidden"
-        >
-          <AvailabilityCalendar />
-        </TabsContent>
-        <TabsContent value="lessons">
-          <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-            <WeekNavigation week={week} onChange={setWeek} />
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CheckboxControl
-                checked={cancelled}
-                onChange={(e) => setCancelled(e.target.checked)}
-              />
-              Mostra annullate
-            </label>
-          </div>
-          {!lessons.length ? (
-            <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center">
-              <CalendarDays className="mb-5 size-7 text-muted-foreground" />
-              <h2 className="text-lg font-medium">
-                Nessuna lezione questa settimana
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Pubblica un orario per iniziare a raccogliere le iscrizioni.
-              </p>
-              <Button
-                variant="outline"
-                className="mt-6"
-                onClick={() => setEditing("new")}
-              >
-                Aggiungi una lezione
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y rounded-2xl border px-5 sm:px-6">
-              {days.map((day) => {
-                const items = lessons.filter((l) =>
-                  romeLocal(l.startsAt).startsWith(day),
-                );
-                return (
-                  <section
-                    key={day}
-                    className="grid gap-4 py-5 sm:grid-cols-[110px_1fr]"
-                  >
-                    <div>
-                      <p
-                        className={`text-sm ${day === todayRome() ? "font-semibold" : "font-medium"}`}
-                      >
-                        {new Intl.DateTimeFormat("it-IT", {
-                          weekday: "long",
-                        }).format(new Date(day + "T12:00Z"))}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Intl.DateTimeFormat("it-IT", {
-                          day: "numeric",
-                          month: "short",
-                        }).format(new Date(day + "T12:00Z"))}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      {!items.length && (
-                        <p className="py-2 text-xs text-muted-foreground">
-                          Nessuna lezione
-                        </p>
-                      )}
-                      {items.map((l) => {
-                        const count =
-                          state.bookings?.filter(
-                            (b) => b.lessonId === l.id && !b.cancelled,
-                          ).length ?? 0;
-                        return (
-                          <article
-                            key={l.id}
-                            className="flex flex-wrap items-center gap-4 rounded-xl border p-4"
-                          >
-                            <div className="w-16 text-xs font-medium">
-                              {time(l.startsAt)}
-                              <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                                {l.durationMinutes} min
-                              </span>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <Link
-                                href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
-                                className="text-sm font-medium hover:underline"
-                              >
-                                {l.title}
-                              </Link>
-                              <p className="mt-1.5 text-xs text-muted-foreground">
-                                {l.coach} · {l.location}
-                              </p>
-                            </div>
-                            <span
-                              className={`rounded-md px-2 py-1 text-[11px] ${l.cancelled ? "bg-red-50 text-red-700" : count === l.capacity ? "bg-amber-50 text-amber-800" : "bg-muted text-muted-foreground"}`}
-                            >
-                              {l.cancelled
-                                ? "Annullata"
-                                : `${count}/${l.capacity} iscritti`}
-                            </span>
-                            <ActionMenu
-                              label={`Azioni ${l.title}`}
-                              items={[
-                                {
-                                  label: "Gestisci iscritti",
-                                  href: `/admin/lezioni/${encodeURIComponent(l.id)}`,
-                                },
-                                {
-                                  label: "Modifica lezione",
-                                  onSelect: () => setEditing(l),
-                                },
-                              ]}
-                            />
-                          </article>
-                        );
-                      })}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-      {editing && (
-        <LessonEditor
-          lesson={editing === "new" ? undefined : editing}
-          close={() => setEditing(null)}
-        />
-      )}
+      <AvailabilityCalendar />
+      {editing && <LessonEditor close={() => setEditing(false)} />}
     </>
   );
 }
@@ -376,7 +211,7 @@ export function LessonDetail({ id }: { id: string }) {
           href="/admin/lezioni"
           className="mt-4 inline-block text-sm underline"
         >
-          Tutte le lezioni
+          Calendario
         </Link>
       </>
     );
@@ -398,7 +233,7 @@ export function LessonDetail({ id }: { id: string }) {
         href="/admin/lezioni"
         className="mb-6 inline-block text-xs text-muted-foreground"
       >
-        ← Tutte le lezioni
+        ← Calendario
       </Link>
       <PageHeading
         title={lesson.title}

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useGuardedNavigation } from "@/modules/crm/use-unsaved-changes";
 import { Dialog } from "radix-ui";
 import { Search, ArrowUpRight, UserRound, Command } from "lucide-react";
 import { useCrm } from "@/modules/crm/store";
@@ -10,7 +10,7 @@ const actions = [
   { label: "Home", hint: "Navigazione", href: "/admin" },
   { label: "Studenti", hint: "Navigazione", href: "/admin/studenti" },
   { label: "Piani e percorsi", hint: "Navigazione", href: "/admin/piani" },
-  { label: "Lezioni in sede", hint: "Navigazione", href: "/admin/lezioni" },
+  { label: "Calendario", hint: "Navigazione", href: "/admin/lezioni" },
   {
     label: "Proprietà",
     hint: "Impostazioni",
@@ -24,7 +24,7 @@ const actions = [
 ];
 export function CommandSearch() {
   const state = useCrm(),
-    router = useRouter();
+    navigate = useGuardedNavigation();
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
     [index, setIndex] = useState(0);
@@ -78,15 +78,15 @@ export function CommandSearch() {
         !document.querySelector('[role="dialog"],[role="alertdialog"]')
       ) {
         e.preventDefault();
-        router.push("/admin/studenti/nuovo");
+        navigate("/admin/studenti/nuovo");
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, router]);
+  }, [open, navigate]);
   const go = (href: string) => {
     setOpen(false);
-    router.push(href);
+    navigate(href);
   };
   return (
     <>

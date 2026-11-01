@@ -1,10 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CheckboxControl } from "@/components/ui/checkbox-control";
+import { useUnsavedChanges } from "./use-unsaved-changes";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "./confirm-dialog";
 import { useCrm, updateCrm, useViewer } from "./store";
 import { useClock } from "./use-clock";
-import { addDays, romeToIso, todayRome, weekStart } from "./fitness-logic";
+import {
+  addDays,
+  romeLocal,
+  romeToIso,
+  todayRome,
+  weekStart,
+} from "./fitness-logic";
 import {
   cellMinutes,
   cellsToSlots,
@@ -61,6 +70,8 @@ export function AvailabilityCalendar() {
     viewer ? a.id === viewer.recordId : a.role === "owner",
   );
   const [week, setWeek] = useState(() => weekStart(todayRome())),
+    [discardAction, setDiscardAction] = useState<(() => void) | null>(null),
+    [showCancelled, setShowCancelled] = useState(false),
     [drag, setDrag] = useState<Drag | null>(null),
     [changes, setChanges] = useState<ReadonlyMap<number, boolean>>(new Map()),
     [confirming, setConfirming] = useState(false),
@@ -139,12 +150,25 @@ export function AvailabilityCalendar() {
     };
   });
   const dirty = changes.size > 0;
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedChanges(dirty, () => setChanges(new Map()));
+  const changeWeek = (next: string) => {
+    if (next === week) return;
+    const change = () => {
+      setChanges(new Map());
+      setDrag(null);
+      setNotice("");
+      setWeek(next);
+    };
+    if (dirty) setDiscardAction(() => change);
+    else change();
+  };
+  const lessons = (state.lessons ?? [])
+    .filter(
+      (lesson) =>
+        (showCancelled || !lesson.cancelled) &&
+        days.includes(romeLocal(lesson.startsAt).slice(0, 10)),
+    )
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   if (!member)
     return (
       <p className="rounded-xl border p-5 text-sm text-muted-foreground">
@@ -172,7 +196,20 @@ export function AvailabilityCalendar() {
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
-        <WeekNavigation week={week} onChange={setWeek} />
+        <WeekNavigation week={week} onChange={changeWeek} />
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckboxControl
+            checked={showCancelled}
+            onChange={(event) => setShowCancelled(event.target.checked)}
+          />
+          Mostra lezioni annullate
+        </label>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="size-2.5 rounded-sm bg-primary" aria-hidden="true" />
+          Le tue disponibilità
+        </p>
         <p className="text-xs text-muted-foreground">
           Ogni slot dura un’ora. Tocca o trascina sul calendario per aggiungere
           le tue disponibilità; fai lo stesso su uno slot per toglierlo. Le
@@ -190,7 +227,12 @@ export function AvailabilityCalendar() {
             variant="outline"
             size="sm"
             disabled={!dirty}
-            onClick={() => setChanges(new Map())}
+            onClick={() => {
+              setDiscardAction(() => () => {
+                setChanges(new Map());
+                setNotice("");
+              });
+            }}
           >
             Annulla modifiche
           </Button>
@@ -223,6 +265,44 @@ export function AvailabilityCalendar() {
               {dayLabel(day, { day: "numeric" })}
             </div>
           ))}
+          {lessons.length > 0 && (
+            <>
+              <div className="border-b px-1 py-3 text-[10px] text-muted-foreground">
+                Lezioni
+              </div>
+              {days.map((day) => (
+                <div key={day} className="space-y-2 border-b border-l p-1.5">
+                  {lessons
+                    .filter((lesson) =>
+                      romeLocal(lesson.startsAt).startsWith(day),
+                    )
+                    .map((lesson) => (
+                      <Link
+                        key={lesson.id}
+                        href={`/admin/lezioni/${encodeURIComponent(lesson.id)}`}
+                        className={`block rounded-lg border p-2 text-xs hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 ${lesson.cancelled ? "border-red-200 bg-red-50 text-red-700" : "bg-muted/50"}`}
+                      >
+                        <span className="block font-medium break-words">
+                          {lesson.title}
+                        </span>
+                        <span className="mt-1 block">
+                          {slotTime.format(new Date(lesson.startsAt))} ·{" "}
+                          {lesson.durationMinutes} min
+                        </span>
+                        <span className="mt-1 block break-words">
+                          {lesson.coach} · {lesson.location}
+                        </span>
+                        <span className="mt-1 block">
+                          {lesson.cancelled
+                            ? "Annullata"
+                            : `${(state.bookings ?? []).filter((booking) => booking.lessonId === lesson.id && !booking.cancelled).length}/${lesson.capacity} iscritti`}
+                        </span>
+                      </Link>
+                    ))}
+                </div>
+              ))}
+            </>
+          )}
           <div>
             {cellTimes.map((label) => (
               <div
@@ -302,6 +382,17 @@ export function AvailabilityCalendar() {
           ))}
         </div>
       </div>
+      <ConfirmDialog
+        open={discardAction !== null}
+        title="Scartare le modifiche?"
+        description="Le disponibilità non salvate andranno perse."
+        confirmLabel="Scarta modifiche"
+        onCancel={() => setDiscardAction(null)}
+        onConfirm={() => {
+          discardAction?.();
+          setDiscardAction(null);
+        }}
+      />
       <ConfirmDialog
         open={confirming}
         title="Salvare le disponibilità?"
