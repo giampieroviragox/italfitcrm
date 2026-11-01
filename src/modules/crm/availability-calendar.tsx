@@ -1,10 +1,16 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { FormError } from "./ui";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "./confirm-dialog";
 import { useCrm, updateCrm, useViewer } from "./store";
 import { useClock } from "./use-clock";
 import { addDays, romeToIso, todayRome, weekStart } from "./fitness-logic";
-import { cellMinutes, paintCells, slotCells } from "./availability";
+import {
+  cellMinutes,
+  cellsToSlots,
+  paintCells,
+  slotCells,
+} from "./availability";
 import type { AvailabilitySlot } from "./availability";
 import { WeekNavigation } from "./week-navigation";
 const firstHour = 7,
@@ -24,6 +30,23 @@ const dayLabel = (day: string, options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("it-IT", options).format(
     new Date(day + "T12:00:00Z"),
   );
+const romeFormat = (options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", ...options });
+const slotDay = romeFormat({
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }),
+  slotTime = romeFormat({ hour: "2-digit", minute: "2-digit" });
+const describeSlots = (slots: AvailabilitySlot[]) =>
+  slots
+    .map(
+      (slot) =>
+        `${slotDay.format(new Date(slot.start))}, ${slotTime.format(new Date(slot.start))}–${slotTime.format(new Date(slot.end))}`,
+    )
+    .join("; ");
+const countLabel = (count: number) =>
+  count === 1 ? "1 slot" : `${count} slot`;
 interface Drag {
   day: string;
   from: number;
@@ -39,18 +62,32 @@ export function AvailabilityCalendar() {
   );
   const [week, setWeek] = useState(() => weekStart(todayRome())),
     [drag, setDrag] = useState<Drag | null>(null),
-    [local, setLocal] = useState<AvailabilitySlot[] | null>(null),
+    [changes, setChanges] = useState<ReadonlyMap<number, boolean>>(new Map()),
+    [confirming, setConfirming] = useState(false),
+    [busy, setBusy] = useState(false),
+    [notice, setNotice] = useState(""),
     [error, setError] = useState("");
-  const pending = useRef(0);
-  const slots = local ?? member?.availability ?? [];
-  const saved = slotCells(slots);
+  const saved = slotCells(member?.availability ?? []);
+  const added = [...changes].filter(([, on]) => on).map(([at]) => at),
+    removed = [...changes].filter(([, on]) => !on).map(([at]) => at);
+  const isAvailable = (at: number) => changes.get(at) ?? saved.has(at);
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
   const cellAt = (day: string, index: number) =>
     Date.parse(romeToIso(`${day}T${cellTimes[index]}`));
-  const save = async (cells: number[], available: boolean) => {
-    if (!member || !cells.length) return;
-    setLocal(paintCells(slots, cells, available));
-    pending.current += 1;
+  const paint = (cells: number[], available: boolean) => {
+    if (!cells.length) return;
+    const next = new Map(changes);
+    for (const at of cells) {
+      if (saved.has(at) === available) next.delete(at);
+      else next.set(at, available);
+    }
+    setChanges(next);
+    setNotice("");
+  };
+  const save = async () => {
+    if (!member) return;
+    setBusy(true);
+    setError("");
     try {
       await updateCrm((s) => ({
         ...s,
@@ -59,20 +96,21 @@ export function AvailabilityCalendar() {
             ? {
                 ...a,
                 availability: paintCells(
-                  a.availability ?? [],
-                  cells,
-                  available,
+                  paintCells(a.availability ?? [], added, true),
+                  removed,
+                  false,
                 ),
               }
             : a,
         ),
       }));
-      setError("");
+      setChanges(new Map());
+      setConfirming(false);
+      setNotice("Disponibilità salvate.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      pending.current -= 1;
-      if (!pending.current) setLocal(null);
+      setBusy(false);
     }
   };
   const inDrag = (day: string, index: number) =>
@@ -85,7 +123,7 @@ export function AvailabilityCalendar() {
       const low = Math.min(drag.from, drag.to),
         high = Math.max(drag.from, drag.to);
       setDrag(null);
-      void save(
+      paint(
         Array.from({ length: high - low + 1 }, (_, i) =>
           cellAt(drag.day, low + i),
         ).filter((at) => at >= now),
@@ -100,6 +138,13 @@ export function AvailabilityCalendar() {
       window.removeEventListener("pointercancel", cancel);
     };
   });
+  const dirty = changes.size > 0;
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   if (!member)
     return (
       <p className="rounded-xl border p-5 text-sm text-muted-foreground">
@@ -107,18 +152,61 @@ export function AvailabilityCalendar() {
       </p>
     );
   const isOn = (day: string, index: number, at: number) =>
-    inDrag(day, index) && at >= now ? drag!.available : saved.has(at);
+    inDrag(day, index) && at >= now ? drag!.available : isAvailable(at);
+  const summary = [
+    added.length ? `${countLabel(added.length)} da aggiungere` : "",
+    removed.length ? `${countLabel(removed.length)} da togliere` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const description = [
+    added.length
+      ? `Aggiungi ${countLabel(added.length)}: ${describeSlots(cellsToSlots(added))}.`
+      : "",
+    removed.length
+      ? `Togli ${countLabel(removed.length)}: ${describeSlots(cellsToSlots(removed))}.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
         <WeekNavigation week={week} onChange={setWeek} />
         <p className="text-xs text-muted-foreground">
-          Ogni slot dura un’ora. Trascina sul calendario per aggiungere le tue
-          disponibilità; trascina su uno slot per toglierlo.
+          Ogni slot dura un’ora. Tocca o trascina sul calendario per aggiungere
+          le tue disponibilità; fai lo stesso su uno slot per toglierlo. Le
+          modifiche valgono solo dopo il salvataggio.
         </p>
       </div>
-      <FormError message={error} />
-      <div className="mt-3 overflow-x-auto rounded-2xl border">
+      <div className="sticky top-2 z-10 mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-3">
+        <p aria-live="polite" className="text-sm">
+          {dirty
+            ? `Da salvare: ${summary}.`
+            : notice || "Nessuna modifica da salvare."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!dirty}
+            onClick={() => setChanges(new Map())}
+          >
+            Annulla modifiche
+          </Button>
+          <Button
+            size="sm"
+            disabled={!dirty}
+            onClick={() => {
+              setError("");
+              setConfirming(true);
+            }}
+          >
+            Salva
+          </Button>
+        </div>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border">
         <div
           className="grid min-w-[640px] select-none"
           style={{ gridTemplateColumns: "52px repeat(7, minmax(0, 1fr))" }}
@@ -151,6 +239,8 @@ export function AvailabilityCalendar() {
                 const at = cellAt(day, index),
                   past = at < now,
                   on = isOn(day, index, at),
+                  pending = changes.has(at),
+                  toRemove = changes.get(at) === false && !on,
                   startsRun =
                     on &&
                     (index === 0 ||
@@ -162,35 +252,46 @@ export function AvailabilityCalendar() {
                     isOn(day, last + 1, cellAt(day, last + 1))
                   )
                     last += 1;
+                const status = toRemove
+                  ? ", da togliere"
+                  : on && pending
+                    ? ", da aggiungere"
+                    : on
+                      ? ", disponibile"
+                      : "";
                 return (
                   <button
                     key={label}
                     type="button"
                     disabled={past}
                     aria-pressed={on}
-                    aria-label={`${dayLabel(day, { weekday: "long", day: "numeric", month: "long" })}, ${label}–${endOf(index)}`}
+                    aria-label={`${dayLabel(day, { weekday: "long", day: "numeric", month: "long" })}, ${label}–${endOf(index)}${status}`}
                     onPointerDown={(e) => {
                       if (e.button === 0)
                         setDrag({
                           day,
                           from: index,
                           to: index,
-                          available: !saved.has(at),
+                          available: !isAvailable(at),
                         });
                     }}
                     onPointerEnter={() => {
                       if (drag?.day === day) setDrag({ ...drag, to: index });
                     }}
                     onClick={(e) => {
-                      if (e.detail === 0) void save([at], !saved.has(at));
+                      if (e.detail === 0) paint([at], !isAvailable(at));
                     }}
-                    className={`block h-10 w-full touch-manipulation overflow-visible border-l px-1 text-left text-[10px] leading-tight whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-inset border-t ${startsRun ? "border-t-transparent" : on ? "border-t-primary-foreground/30" : ""} ${on ? (past ? "bg-primary/30 text-primary" : "bg-primary text-primary-foreground") : past ? "cursor-not-allowed bg-muted/40" : "cursor-pointer hover:bg-muted"}`}
+                    className={`block h-10 w-full touch-manipulation overflow-visible border-l px-1 text-left text-[10px] leading-tight whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-inset border-t ${startsRun ? "border-t-transparent" : on ? "border-t-primary-foreground/30" : ""} ${toRemove ? "cursor-pointer bg-red-50 text-red-700 line-through hover:bg-red-100" : on ? (past ? "bg-primary/30 text-primary" : pending ? "cursor-pointer bg-primary/70 text-primary-foreground" : "cursor-pointer bg-primary text-primary-foreground") : past ? "cursor-not-allowed bg-muted/40" : "cursor-pointer hover:bg-muted"}`}
                   >
                     {startsRun ? (
                       <>
                         <span className="block">{`${label}–${endOf(last)}`}</span>
-                        <span className="block">{`${last - index + 1} slot`}</span>
+                        <span className="block">
+                          {countLabel(last - index + 1)}
+                        </span>
                       </>
+                    ) : toRemove ? (
+                      `${label}–${endOf(index)}`
                     ) : (
                       ""
                     )}
@@ -201,6 +302,16 @@ export function AvailabilityCalendar() {
           ))}
         </div>
       </div>
+      <ConfirmDialog
+        open={confirming}
+        title="Salvare le disponibilità?"
+        description={description}
+        confirmLabel="Conferma e salva"
+        busy={busy}
+        error={error}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => void save()}
+      />
     </>
   );
 }

@@ -224,7 +224,11 @@ export function LessonsWorkspace() {
             Disponibilità
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="availability">
+        <TabsContent
+          forceMount
+          value="availability"
+          className="data-[state=inactive]:hidden"
+        >
           <AvailabilityCalendar />
         </TabsContent>
         <TabsContent value="lessons">
