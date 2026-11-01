@@ -1,5 +1,6 @@
 "use client";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
+import { studentAccess } from "./tier-access";
 import { SelectControl } from "@/components/ui/select-control";
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -404,7 +405,7 @@ export function AssignmentEditor({
           >
             <option value="">Seleziona studente…</option>
             {state.students
-              .filter((s) => !s.archived)
+              .filter((s) => !s.archived && studentAccess(state, s).plans)
               .map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.firstName} {s.lastName}

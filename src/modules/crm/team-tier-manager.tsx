@@ -1,6 +1,7 @@
 "use client";
 import { InviteButton } from "./invite-button";
 import { useState } from "react";
+import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import {
@@ -45,6 +46,17 @@ export function TierManager() {
             <p className="my-5 text-xs">
               {state.students.filter((s) => s.tierId === t.id).length} studenti
               assegnati
+            </p>
+            <p className="mb-4 text-xs leading-5 text-muted-foreground">
+              {[
+                (t.entitlements?.plans ?? true) ? "Piani online" : "",
+                (t.entitlements?.lessons ?? true) ? "Lezioni in sede" : "",
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Nessun servizio abilitato"}
+              {t.entitlements?.lessons && t.entitlements.monthlyBookingLimit
+                ? ` · ${t.entitlements.monthlyBookingLimit} ${t.entitlements.monthlyBookingLimit === 1 ? "lezione" : "lezioni"}/mese`
+                : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => setEditing(t)}>
@@ -109,6 +121,13 @@ function TierEditor({ tier, close }: { tier?: CrmTier; close: () => void }) {
             name: String(f.get("name")).trim(),
             description: String(f.get("description")).trim(),
             archived: tier?.archived ?? false,
+            entitlements: {
+              plans: f.get("plans") === "on",
+              lessons: f.get("lessons") === "on",
+              monthlyBookingLimit: String(f.get("monthlyLimit") ?? "").trim()
+                ? Number(f.get("monthlyLimit"))
+                : null,
+            },
           };
           try {
             await updateCrm((s) => {
@@ -159,6 +178,44 @@ function TierEditor({ tier, close }: { tier?: CrmTier; close: () => void }) {
           />
         </Field>
         <FormError message={error} />
+        <fieldset className="space-y-4 rounded-xl border p-4">
+          <legend className="px-1 text-sm font-medium">Servizi inclusi</legend>
+          <label className="flex items-center gap-3 text-sm">
+            <CheckboxControl
+              name="plans"
+              defaultChecked={tier ? (tier.entitlements?.plans ?? true) : false}
+            />
+            Piani di allenamento online
+          </label>
+          <label className="flex items-center gap-3 text-sm">
+            <CheckboxControl
+              name="lessons"
+              defaultChecked={
+                tier ? (tier.entitlements?.lessons ?? true) : false
+              }
+            />
+            Prenotazione lezioni in sede
+          </label>
+          <Field
+            label="Lezioni per mese"
+            hint="Lascia vuoto per nessun limite. Il conteggio segue il mese della lezione nel fuso di Roma; gli annullamenti liberano disponibilità."
+          >
+            <input
+              className={control}
+              name="monthlyLimit"
+              type="number"
+              min={1}
+              max={200}
+              defaultValue={tier?.entitlements?.monthlyBookingLimit ?? ""}
+              placeholder="Nessun limite"
+            />
+          </Field>
+          <p className="text-xs leading-5 text-muted-foreground">
+            I piani e le prenotazioni già registrati restano nello storico.
+            Cambiare i servizi limita i nuovi accessi e le nuove prenotazioni;
+            gli studenti possono sempre annullare i propri posti già prenotati.
+          </p>
+        </fieldset>
         <div className="crm-form-actions">
           <EditorCancel />
           <Button type="submit">Salva tier</Button>

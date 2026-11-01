@@ -8,6 +8,21 @@ import {
 import { readCrm } from "@/modules/crm/server/repository";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appUrl } from "@/lib/supabase/config";
+import {
+  emailConfiguration,
+  emailStatus,
+} from "@/modules/crm/server/email-config";
+import { sendAccessEmail } from "@/modules/crm/server/access-email";
+export async function GET() {
+  try {
+    await requireAccess(true);
+    return Response.json(emailStatus(), {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
@@ -15,9 +30,14 @@ export async function POST(request: Request) {
     const input = await readJsonInput(request);
     if (
       (input.kind !== "student" && input.kind !== "admin") ||
-      typeof input.id !== "string"
+      typeof input.id !== "string" ||
+      (input.delivery !== undefined &&
+        input.delivery !== "link" &&
+        input.delivery !== "email")
     )
       throw new HttpError(400, "Invito non valido.");
+    if (input.delivery === "email" && !emailStatus().enabled)
+      throw new HttpError(503, emailStatus().reason);
     if (input.kind === "admin" && access.role !== "owner")
       throw new HttpError(
         403,
@@ -68,11 +88,27 @@ export async function POST(request: Request) {
       generated.data.properties.verification_type === "invite"
         ? "invite"
         : "recovery";
-    const link = new URL("/auth/confirm", appUrl());
+    const link = new URL("/invito", appUrl());
     link.searchParams.set("token_hash", generated.data.properties.hashed_token);
     link.searchParams.set("type", type);
+    let emailSent = false,
+      emailError = "";
+    if (input.delivery === "email") {
+      try {
+        await sendAccessEmail(
+          emailConfiguration(),
+          person.email,
+          "firstName" in person ? person.firstName : person.name,
+          link.toString(),
+        );
+        emailSent = true;
+      } catch {
+        emailError =
+          "Il servizio non ha confermato l’invio dell’email. Condividi il link personale qui sotto; evita di inviare nuovi inviti finché non hai verificato l’esito.";
+      }
+    }
     return Response.json(
-      { link: link.toString(), email: person.email },
+      { link: link.toString(), email: person.email, emailSent, emailError },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

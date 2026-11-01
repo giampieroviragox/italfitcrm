@@ -29,6 +29,12 @@ export interface CrmTier {
   name: string;
   description: string;
   archived: boolean;
+  entitlements?: TierAccess;
+}
+export interface TierAccess {
+  plans: boolean;
+  lessons: boolean;
+  monthlyBookingLimit: number | null;
 }
 export interface AccountAccess {
   status: "invited" | "active";

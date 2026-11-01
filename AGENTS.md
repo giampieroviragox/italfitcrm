@@ -5,9 +5,9 @@
 - Consultare siti e documentazione via Computer Use quando necessario; non usare Firecrawl (preferenza esplicita dell’utente).
 - Con `.env.local` configurato il progetto usa il database reale TEAM ITALFIT CRM. Nei test usare solo record tecnici identificabili e rimuoverli alla fine. Non usare fixture locali come dati di produzione.
 - Il CRM usa sessioni SSR, ruoli in `crm_access`, RLS e API server con transazioni versionate. L’adapter locale è solo un fallback senza env. Non collegare il vecchio repository dimostrativo alle pagine operative. Non fidarsi mai del ruolo dichiarato dal client o dai user metadata.
-- Segreti soltanto in file ambiente ignorati: nessuna chiave server nei bundle client o nella documentazione. Resend è predisposto ma non attiva invii automatici.
+- Segreti soltanto in file ambiente ignorati: nessuna chiave server nei bundle client o nella documentazione. Resend invia soltanto quando l’admin sceglie esplicitamente l’invito email, con dominio verificato e mittente configurato; nessun invio massivo automatico.
 - Nessuna registrazione pubblica: gli studenti saranno creati e invitati dall’admin.
-- La richiesta del 31 ottobre 2026 autorizza piani e prenotazioni nel prototipo locale. Le abilitazioni di accesso per tier restano da definire: non inferire permessi dal nome del tier.
+- Il 1 novembre 2026 l’utente ha confermato Coaching online → piani, Allenamento in sede → lezioni, tier completo → entrambi. Le regole sono salvate esplicitamente nel tier e applicate sul server: non derivare permessi dai nomi. Limite mensile delle lezioni facoltativo, calcolato sul mese della lezione in Europe/Rome. Una riduzione dei servizi conserva lo storico e consente di annullare prenotazioni esistenti.
 - UI in italiano, date `Europe/Rome`, layout responsive e controlli accessibili.
 - Usare pnpm e preservare il lockfile. Prima della consegna: `pnpm check` e `pnpm build`, più verifica UI delle interazioni cambiate.
 

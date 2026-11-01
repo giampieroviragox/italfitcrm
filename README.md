@@ -13,7 +13,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supabase.com/dashboard/project/nvvaxfhpcsizchzaykoi). URL locale: [127.0.0.1:3000](http://127.0.0.1:3000). Il proprietario iniziale è già stato creato; la password non è conservata nei file del progetto. Senza variabili Supabase è disponibile il fallback dimostrativo locale.
+Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supabase.com/dashboard/project/nvvaxfhpcsizchzaykoi). URL locale: [127.0.0.1:3000](http://127.0.0.1:3000). Il progetto di hosting dedicato è `italfitcrm` su Vercel. Il proprietario iniziale è già stato creato; la password non è conservata nei file del progetto. Senza variabili Supabase è disponibile il fallback dimostrativo locale.
 
 ## Funzioni
 
@@ -23,7 +23,7 @@ Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supaba
 - Viste per account: ricerca, filtri tipizzati in AND, colonne riordinabili, ordinamento, tabella/schede, paginazione e modifiche massive. Ricerca con aggiornamento immediato e persistenza delle preferenze con debounce. CSV dei risultati filtrati con neutralizzazione delle formule.
 - Note interne datate e cronologia generata dal server; le nuove attività includono l’autore. Errori e modifiche concorrenti non generano conferme di salvataggio false.
 - Più amministratori con gestione riservata al proprietario. La scheda CRM e l’identità Auth sono distinte: il pulsante Invita prepara l’accesso.
-- Inviti con link personali temporanei, copiabili dall’admin. Il destinatario imposta la propria password. Non vengono spedite email automatiche; Resend è riservato al prossimo passaggio. Il recupero password usa il sistema email nativo Supabase.
+- Inviti con link personali temporanei, copiabili dall’admin. Il destinatario imposta la propria password. La modalità corrente usa link condivisi manualmente e non dipende da Resend. Per recuperare l’accesso lo studente chiede un nuovo link al team. L’invio email è disponibile solo dopo la configurazione di un mittente verificato; il recupero email richiede anche SMTP Auth e `AUTH_EMAIL_ENABLED=true`.
 - Piani: bozze, pubblicazione, archiviazione, sessioni/esercizi con serie, ripetizioni o durata, recupero, note e video. Un piano per studente/mese con copia indipendente dal modello.
 - Lezioni: agenda settimanale, orari di Roma, durata, coach, sala, capienza, iscrizioni e annullamenti. Controlli su orari, sovrapposizioni e posti anche con richieste simultanee.
 - Area studente reale: solo il proprio piano e le lezioni; prenotazione e annullamento. Lo staff dispone anche dell’anteprima con selettore.
@@ -39,7 +39,7 @@ Le tabelle hanno RLS, vincoli univoci, chiavi esterne e indici. Le API autentica
 
 Le chiavi sono in `.env.local`, ignorato dal repository. Le chiavi server e Resend non hanno il prefisso `NEXT_PUBLIC_`. Il personal access token usato per configurare il progetto non serve a eseguire l’app e non viene conservato nel repository.
 
-I dati dimostrativi del vecchio localStorage non vengono importati automaticamente. Le abilitazioni dei contenuti per tier restano da definire. Per il deployment pubblico occorre impostare URL canonico/redirect del dominio e configurare l’email transazionale. L’attuale infrastruttura è collegata al database cloud, ma il frontend è ancora locale.
+I dati dimostrativi del vecchio localStorage non vengono importati automaticamente. Le abilitazioni sono esplicite: Coaching online include i piani, Allenamento in sede include le lezioni; l’admin può creare tier con entrambi i servizi e impostare un limite mensile facoltativo. Il server applica queste regole anche alle richieste dirette. I nuovi inviti passano da una pagina di conferma: una semplice apertura del link non consuma il token. La modalità con link manuali permette il rilascio senza un dominio email. Per il dominio pubblico e la configurazione di produzione vedi [production.md](docs/production.md).
 
 ## Codice e verifiche
 

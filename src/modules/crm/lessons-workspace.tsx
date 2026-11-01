@@ -34,6 +34,7 @@ import {
 } from "./fitness-logic";
 import { ConfirmDialog } from "./confirm-dialog";
 import type { Lesson } from "./fitness-model";
+import { bookingRestriction } from "./tier-access";
 export const lessonDate = (iso: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "full",
@@ -501,6 +502,7 @@ export function LessonDetail({ id }: { id: string }) {
                     (s) =>
                       !s.archived &&
                       s.status === "active" &&
+                      !bookingRestriction(state, s.id, id) &&
                       !bookings.some((b) => b.studentId === s.id),
                   )
                   .map((s) => (

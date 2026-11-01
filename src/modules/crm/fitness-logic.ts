@@ -1,5 +1,6 @@
 import { normalize, validDate, type CrmState } from "./model.ts";
 import type { WorkoutPlan, Lesson } from "./fitness-model.ts";
+import { studentAccess, bookingRestriction } from "./tier-access.ts";
 export const todayRome = () =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(
     new Date(),
@@ -223,6 +224,13 @@ export function assertFitnessTransition(
         "Assegna solo piani pubblicati a studenti non archiviati.",
       );
     validateSessions({ sessions: a.snapshot.sessions, status: "published" });
+    if (
+      JSON.stringify(old) !== JSON.stringify(a) &&
+      !studentAccess(next, student).plans
+    )
+      throw new Error(
+        "Il tier dello studente non include i piani di allenamento.",
+      );
   }
   for (const l of lessons) {
     if (
@@ -293,6 +301,8 @@ export function assertFitnessTransition(
         throw new Error(
           "Puoi iscrivere solo studenti attivi a lezioni future disponibili.",
         );
+      const restriction = bookingRestriction(next, s.id, l.id, b.id);
+      if (restriction) throw new Error(restriction);
     }
     if (!b.cancelled && s.archived)
       throw new Error(

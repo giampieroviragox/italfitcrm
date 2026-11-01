@@ -1,10 +1,20 @@
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
-import type { CrmState } from "./model.ts";
+import type { CrmState, TierAccess } from "./model.ts";
 import { isFitnessData } from "./fitness-logic.ts";
+import {
+  studentAccess,
+  bookingRestriction,
+  isTierAccess,
+} from "./tier-access.ts";
 export interface StudentPortalData {
   student: { id: string; firstName: string; lastName: string; status: string };
+  services: TierAccess;
   assignments: PlanAssignment[];
-  lessons: (Lesson & { enrolled: boolean; occupied: number })[];
+  lessons: (Lesson & {
+    enrolled: boolean;
+    occupied: number;
+    restriction: string;
+  })[];
 }
 export function parseStudentPortalData(value: unknown): StudentPortalData {
   if (
@@ -19,12 +29,15 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
     ) ||
     !("assignments" in value) ||
     !Array.isArray(value.assignments) ||
+    !("services" in value) ||
+    !isTierAccess(value.services) ||
     !("lessons" in value) ||
     !Array.isArray(value.lessons) ||
     !isFitnessData(value as Record<string, unknown>) ||
     !value.lessons.every(
       (lesson) =>
         typeof lesson.enrolled === "boolean" &&
+        typeof lesson.restriction === "string" &&
         Number.isInteger(lesson.occupied) &&
         lesson.occupied >= 0 &&
         Number.isFinite(Date.parse(lesson.startsAt)),
@@ -41,24 +54,30 @@ export function studentProjection(
 ): StudentPortalData {
   const student = state.students.find((s) => s.id === id && !s.archived);
   if (!student) throw new Error("Studente non disponibile.");
+  const services = studentAccess(state, student);
+  const own = (state.bookings ?? []).filter(
+    (booking) => booking.studentId === id,
+  );
   return {
+    services,
     student: {
       id: student.id,
       firstName: student.firstName,
       lastName: student.lastName,
       status: student.status,
     },
-    assignments: (state.assignments ?? []).filter((a) => a.studentId === id),
+    assignments: services.plans
+      ? (state.assignments ?? []).filter((a) => a.studentId === id)
+      : [],
     lessons: (state.lessons ?? [])
       .filter(
         (l) =>
-          !l.cancelled ||
-          (state.bookings ?? []).some(
-            (b) => b.lessonId === l.id && b.studentId === id,
-          ),
+          (services.lessons && !l.cancelled) ||
+          own.some((b) => b.lessonId === l.id),
       )
       .map((l) => ({
         ...l,
+        restriction: bookingRestriction(state, id, l.id),
         enrolled: (state.bookings ?? []).some(
           (b) => b.lessonId === l.id && b.studentId === id && !b.cancelled,
         ),

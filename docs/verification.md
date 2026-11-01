@@ -65,3 +65,11 @@ Sette ulteriori verifiche cloud sono passate: fixture via API CRM, GET disponibi
 Account Auth e record tecnici rimossi. Conteggi finali: 0 studenti, 1 amministratore, 2 tier, 0 proprietà, 0 piani e 0 lezioni. La revisione globale è stata incrementata per impedire a finestre con dati di prova obsoleti di riscriverli. Credenziali tecniche temporanee eliminate.
 
 Screenshot dell’[area studente mobile](screenshots/student-ux-mobile.jpg) acquisito con la fixture prima della pulizia. La documentazione descrive gli esiti e i limiti osservati; non equivale a una certificazione WCAG o a un audit di sicurezza esterno.
+
+## Tier e inviti manuali · rilascio del 1 novembre 2026
+
+L’utente ha confermato piani per Coaching online e lezioni per Allenamento in sede; ha poi richiesto di procedere senza configurare il dominio Resend. Le abilitazioni iniziali sono state salvate esplicitamente e rilette dal database. Sono modificabili dalle impostazioni; i limiti mensili sono facoltativi.
+
+La suite comprende ora **62 test**. Le dieci prove aggiuntive coprono le policy dei tier, i limiti e il calendario di Roma, la conservazione dello storico, la validazione dei payload, il template email e gli esiti del provider. Sette verifiche end-to-end sul database reale hanno confermato le policy, il limite con due richieste simultanee, l’annullamento dopo la riduzione dei servizi e la conferma degli inviti tramite POST. Aperture GET ripetute della pagina invito non consumano il token.
+
+Verificati dal browser: checkbox dei servizi e limite riletti e salvati dal form; generazione del link dalla scheda; assenza del pulsante email quando non configurato; recupero dell’accesso con istruzioni per ottenere un nuovo link dal team. Nessuna promessa di email automatica nella modalità manuale. La configurazione senza Supabase non può attivare il workspace dimostrativo su Vercel.

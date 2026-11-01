@@ -1,5 +1,6 @@
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
 import { isFitnessData } from "./fitness-logic.ts";
+import { isTierAccess } from "./tier-access.ts";
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 const strings = (v: unknown): v is string[] =>
@@ -81,7 +82,8 @@ export function isCrmState(v: unknown): v is CrmState {
       (t) =>
         isObject(t) &&
         ["id", "name", "description"].every((k) => typeof t[k] === "string") &&
-        typeof t.archived === "boolean",
+        typeof t.archived === "boolean" &&
+        (t.entitlements === undefined || isTierAccess(t.entitlements)),
     ) &&
     v.properties.every(
       (p) =>
