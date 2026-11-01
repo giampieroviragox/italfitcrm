@@ -113,6 +113,7 @@ export function InviteDialog({
   };
   return (
     <Editor
+      centered={Boolean(createdName)}
       title="Invita con un accesso personale"
       description={`${createdName ? `Scheda di ${createdName} creata. ` : ""}${
         emailConfig?.enabled

@@ -18,13 +18,14 @@ Il progetto configurato in questo workspace è [TEAM ITALFIT CRM](https://supaba
 ## Funzioni
 
 - Login email/password, sessioni SSR, logout e recupero password. Registrazione pubblica disattivata. Ruoli owner/admin/student verificati sul server.
-- CRM studenti: anagrafica, telefono, stato, coach, tag, tier, proprietà personalizzate, archiviazione e ripristino.
+- CRM studenti: creazione in una modale con nome, cognome, email, telefono con prefisso, tier, inizio percorso e data di creazione automatica; nuovi studenti attivi. Stato, coach, tag e proprietà personalizzate si gestiscono dalla modifica della scheda; archiviazione e ripristino.
 - Undici tipi di proprietà: testo, multiriga, numero, data, dropdown, radio, scelta multipla, booleano, link, email e telefono. Dalle impostazioni si scelgono nome e tipo (più le opzioni per i campi a scelta); archiviazione senza perdita dei valori.
 - Viste per account: ricerca, filtri tipizzati in AND, colonne riordinabili, ordinamento, tabella/schede, paginazione e modifiche massive. Ricerca con aggiornamento immediato e persistenza delle preferenze con debounce. CSV dei risultati filtrati con neutralizzazione delle formule.
 - Note interne datate e cronologia generata dal server; le nuove attività includono l’autore. Errori e modifiche concorrenti non generano conferme di salvataggio false.
 - Impostazioni · Utenti: amministratori e studenti, accessi, inviti e permessi. Il ruolo si sceglie alla creazione e non cambia. Più amministratori con gestione riservata al proprietario. La scheda CRM e l’identità Auth sono distinte: alla creazione di uno studente l’admin sceglie tra solo scheda e scheda con accesso; il pulsante Invita prepara l’accesso anche in seguito.
 - Inviti con link personali temporanei, copiabili dall’admin. Il destinatario imposta la propria password. La modalità corrente usa link condivisi manualmente e non dipende da Resend. Per recuperare l’accesso lo studente chiede un nuovo link al team. L’invio email è disponibile solo dopo la configurazione di un mittente verificato; il recupero email richiede anche SMTP Auth e `AUTH_EMAIL_ENABLED=true`.
 - Piani: bozze, pubblicazione, archiviazione, sessioni/esercizi con serie, ripetizioni o durata, recupero, note e video. Un piano per studente/mese con copia indipendente dal modello.
+- Disponibilità: calendario settimanale in Lezioni dove ogni amministratore seleziona i propri slot da 30 minuti trascinando sui giorni. Salvate nella scheda amministratore, senza prenotazione studenti per ora.
 - Lezioni: agenda settimanale, orari di Roma, durata, coach, sala, capienza, iscrizioni e annullamenti. Controlli su orari, sovrapposizioni e posti anche con richieste simultanee.
 - Area studente reale: solo il proprio piano e le lezioni; prenotazione e annullamento. Lo staff dispone anche dell’anteprima con selettore.
 - Home con dati attuali e attività recenti, ricerca globale ⌘K/CtrlK, shortcut N, sidebar riducibile e navigazione mobile.

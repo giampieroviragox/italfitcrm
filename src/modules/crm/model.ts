@@ -1,3 +1,4 @@
+import type { AvailabilitySlot } from "./availability.ts";
 import type { Student } from "@/types/domain";
 export const propertyTypes = {
   text: "Testo su una riga",
@@ -56,6 +57,7 @@ export interface AdminMember {
   email: string;
   role: "owner" | "admin";
   status: "draft" | "active";
+  availability?: AvailabilitySlot[];
 }
 export interface CrmState {
   version: 1;

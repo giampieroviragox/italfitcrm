@@ -58,6 +58,18 @@ export function validateStaffUpdate(
         "I ruoli e gli accessi vengono gestiti dal server.",
       );
   }
+  for (const a of proposed.admins) {
+    const old = current.admins.find((x) => x.id === a.id);
+    if (
+      a.id !== access.record_id &&
+      JSON.stringify(a.availability ?? []) !==
+        JSON.stringify(old?.availability ?? [])
+    )
+      throw new HttpError(
+        403,
+        "Ogni amministratore gestisce solo le proprie disponibilità.",
+      );
+  }
   for (const key of ["students", "admins"] as const)
     for (const item of proposed[key]) {
       const old = current[key].find((x) => x.id === item.id);

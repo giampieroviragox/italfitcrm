@@ -1,6 +1,7 @@
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
 import { isFitnessData } from "./fitness-logic.ts";
 import { isTierAccess } from "./tier-access.ts";
+import { isAvailability } from "./availability.ts";
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 const strings = (v: unknown): v is string[] =>
@@ -137,7 +138,8 @@ export function isCrmState(v: unknown): v is CrmState {
         isObject(a) &&
         ["id", "name", "email"].every((k) => typeof a[k] === "string") &&
         ["owner", "admin"].includes(String(a.role)) &&
-        ["draft", "active"].includes(String(a.status)),
+        ["draft", "active"].includes(String(a.status)) &&
+        (a.availability === undefined || isAvailability(a.availability)),
     ) &&
     v.admins.some((a) => isObject(a) && a.role === "owner")
   );

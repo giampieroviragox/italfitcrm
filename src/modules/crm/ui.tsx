@@ -128,12 +128,14 @@ export function Editor({
   close,
   children,
   dirty: explicitDirty,
+  centered = false,
 }: {
   title: string;
   description: string;
   close: () => void;
   children: ReactNode;
   dirty?: boolean;
+  centered?: boolean;
 }) {
   const saving = useSaving();
   const firstInvalid = useRef(false);
@@ -176,6 +178,7 @@ export function Editor({
           }}
         >
           <SheetContent
+            side={centered ? "center" : "right"}
             onOpenAutoFocus={() => {
               previousFocus.current =
                 document.activeElement instanceof HTMLElement

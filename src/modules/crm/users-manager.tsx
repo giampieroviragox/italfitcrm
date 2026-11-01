@@ -8,7 +8,7 @@ import { SelectControl } from "@/components/ui/select-control";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCrm, updateCrm, useViewer, useRemoteMode } from "./store";
 import type { AccountAccess, AdminMember, CrmStudent } from "./model";
-import { StudentEditor } from "./student-editor";
+import { StudentCreateDialog, StudentEditor } from "./student-editor";
 import {
   EditorCancel,
   Editor,
@@ -178,9 +178,12 @@ export function UsersManager() {
           close={() => setEditingAdmin(null)}
         />
       )}
-      {editingStudent && (
+      {editingStudent === "new" && (
+        <StudentCreateDialog close={() => setEditingStudent(null)} />
+      )}
+      {editingStudent && editingStudent !== "new" && (
         <StudentEditor
-          student={editingStudent === "new" ? undefined : editingStudent}
+          student={editingStudent}
           close={() => setEditingStudent(null)}
         />
       )}
@@ -213,6 +216,9 @@ function AdminEditor({
             email: String(f.get("email")).trim().toLowerCase(),
             role: member?.role || "admin",
             status: member?.status || "draft",
+            ...(member?.availability
+              ? { availability: member.availability }
+              : {}),
           };
           try {
             await updateCrm((s) => {

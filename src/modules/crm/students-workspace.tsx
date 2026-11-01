@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { StudentsDirectory } from "@/modules/students/components/students-directory";
-import { StudentEditor } from "./student-editor";
+import { StudentCreateDialog } from "./student-editor";
 import { LocalNotice } from "./ui";
 export function StudentsWorkspace() {
   const [adding, setAdding] = useState(false);
@@ -28,7 +28,7 @@ export function StudentsWorkspace() {
       )}
       <StudentsDirectory onAdd={() => setAdding(true)} />
       {adding && (
-        <StudentEditor
+        <StudentCreateDialog
           close={() => setAdding(false)}
           saved={(_, accessRequested) =>
             setMessage(
