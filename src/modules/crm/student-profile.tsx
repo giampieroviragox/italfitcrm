@@ -1,7 +1,7 @@
 "use client";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
@@ -14,7 +14,7 @@ import {
   type CrmProperty,
   type PropertyValue,
 } from "./model";
-import { useCrm, updateCrm, useHydrated } from "./store";
+import { useCrm, updateCrm, useHydrated, addStudentComment } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
 import { StudentEditor } from "./student-editor";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -64,6 +64,10 @@ function PropertyDisplay({
 export function StudentProfile({ id }: { id: string }) {
   const state = useCrm(),
     hydrated = useHydrated();
+  const commentLock = useRef(false);
+  const commentList = useRef<HTMLOListElement>(null);
+  const [commentPending, setCommentPending] = useState(false);
+  const [commentResult, setCommentResult] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [editing, setEditing] = useState(false),
     [tab, setTab] = useState("properties"),
@@ -157,7 +161,6 @@ export function StudentProfile({ id }: { id: string }) {
                 ],
                 ["Coach", student.coach || "Non assegnato"],
                 ["Aggiunto il", formatDate(student.joinedAt)],
-                ["Tag", student.tags.join(", ") || "Nessun tag"],
               ].map(([label, value]) => (
                 <div
                   className="flex flex-wrap justify-between gap-3 py-4 text-xs"
@@ -216,7 +219,10 @@ export function StudentProfile({ id }: { id: string }) {
             {[
               { id: "properties", label: "Proprietà" },
               { id: "plans", label: "Piani e lezioni" },
-              { id: "notes", label: `Note (${student.notes?.length ?? 0})` },
+              {
+                id: "notes",
+                label: `Commenti (${student.notes?.length ?? 0})`,
+              },
               { id: "history", label: "Cronologia" },
             ].map((t) => (
               <Button
@@ -347,77 +353,115 @@ export function StudentProfile({ id }: { id: string }) {
               </>
             )}
             {tab === "notes" && (
-              <>
-                <Card className="p-6 shadow-none">
-                  <h2 className="text-sm font-semibold">Aggiungi nota</h2>
-                  <form
-                    className="space-y-4"
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      run(async () => {
+              <Card className="gap-5 p-5 shadow-none sm:p-6">
+                <div className="space-y-2">
+                  <h2 className="text-sm font-semibold">Commenti interni</h2>
+                  <p className="text-xs leading-6 text-muted-foreground">
+                    Ogni commento conserva autore, data e testo originale. I
+                    commenti pubblicati non possono essere modificati o
+                    eliminati.
+                  </p>
+                </div>
+                <form
+                  className="space-y-4"
+                  aria-busy={commentPending}
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (commentLock.current) return;
+                    commentLock.current = true;
+                    setCommentPending(true);
+                    setCommentResult("");
+                    try {
+                      await run(async () => {
                         const text = note.trim();
                         if (!text || text.length > 5000)
                           throw new Error(
-                            "Inserisci una nota tra 1 e 5000 caratteri.",
+                            "Inserisci un commento tra 1 e 5000 caratteri.",
                           );
-                        await updateCrm((s) => ({
-                          ...s,
-                          students: s.students.map((x) =>
-                            x.id === id
-                              ? {
-                                  ...x,
-                                  notes: [
-                                    ...(x.notes ?? []),
-                                    {
-                                      id: crypto.randomUUID(),
-                                      text,
-                                      createdAt: new Date().toISOString(),
-                                    },
-                                  ],
-                                }
-                              : x,
-                          ),
-                        }));
+                        await addStudentComment(id, text);
+                        commentList.current?.scrollTo({ top: 0 });
                         setNote("");
+                        setCommentResult(
+                          "Commento pubblicato e salvato nella cronologia.",
+                        );
                       });
-                    }}
+                    } finally {
+                      commentLock.current = false;
+                      setCommentPending(false);
+                    }
+                  }}
+                >
+                  <Field
+                    label="Nuovo commento"
+                    hint="Massimo 5000 caratteri. Visibile solo agli amministratori."
                   >
-                    <Field label="Nota interna">
-                      <textarea
-                        className={control}
-                        rows={4}
-                        required
-                        maxLength={5000}
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                      />
-                    </Field>
-                    <Button type="submit">Aggiungi nota</Button>
-                  </form>
-                </Card>
-                {(student.notes ?? [])
-                  .slice()
-                  .reverse()
-                  .map((n) => (
-                    <Card className="gap-3 p-6 shadow-none" key={n.id}>
-                      <time
-                        className="text-xs text-muted-foreground"
-                        dateTime={n.createdAt}
-                      >
-                        {timestamp(n.createdAt)}
-                        {n.actorName ? ` · ${n.actorName}` : ""}
-                      </time>
-                      <p className="whitespace-pre-wrap break-words text-sm leading-7">
-                        {n.text}
-                      </p>
-                    </Card>
-                  ))}
-                {!student.notes?.length && (
-                  <p className="p-4 text-xs text-muted-foreground">
-                    Nessuna nota ancora presente.
+                    <textarea
+                      className={control}
+                      rows={3}
+                      required
+                      maxLength={5000}
+                      value={note}
+                      disabled={commentPending}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                  </Field>
+                  <Button
+                    type="submit"
+                    disabled={commentPending || !note.trim()}
+                  >
+                    {commentPending ? "Pubblicazione…" : "Pubblica commento"}
+                  </Button>
+                  <p role="status" className="text-xs text-muted-foreground">
+                    {commentResult}
                   </p>
-                )}
-              </>
+                </form>
+                <div className="border-t pt-5">
+                  <h3 className="mb-3 text-xs font-medium">
+                    Commenti ({student.notes?.length ?? 0}) · Più recenti prima
+                  </h3>
+                  {student.notes?.length ? (
+                    <ol
+                      ref={commentList}
+                      aria-label="Commenti salvati"
+                      tabIndex={0}
+                      className="max-h-[32rem] space-y-4 overflow-y-auto overscroll-contain rounded-lg p-1 focus-visible:outline-2 focus-visible:outline-primary"
+                      style={{ scrollbarGutter: "stable" }}
+                    >
+                      {student.notes
+                        .toSorted(
+                          (a, b) =>
+                            Date.parse(b.createdAt) - Date.parse(a.createdAt) ||
+                            b.id.localeCompare(a.id),
+                        )
+                        .map((n) => (
+                          <li
+                            className="space-y-3 rounded-lg border bg-muted/20 p-4"
+                            key={n.id}
+                          >
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                              <p className="break-words text-sm font-medium">
+                                {n.actorName || "Autore non disponibile"}
+                              </p>
+                              <time
+                                className="text-xs text-muted-foreground"
+                                dateTime={n.createdAt}
+                              >
+                                {timestamp(n.createdAt)}
+                              </time>
+                            </div>
+                            <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                              {n.text}
+                            </p>
+                          </li>
+                        ))}
+                    </ol>
+                  ) : (
+                    <p className="py-3 text-xs text-muted-foreground">
+                      Nessun commento ancora presente.
+                    </p>
+                  )}
+                </div>
+              </Card>
             )}
             {tab === "history" && (
               <Card className="gap-3 p-6 shadow-none">
@@ -425,21 +469,41 @@ export function StudentProfile({ id }: { id: string }) {
                   Cronologia della scheda
                 </h2>
                 <p className="text-xs leading-6 text-muted-foreground">
-                  Modifiche e attività della scheda, in ordine cronologico.
+                  Modifiche e attività della scheda con autore e data. Le più
+                  recenti sono in alto.
                 </p>
-                <ol className="divide-y">
+                <ol
+                  aria-label="Attività della scheda"
+                  tabIndex={0}
+                  className="max-h-[40rem] divide-y overflow-y-auto overscroll-contain rounded focus-visible:outline-2 focus-visible:outline-primary"
+                >
                   {(student.history ?? [])
-                    .slice()
-                    .reverse()
+                    .toSorted(
+                      (a, b) =>
+                        Date.parse(b.createdAt) - Date.parse(a.createdAt) ||
+                        b.id.localeCompare(a.id),
+                    )
                     .map((h) => (
                       <li className="space-y-1 py-4" key={h.id}>
-                        <p className="text-sm">{h.text}</p>
+                        <p className="text-sm font-medium">{h.text}</p>
+                        {h.details && h.details.length > 0 && (
+                          <ul className="space-y-1 text-xs leading-6 text-muted-foreground">
+                            {h.details.map((detail, index) => (
+                              <li
+                                className="whitespace-pre-wrap break-words"
+                                key={index}
+                              >
+                                {detail}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                         <time
                           className="text-xs text-muted-foreground"
                           dateTime={h.createdAt}
                         >
                           {timestamp(h.createdAt)}
-                          {h.actorName ? ` · ${h.actorName}` : ""}
+                          {` · ${h.actorName || "Autore non disponibile"}`}
                         </time>
                       </li>
                     ))}
@@ -480,7 +544,7 @@ export function StudentProfile({ id }: { id: string }) {
             <p className="text-xs leading-6 text-muted-foreground">
               {student.archived
                 ? "Il ripristino riporta lo studente nelle viste normali."
-                : "Archivia uno studente per rimuoverlo dalle viste operative mantenendo scheda, proprietà e note."}
+                : "Archivia uno studente per rimuoverlo dalle viste operative mantenendo scheda, proprietà e commenti."}
             </p>
             {student.archived && tier?.archived && (
               <Field label="Tier per il ripristino">

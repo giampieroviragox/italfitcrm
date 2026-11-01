@@ -123,7 +123,10 @@ test("history and revisions come from server, existing notes cannot be overwritt
   assert.ok(!saved.students[0].history.some((x) => x.id === "forged"));
   const changed = structuredClone(s);
   changed.students[0].notes[0].text = "Rewritten";
-  assert.throws(() => validateStaffUpdate(s, changed, access("owner")), /note/);
+  assert.throws(
+    () => validateStaffUpdate(s, changed, access("owner")),
+    /commenti/,
+  );
 });
 test("student projection excludes other students, contacts, properties, notes, history and admin list", () => {
   const s = state();

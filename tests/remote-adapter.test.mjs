@@ -196,3 +196,34 @@ test("requests time out, never retry and normalize unreadable responses", async 
     /servizio non ha risposto/,
   );
 });
+
+test("comment writes send only student id and text, share the write queue and keep uncertain results blocked", async () => {
+  const comment = deferred(),
+    started = deferred(),
+    calls = [];
+  const store = createRemoteStore(envelope(), null, async (url, init) => {
+    calls.push({ url, body: init.body ? JSON.parse(init.body) : null });
+    if (url === "/api/commenti") {
+      started.resolve();
+      return comment.promise;
+    }
+    return response(envelope(3, "updated"));
+  });
+  const posting = store.comment("student", "Testo"),
+    updating = store.update(change("updated"));
+  await started.promise;
+  assert.deepEqual(calls, [
+    { url: "/api/commenti", body: { studentId: "student", text: "Testo" } },
+  ]);
+  comment.resolve(response(envelope(2)));
+  await Promise.all([posting, updating]);
+  assert.equal(calls[1].body.revision, 2);
+  assert.equal(store.pending(), false);
+  assert.equal(store.snapshot().directory.query, "updated");
+  const failing = createRemoteStore(envelope(), null, async () => {
+    throw new TypeError("Network");
+  });
+  await assert.rejects(failing.comment("student", "Testo"), /Connessione/);
+  assert.equal(failing.status().requiresRefresh, true);
+  await assert.rejects(failing.comment("student", "Testo"), /Aggiorna/);
+});

@@ -19,6 +19,5 @@ export interface Student {
   tierId: string;
   properties?: Record<string, string | number | boolean | string[]>;
   joinedAt: string;
-  tags: string[];
   coach: string;
 }

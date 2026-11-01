@@ -115,7 +115,7 @@ export function sanitizeDirectory(
         : "all",
     columns: config.columns.filter(
       (id) =>
-        ["tier", "status", "joinedAt", "phone", "coach", "tags"].includes(id) ||
+        ["tier", "status", "joinedAt", "phone", "coach"].includes(id) ||
         (id.startsWith("property:") && ids.has(id.slice(9))),
     ),
     filters: config.filters.filter((f) => ids.has(f.propertyId)),
@@ -154,7 +154,6 @@ export function selectStudents(
             s.email,
             s.phone ?? "",
             s.coach,
-            ...s.tags,
             tiers.find((t) => t.id === s.tierId)?.name ?? "",
             ...active.flatMap((p) => {
               const v = s.properties[p.id];
@@ -295,7 +294,6 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
         v.tierId,
         v.status,
         v.coach,
-        v.tags,
         v.properties,
       ]);
     if (

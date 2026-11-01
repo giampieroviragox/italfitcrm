@@ -10,7 +10,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "online",
     joinedAt: "2026-10-26",
-    tags: ["Forza", "Personalizzato"],
+
     coach: "Giorgio",
   },
   {
@@ -21,7 +21,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "studio",
     joinedAt: "2026-10-24",
-    tags: ["Functional"],
+
     coach: "Giorgio",
   },
   {
@@ -32,7 +32,7 @@ export const demoStudents: readonly Student[] = [
     status: "invited",
     tierId: "online",
     joinedAt: "2026-10-23",
-    tags: ["Nuovo iscritto"],
+
     coach: "Giorgio",
   },
   {
@@ -43,7 +43,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "online",
     joinedAt: "2026-10-20",
-    tags: ["Hyrox", "Personalizzato"],
+
     coach: "Giorgio",
   },
   {
@@ -54,7 +54,7 @@ export const demoStudents: readonly Student[] = [
     status: "paused",
     tierId: "studio",
     joinedAt: "2026-10-18",
-    tags: ["Forza"],
+
     coach: "Giorgio",
   },
   {
@@ -65,7 +65,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "studio",
     joinedAt: "2026-10-15",
-    tags: ["Functional", "Nuovo iscritto"],
+
     coach: "Giorgio",
   },
   {
@@ -76,7 +76,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "online",
     joinedAt: "2026-10-12",
-    tags: ["Hyrox"],
+
     coach: "Giorgio",
   },
   {
@@ -87,7 +87,7 @@ export const demoStudents: readonly Student[] = [
     status: "active",
     tierId: "studio",
     joinedAt: "2026-10-09",
-    tags: ["Personalizzato"],
+
     coach: "Giorgio",
   },
 ];

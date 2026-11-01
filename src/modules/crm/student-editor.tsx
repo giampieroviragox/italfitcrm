@@ -123,7 +123,7 @@ export function StudentCreateDialog({
                     email: address,
                     phone,
                     coach: "",
-                    tags: [],
+
                     status: "active",
                     tierId,
                     joinedAt,
@@ -412,22 +412,6 @@ export function StudentEditor({
             className={control}
             value={draft.coach}
             onChange={(e) => set("coach", e.target.value)}
-          />
-        </Field>
-        <Field label="Tag" hint="Separa i tag con una virgola.">
-          <input
-            className={control}
-            defaultValue={draft.tags.join(", ")}
-            onChange={(e) =>
-              set("tags", [
-                ...new Set(
-                  e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                ),
-              ])
-            }
           />
         </Field>
         {Array.from(

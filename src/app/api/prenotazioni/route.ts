@@ -48,14 +48,22 @@ export async function POST(request: Request) {
       };
       let next;
       try {
-        next = prepareTransition(current.state, {
-          ...current.state,
-          bookings: old
-            ? (current.state.bookings ?? []).map((b) =>
-                b.id === old.id ? booking : b,
-              )
-            : [...(current.state.bookings ?? []), booking],
-        });
+        const student = current.state.students.find(
+          (s) => s.id === access.record_id,
+        );
+        if (!student) throw new HttpError(404, "Studente non trovato.");
+        next = prepareTransition(
+          current.state,
+          {
+            ...current.state,
+            bookings: old
+              ? (current.state.bookings ?? []).map((b) =>
+                  b.id === old.id ? booking : b,
+                )
+              : [...(current.state.bookings ?? []), booking],
+          },
+          { id: student.id, name: `${student.firstName} ${student.lastName}` },
+        );
       } catch (e) {
         throw new HttpError(400, (e as Error).message);
       }

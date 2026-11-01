@@ -90,7 +90,6 @@ function PropertyEditor({
                   "telefono",
                   "tier",
                   "stato",
-                  "tag",
                   "coach",
                 ].includes(next.name.toLowerCase()) ||
                 s.properties.some(

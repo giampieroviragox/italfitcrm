@@ -97,7 +97,10 @@ export async function updateCrm(update: (state: CrmState) => CrmState) {
   }
   const current = snapshot();
   if (issue) throw new Error(issue);
-  const next = prepareTransition(current, update(current));
+  const next = prepareTransition(current, update(current), {
+    id: "owner-demo",
+    name: "Amministratore demo",
+  });
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -108,6 +111,32 @@ export async function updateCrm(update: (state: CrmState) => CrmState) {
   cachedRaw = JSON.stringify(next);
   cached = next;
   window.dispatchEvent(new Event(EVENT));
+}
+
+export async function addStudentComment(studentId: string, text: string) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.comment(studentId, text);
+  }
+  return updateCrm((s) => ({
+    ...s,
+    students: s.students.map((student) =>
+      student.id === studentId
+        ? {
+            ...student,
+            notes: [
+              ...(student.notes ?? []),
+              {
+                id: crypto.randomUUID(),
+                text,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          }
+        : student,
+    ),
+  }));
 }
 
 export function useStorageIssue() {

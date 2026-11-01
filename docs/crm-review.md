@@ -3,9 +3,9 @@
 ## Correzioni principali
 
 - Le viste e la configurazione corrente dell’elenco sopravvivono a navigazione e ricaricamento. I nomi sono univoci, con il nome della vista predefinita riservato.
-- Filtri tipizzati combinati in AND; campo vuoto distinto da zero e No. Ricerche nei soli campi attivi, compresi coach, tag e nome del tier.
+- Filtri tipizzati combinati in AND; campo vuoto distinto da zero e No. Ricerche nei soli campi attivi, compresi coach e nome del tier.
 - Colonne, ordinamento stabile e paginazione; selezioni mantenute tra pagine e azzerate al cambio dei filtri. Azioni massive validate prima di scrivere il payload.
-- Note e cronologia, revisione dei record, conferma di scarto dei form, controllo dei salvataggi basati su schede superate.
+- Commenti permanenti con autore e data, cronologia dettagliata, revisione dei record, conferma di scarto dei form, controllo dei salvataggi basati su schede superate.
 - Archiviazione senza cancellazione di dati. Gli archiviati non entrano nei conteggi Home; il ripristino richiede un tier disponibile.
 - Proprietà archiviate escluse da ricerca, filtri e colonne. La conferma spiega l’effetto sulle viste; i valori rimangono nelle schede e ricompaiono al ripristino della proprietà.
 - Validazione di date reali, opzioni univoche anche rispetto a spazi e maiuscole, email duplicate e riferimenti ai tier. Il caricamento controlla anche la coerenza del contenuto locale, senza sovrascrivere dati corrotti.

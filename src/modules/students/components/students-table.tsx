@@ -45,7 +45,6 @@ export function StudentsTable({
     joinedAt: "Aggiunto il",
     phone: "Telefono",
     coach: "Coach",
-    tags: "Tag",
   };
   const columns = (
     columnKeys ??
@@ -89,8 +88,6 @@ export function StudentsTable({
         );
       case "coach":
         return student.coach || "—";
-      case "tags":
-        return student.tags.join(", ") || "—";
       case "phone":
         return student.phone ? (
           <a

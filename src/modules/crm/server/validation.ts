@@ -93,33 +93,10 @@ export function validateStaffUpdate(
     })),
     students: proposed.students.map((s) => {
       const old = current.students.find((x) => x.id === s.id);
-      const notes = s.notes ?? [];
-      if (
-        (old?.notes ?? []).some(
-          (n) =>
-            !notes.some(
-              (x) => x.id === n.id && JSON.stringify(x) === JSON.stringify(n),
-            ),
-        )
-      )
-        throw new HttpError(
-          400,
-          "Le note esistenti non possono essere sovrascritte.",
-        );
       return {
         ...s,
         access: old?.access ?? null,
-        notes: notes.map((n) =>
-          (old?.notes ?? []).some((x) => x.id === n.id)
-            ? n
-            : {
-                id: crypto.randomUUID(),
-                text: n.text,
-                actorId: actor.id,
-                actorName: actor.name,
-                createdAt: new Date().toISOString(),
-              },
-        ),
+        notes: s.notes ?? old?.notes ?? [],
         revision: old?.revision ?? 0,
         history: old?.history ?? [],
       };

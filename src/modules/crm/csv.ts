@@ -24,7 +24,6 @@ export function studentsCsv(
     status: "Stato",
     joinedAt: "Aggiunto il",
     coach: "Coach",
-    tags: "Tag",
     phone: "Telefono",
   };
   const headers = [
@@ -33,7 +32,7 @@ export function studentsCsv(
     "Email",
     "Telefono",
     ...columns
-      .filter((c) => c !== "phone")
+      .filter((c) => c !== "phone" && c !== "tags")
       .map((c) =>
         c.startsWith("property:")
           ? (properties.find((p) => `property:${p.id}` === c)?.name ?? c)
@@ -51,7 +50,7 @@ export function studentsCsv(
     s.email,
     s.phone ?? "",
     ...columns
-      .filter((c) => c !== "phone")
+      .filter((c) => c !== "phone" && c !== "tags")
       .map((c) => {
         const p = properties.find((p) => `property:${p.id}` === c);
         if (p) return formatPropertyValue(p, s.properties?.[p.id]);
@@ -64,8 +63,6 @@ export function studentsCsv(
             return s.joinedAt;
           case "coach":
             return s.coach;
-          case "tags":
-            return s.tags.join(", ");
           default:
             return "";
         }

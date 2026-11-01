@@ -50,7 +50,6 @@ const baseColumns = [
   { id: "joinedAt", name: "Aggiunto il" },
   { id: "phone", name: "Telefono" },
   { id: "coach", name: "Coach" },
-  { id: "tags", name: "Tag" },
 ];
 export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   const state = useCrm();
@@ -245,7 +244,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           />
           <Input
             aria-label="Cerca studenti"
-            placeholder="Cerca nome, email, coach, tag, proprietà…"
+            placeholder="Cerca nome, email, coach, proprietà…"
             value={query}
             onChange={(e) => {
               const value = e.target.value;

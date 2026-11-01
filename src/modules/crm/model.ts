@@ -129,6 +129,7 @@ export interface CrmNote {
   createdAt: string;
 }
 export interface CrmActivity {
+  details?: string[];
   actorId?: string;
   actorName?: string;
   id: string;

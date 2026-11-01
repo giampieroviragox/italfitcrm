@@ -12,22 +12,22 @@ L’app usa `@supabase/ssr` e cookie per la sessione. Il Proxy aggiorna i token;
 
 Le migrazioni riproducibili sono in `supabase/migrations`. Le tabelle sono:
 
-| Tabella             | Contenuto                                                 |
-| ------------------- | --------------------------------------------------------- |
-| crm_access          | Collegamenti tra account, ruolo, scheda e stato accesso   |
-| crm_tiers           | Definizioni dei tier                                      |
-| crm_properties      | Definizioni dei campi, opzioni, gruppi e obbligatorietà   |
-| crm_students        | Anagrafica, stato, tier, coach, tag e revisione           |
-| crm_property_values | Valori delle proprietà per studente, collegati tramite ID |
-| crm_notes           | Note interne immutabili, datate e attribuite all’autore   |
-| crm_activities      | Cronologia generata dal server                            |
-| crm_admins          | Schede dei membri admin                                   |
-| crm_plans           | Programmi, sessioni ed esercizi                           |
-| crm_assignments     | Piano mensile e copia indipendente delle sessioni         |
-| crm_lessons         | Orari, durata, coach, sala e capienza                     |
-| crm_bookings        | Iscrizioni e annullamenti                                 |
-| crm_preferences     | Viste e configurazione della directory per account        |
-| crm_meta            | Revisione globale e ultimo aggiornamento                  |
+| Tabella             | Contenuto                                                   |
+| ------------------- | ----------------------------------------------------------- |
+| crm_access          | Collegamenti tra account, ruolo, scheda e stato accesso     |
+| crm_tiers           | Definizioni dei tier                                        |
+| crm_properties      | Definizioni dei campi, opzioni, gruppi e obbligatorietà     |
+| crm_students        | Anagrafica, stato, tier, coach e revisione                  |
+| crm_property_values | Valori delle proprietà per studente, collegati tramite ID   |
+| crm_notes           | Commenti interni immutabili, datati e attribuiti all’autore |
+| crm_activities      | Cronologia generata dal server                              |
+| crm_admins          | Schede dei membri admin                                     |
+| crm_plans           | Programmi, sessioni ed esercizi                             |
+| crm_assignments     | Piano mensile e copia indipendente delle sessioni           |
+| crm_lessons         | Orari, durata, coach, sala e capienza                       |
+| crm_bookings        | Iscrizioni e annullamenti                                   |
+| crm_preferences     | Viste e configurazione della directory per account          |
+| crm_meta            | Revisione globale e ultimo aggiornamento                    |
 
 Le colonne relazionali e le chiavi esterne collegano studenti, tier, proprietà, piani e lezioni. Vincoli univoci impediscono email duplicate, più assegnazioni per studente/mese e più iscrizioni per studente/lezione. I payload JSONB conservano i dettagli flessibili del dominio; proprietà, note e attività sono righe distinte. I tipi sono generati dal database in `src/lib/supabase/database.types.ts`.
 
@@ -45,7 +45,7 @@ Le prenotazioni degli studenti accettano solo ID lezione e intenzione di prenota
 
 RLS è attiva su ogni tabella applicativa. Gli autenticati possono leggere solo il proprio collegamento di accesso e le proprie preferenze; le tabelle private sono leggibili direttamente soltanto dallo staff attivo. Gli studenti non possono leggere quelle righe. INSERT, UPDATE, DELETE e le RPC di persistenza non sono concessi ad anon/authenticated: le mutazioni attraversano il server con autorizzazione esplicita.
 
-Note e cronologia non sono riscrivibili dal payload client. L’email di un account collegato non si cambia dalla scheda, perché deve restare allineata all’identità Auth. I ruoli owner/admin e gli stati di accesso vengono gestiti dal server.
+Commenti e cronologia non sono riscrivibili dal payload client. L’email di un account collegato non si cambia dalla scheda, perché deve restare allineata all’identità Auth. I ruoli owner/admin e gli stati di accesso vengono gestiti dal server.
 
 ## Inviti e password
 
@@ -68,3 +68,7 @@ L’adapter remoto serializza anche le riletture, deduplica gli aggiornamenti si
 `GET /api/prenotazioni` verifica la sessione e restituisce esclusivamente la proiezione del proprio studente. Aggiornare i posti non ricrea il selettore del mese. La prenotazione restituisce la proiezione aggiornata e l’interfaccia annuncia l’esito. L’annullamento richiede conferma.
 
 Il callback Auth risponde con Location relativa, `no-store` e `no-referrer`: il browser conserva l’origine su cui è stato verificato il link, anche dietro un proxy locale.
+
+La cronologia conserva i valori precedenti e nuovi, le assegnazioni dei piani con la prescrizione degli esercizi e le modifiche alle lezioni degli iscritti. Include prenotazioni e annullamenti fatti dagli studenti, con autore ricavato dalla sessione. I commenti precedenti restano leggibili; se manca l’autore storico la UI lo segnala senza inventarlo.
+
+La migrazione `20261101113825_italfit_comment_history.sql` registra preparazione e rigenerazione degli inviti e attivazione dell’accesso nella stessa transazione della modifica, usando il lock su `crm_meta`. Applicarla prima di distribuire il codice che chiama `crm_accept_access`; la funzione è riservata a `service_role`, viene chiamata dopo la verifica della sessione SSR e non registra due volte la stessa attivazione.

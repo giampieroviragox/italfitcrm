@@ -1,6 +1,7 @@
 import type { CrmState } from "./model.ts";
 import { isCrmEnvelope, type CrmEnvelope } from "./envelope.ts";
 import { assertCrmTransition } from "./logic.ts";
+import { mutationState } from "./mutation.ts";
 import { requestJson, RequestError } from "../../lib/request-json.ts";
 
 export interface Viewer {
@@ -20,6 +21,7 @@ export interface RemoteStore {
   subscribe: (fn: () => void) => () => void;
   update: (fn: (state: CrmState) => CrmState) => Promise<void>;
   refresh: () => Promise<void>;
+  comment: (studentId: string, text: string) => Promise<void>;
   pending: () => boolean;
   error: () => string;
   status: () => SyncStatus;
@@ -69,6 +71,66 @@ export function createRemoteStore(
     envelope = data;
     patchStatus({ error: "", authRequired: false, requiresRefresh: false });
   };
+  const send = async (url: string, body: unknown) => {
+    let data;
+    try {
+      data = await requestJson(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        fetcher,
+      );
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 409) {
+        try {
+          await read();
+        } catch {
+          patchStatus({ requiresRefresh: true });
+        }
+      } else if (
+        !(e instanceof RequestError) ||
+        e.status === 0 ||
+        e.status >= 500 ||
+        e.status < 300
+      ) {
+        patchStatus({ requiresRefresh: true });
+      }
+      throw e;
+    }
+    if (!isCrmEnvelope(data) || data.revision < envelope.revision) {
+      patchStatus({ requiresRefresh: true });
+      throw new Error(
+        "Esito del salvataggio non verificato. Aggiorna i dati prima di riprovare.",
+      );
+    }
+    envelope = data;
+    patchStatus({ error: "", authRequired: false });
+  };
+  const write = (operation: () => Promise<void>) => {
+    pending++;
+    emit();
+    return enqueue(async () => {
+      try {
+        if (!status.online)
+          throw new Error(
+            "Sei offline. Le modifiche restano nel form: riconnettiti prima di salvare.",
+          );
+        if (status.requiresRefresh)
+          throw new Error(
+            "Aggiorna i dati per verificare l’ultimo salvataggio prima di riprovare.",
+          );
+        await operation();
+      } catch (e) {
+        throw fail(e);
+      } finally {
+        pending--;
+        emit();
+      }
+    });
+  };
   const remote: RemoteStore = {
     viewer,
     snapshot: () => envelope.state,
@@ -97,69 +159,17 @@ export function createRemoteStore(
       });
       return reading;
     },
-    update: (fn) => {
-      pending++;
-      emit();
-      return enqueue(async () => {
-        try {
-          if (!status.online)
-            throw new Error(
-              "Sei offline. Le modifiche restano nel form: riconnettiti prima di salvare.",
-            );
-          if (status.requiresRefresh)
-            throw new Error(
-              "Aggiorna i dati per verificare l’ultimo salvataggio prima di riprovare.",
-            );
-          const proposed = fn(envelope.state);
-          assertCrmTransition(envelope.state, proposed);
-          let data;
-          try {
-            data = await requestJson(
-              "/api/crm",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  revision: envelope.revision,
-                  state: proposed,
-                }),
-              },
-              fetcher,
-            );
-          } catch (e) {
-            if (e instanceof RequestError && e.status === 409) {
-              // Read directly inside the queue; enqueueing here would deadlock.
-              try {
-                await read();
-              } catch {
-                patchStatus({ requiresRefresh: true });
-              }
-            } else if (
-              !(e instanceof RequestError) ||
-              e.status === 0 ||
-              e.status >= 500 ||
-              e.status < 300
-            ) {
-              patchStatus({ requiresRefresh: true });
-            }
-            throw e;
-          }
-          if (!isCrmEnvelope(data) || data.revision < envelope.revision) {
-            patchStatus({ requiresRefresh: true });
-            throw new Error(
-              "Esito del salvataggio non verificato. Aggiorna i dati prima di riprovare.",
-            );
-          }
-          envelope = data;
-          patchStatus({ error: "", authRequired: false });
-        } catch (e) {
-          throw fail(e);
-        } finally {
-          pending--;
-          emit();
-        }
-      });
-    },
+    update: (fn) =>
+      write(() => {
+        const proposed = fn(envelope.state);
+        assertCrmTransition(envelope.state, proposed);
+        return send("/api/crm", {
+          revision: envelope.revision,
+          state: mutationState(envelope.state, proposed),
+        });
+      }),
+    comment: (studentId, text) =>
+      write(() => send("/api/commenti", { studentId, text })),
   };
   return remote;
 }

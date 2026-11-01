@@ -30,10 +30,8 @@ export async function requireAccess(staff = false) {
     throw new HttpError(403, "Accesso riservato agli amministratori.");
   if (!access.accepted_at) {
     const { error: acceptError } = await createAdminClient()
-      .from("crm_access")
-      .update({ accepted_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .is("accepted_at", null);
+      .rpc("crm_accept_access", { p_actor: user.id })
+      .retry(false);
     if (acceptError)
       throw new HttpError(503, "Impossibile verificare l’account.");
   }

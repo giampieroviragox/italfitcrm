@@ -112,7 +112,6 @@ export function isCrmState(v: unknown): v is CrmState {
         ].every((k) => typeof s[k] === "string") &&
         ["active", "invited", "paused"].includes(String(s.status)) &&
         (s.phone === undefined || typeof s.phone === "string") &&
-        strings(s.tags) &&
         (s.archived === undefined || typeof s.archived === "boolean") &&
         (s.revision === undefined ||
           (Number.isSafeInteger(s.revision) && Number(s.revision) >= 0)) &&
@@ -125,6 +124,10 @@ export function isCrmState(v: unknown): v is CrmState {
                   isObject(n) &&
                   typeof n.id === "string" &&
                   typeof n.text === "string" &&
+                  (n.actorId === undefined || typeof n.actorId === "string") &&
+                  (n.actorName === undefined ||
+                    typeof n.actorName === "string") &&
+                  (n.details === undefined || strings(n.details)) &&
                   typeof n.createdAt === "string" &&
                   Number.isFinite(Date.parse(n.createdAt)),
               )),

@@ -343,6 +343,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      crm_accept_access: { Args: { p_actor: string }; Returns: undefined };
       crm_link_access: {
         Args: {
           p_actor: string;
