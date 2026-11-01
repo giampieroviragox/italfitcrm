@@ -147,12 +147,12 @@ export function AvailabilityEditor({
           />
         </Field>
         <div
-          className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"
+          className="flex items-start gap-3 border-t border-b bg-[#f7f9f7] px-1 py-4 text-[#294532]"
           aria-live="polite"
         >
-          <Clock3 className="mt-0.5 size-5 shrink-0" />
+          <Clock3 className="mt-0.5 size-4 shrink-0" />
           <div>
-            <p className="text-sm font-semibold">
+            <p className="text-sm font-medium">
               {period
                 ? `${availabilitySlotCount(period)} slot da ${durationLabel(slotDurationMinutes(period))}`
                 : "Controlla fascia e numero di slot"}

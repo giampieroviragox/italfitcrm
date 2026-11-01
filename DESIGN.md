@@ -74,3 +74,7 @@ Sistema neutro applicato a shell, navigazione, titoli, pulsanti, form e pannelli
 Verifica completa in [docs/verification.md](docs/verification.md), con screenshot desktop e risultati dei controlli. L’analisi di ElevenLabs resta limitata alle superfici effettivamente osservate, come dichiarato sopra.
 
 La revisione successiva ha sostituito tutti i select, le checkbox e le scelte radio native con controlli Radix personalizzati. Focus, tastiera, validazione e protezione dalle modifiche non salvate sono condivisi; i menu vengono riposizionati entro il viewport anche su mobile.
+
+## Calendario: ritmo e densità
+
+La revisione del 1 novembre 2026 usa una superficie unica con raggio di 12px, toolbar compatta, intestazioni da 64px e un asse orario comune. Le fasce sono blocchi pieni con bordo laterale, testo allineato in alto e contrasto conservato anche nel passato. Evitare ombre, card sovrapposte, divisori decorativi dentro gli eventi e barre flottanti sempre visibili. Il salvataggio appare nel bordo inferiore quando ci sono modifiche. Su mobile: giorno selezionabile, controlli tattili e nessuno scorrimento orizzontale della pagina. Il calendario studenti condivide colori, intestazioni e spaziature; gli stati vuoti sono discreti e le prenotazioni confermate hanno un indicatore laterale.

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
+import styles from "./calendar-styles";
 import {
-  CalendarDays,
   Check,
   Clock3,
   MapPin,
@@ -95,13 +95,13 @@ export function StudentCalendar({
     }
   };
   return (
-    <section aria-label="Calendario studente" className="space-y-5">
+    <section aria-label="Calendario studente" className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">
+          <h2 className="text-lg font-semibold tracking-tight">
             Il tuo calendario
           </h2>
-          <p className="mt-1.5 max-w-xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-1 max-w-xl text-[13px] leading-5 text-muted-foreground">
             {data.services.lessons
               ? "Scegli il giorno e prenota il tuo prossimo allenamento."
               : "Consulta e gestisci le prenotazioni già confermate."}
@@ -125,17 +125,16 @@ export function StudentCalendar({
         <button
           type="button"
           onClick={() => setSelectedId(nextLesson.id)}
-          className="flex w-full items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left text-emerald-950 transition-colors hover:bg-emerald-100 sm:p-5"
+          className={styles.nextLesson}
         >
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white">
-            <CalendarDays className="size-5" />
-          </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-medium uppercase tracking-wider text-emerald-800">
+            <span className="block text-[11px] text-[#617569]">
               Il prossimo allenamento
             </span>
-            <span className="mt-1 block font-semibold">{nextLesson.title}</span>
-            <span className="mt-1 block text-xs leading-5">
+            <span className="mt-0.5 block text-sm font-medium">
+              {nextLesson.title}
+            </span>
+            <span className="mt-0.5 block text-xs leading-5">
               {dateLabel(romeLocal(nextLesson.startsAt).slice(0, 10), {
                 weekday: "long",
                 day: "numeric",
@@ -148,24 +147,21 @@ export function StudentCalendar({
         </button>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="grid w-full grid-cols-2 rounded-xl bg-muted p-1 sm:inline-flex sm:w-auto"
-          aria-label="Filtra calendario"
-        >
+        <div className={styles.filters} aria-label="Filtra calendario">
           <Button
             size="sm"
-            variant={!onlyMine ? "outline" : "ghost"}
+            variant="ghost"
             aria-pressed={!onlyMine}
-            className={!onlyMine ? "bg-white shadow-xs" : ""}
+            className={styles.filter}
             onClick={() => setOnlyMine(false)}
           >
             Tutti gli orari
           </Button>
           <Button
             size="sm"
-            variant={onlyMine ? "outline" : "ghost"}
+            variant="ghost"
             aria-pressed={onlyMine}
-            className={onlyMine ? "bg-white shadow-xs" : ""}
+            className={styles.filter}
             onClick={() => setOnlyMine(true)}
           >
             <span className="sm:hidden">Le mie · {mine.length}</span>
@@ -181,14 +177,14 @@ export function StudentCalendar({
           </p>
         )}
       </div>
-      <div className="overflow-hidden rounded-2xl border bg-white shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 sm:px-5">
+      <div className={styles.surface}>
+        <div className={styles.toolbar}>
           <WeekNavigation week={week} onChange={setWeek} />
           <span className="text-[11px] text-muted-foreground">
             Orari di Roma
           </span>
         </div>
-        <div className="grid grid-cols-7 border-b bg-muted/20">
+        <div className={styles.studentHeader}>
           {days.map((day) => {
             const count = filtered.filter((lesson) =>
               romeLocal(lesson.startsAt).startsWith(day),
@@ -204,25 +200,25 @@ export function StudentCalendar({
                 })}
                 aria-pressed={day === activeDay}
                 onClick={() => setSelectedDay(day)}
-                className={`flex min-h-24 flex-col items-center gap-1.5 border-r py-3 text-xs last:border-r-0 ${day === activeDay ? "bg-muted/70 md:bg-transparent" : "hover:bg-muted/50"}`}
+                className={`${styles.day} ${styles.studentDay}`}
               >
                 <span className="capitalize text-muted-foreground">
                   {dateLabel(day, { weekday: "short" })}
                 </span>
                 <span
-                  className={`flex size-8 items-center justify-center rounded-full text-base font-semibold ${day === todayRome() ? "bg-foreground text-white" : ""}`}
+                  className={`${styles.dayNumber} ${day === todayRome() ? styles.today : ""}`}
                 >
                   {dateLabel(day, { day: "numeric" })}
                 </span>
                 <span
-                  className={`size-1 rounded-full ${count ? "bg-emerald-600" : "bg-transparent"}`}
+                  className={`size-1 rounded-full ${count ? "bg-[#44765c]" : "bg-transparent"}`}
                   aria-label={`${count} lezioni`}
                 />
               </button>
             );
           })}
         </div>
-        <div className="grid md:min-h-80 md:grid-cols-7">
+        <div className={styles.studentColumns}>
           {days.map((day) => {
             const lessons = filtered.filter((lesson) =>
               romeLocal(lesson.startsAt).startsWith(day),
@@ -230,9 +226,10 @@ export function StudentCalendar({
             return (
               <div
                 key={day}
-                className={`min-w-0 space-y-2 p-3 md:border-r md:p-2 md:last:border-r-0 ${day === activeDay ? "" : "hidden md:block"}`}
+                className={styles.studentColumn}
+                data-hidden={day !== activeDay}
               >
-                <h3 className="px-1 py-2 text-sm font-medium capitalize md:sr-only">
+                <h3 className="mb-3 text-xs font-medium capitalize text-[#67736a] md:sr-only">
                   {dateLabel(day, {
                     weekday: "long",
                     day: "numeric",
@@ -245,34 +242,39 @@ export function StudentCalendar({
                     key={lesson.id}
                     onClick={() => setSelectedId(lesson.id)}
                     aria-label={`${lesson.title}, ${timeLabel(lesson.startsAt)}, ${status(lesson)}`}
-                    className={`flex w-full items-start gap-4 rounded-xl border p-4 text-left transition-colors hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 md:block md:p-3 ${lesson.enrolled && !lesson.cancelled ? "border-emerald-200 bg-emerald-50" : lesson.cancelled ? "bg-muted/50 text-muted-foreground" : "bg-white"}`}
+                    className={styles.studentSlot}
+                    data-enrolled={lesson.enrolled && !lesson.cancelled}
+                    data-cancelled={lesson.cancelled}
                   >
-                    <span className="block shrink-0 text-lg font-semibold tabular-nums md:text-sm">
+                    <span className={styles.slotTime}>
                       {timeLabel(lesson.startsAt)}
-                      <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                      <span className={styles.slotDuration}>
                         {lesson.durationMinutes} min
                       </span>
                     </span>
-                    <span className="block min-w-0 flex-1 md:mt-3">
-                      <span className="block text-sm font-medium break-words md:text-xs">
-                        {lesson.title}
-                      </span>
-                      <span className="mt-1.5 block text-xs text-muted-foreground md:text-[11px]">
-                        {lesson.coach}
-                      </span>
-                      <span
-                        className={`mt-3 inline-block rounded-md px-1.5 py-1 text-[10px] font-medium ${lesson.enrolled ? "bg-emerald-100 text-emerald-900" : lesson.occupied >= lesson.capacity || lesson.cancelled ? "bg-muted text-muted-foreground" : "bg-emerald-50 text-emerald-800"}`}
-                      >
+                    <span className="block min-w-0 flex-1">
+                      <span className={styles.slotTitle}>{lesson.title}</span>
+                      <span className={styles.slotCoach}>{lesson.coach}</span>
+                      <span className={styles.slotStatus}>
                         {status(lesson)}
                       </span>
                     </span>
                   </button>
                 ))}
                 {!lessons.length && (
-                  <div className="flex min-h-40 flex-col items-center justify-center gap-2 p-4 text-center md:min-h-32 md:px-1">
-                    <CalendarDays className="size-5 text-muted-foreground/50 md:hidden" />
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      {onlyMine ? "Nessuna prenotazione" : "Nessuna lezione"}
+                  <div className={styles.emptyDay}>
+                    <span
+                      className="hidden md:inline"
+                      aria-label={
+                        onlyMine ? "Nessuna prenotazione" : "Nessuna lezione"
+                      }
+                    >
+                      —
+                    </span>
+                    <p className="md:hidden">
+                      {onlyMine
+                        ? "Nessuna prenotazione per questo giorno."
+                        : "Nessuna lezione per questo giorno."}
                     </p>
                   </div>
                 )}
@@ -302,13 +304,15 @@ export function StudentCalendar({
         >
           <SheetContent
             side="center"
-            className="w-[calc(100%-24px)] max-w-md gap-0 overflow-hidden rounded-2xl p-0"
+            className="w-[calc(100%-32px)] max-w-md gap-0 overflow-hidden rounded-xl p-0"
           >
-            <SheetHeader className="border-b px-6 pt-7 pb-5">
-              <p className="mb-2 text-xs font-medium text-emerald-800">
+            <SheetHeader className="gap-2 border-b px-6 pt-6 pb-5">
+              <p className="text-[11px] font-medium text-[#426a4e]">
                 {status(selected)}
               </p>
-              <SheetTitle className="pr-6 text-xl">{selected.title}</SheetTitle>
+              <SheetTitle className="pr-6 text-lg leading-6">
+                {selected.title}
+              </SheetTitle>
               <SheetDescription className="capitalize">
                 {dateLabel(romeLocal(selected.startsAt).slice(0, 10), {
                   weekday: "long",
@@ -317,8 +321,8 @@ export function StudentCalendar({
                 })}
               </SheetDescription>
             </SheetHeader>
-            <div className="space-y-4 p-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6 p-6">
+              <div className="grid grid-cols-2 gap-x-5 gap-y-6">
                 {[
                   {
                     icon: Clock3,

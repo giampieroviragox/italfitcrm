@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import styles from "./calendar-styles";
 import { addDays, romeLocal, romeToIso, todayRome } from "./fitness-logic";
 import {
   availabilitySlotCount,
@@ -23,7 +24,7 @@ export const calendarDayLabel = (
     timeZone: "Europe/Rome",
     ...options,
   }).format(new Date(day + "T12:00:00Z"));
-const rowHeight = 28;
+const rowHeight = 32;
 const minutesAt = (iso: string) => {
   const local = romeLocal(iso).slice(11);
   return Number(local.slice(0, 2)) * 60 + Number(local.slice(3));
@@ -90,11 +91,13 @@ export function AvailabilityGrid({
     <div
       ref={scroll}
       data-calendar-scroll
-      className="relative isolate max-h-[min(680px,70dvh)] min-h-80 overflow-auto overscroll-contain rounded-b-2xl bg-white"
+      className={styles.scroll}
       aria-label="Calendario disponibilità, tutte le 24 ore"
       tabIndex={0}
     >
-      <div className="sticky top-0 z-30 grid grid-cols-7 border-b bg-white/95 backdrop-blur-md md:grid-cols-[52px_repeat(7,minmax(0,1fr))]">
+      <div
+        className={`${styles.dayHeader} grid grid-cols-7 md:grid-cols-[64px_repeat(7,minmax(0,1fr))]`}
+      >
         <div className="hidden items-center justify-center text-[10px] text-muted-foreground md:flex">
           Roma
         </div>
@@ -109,13 +112,13 @@ export function AvailabilityGrid({
               month: "long",
             })}
             aria-pressed={index === selectedDay}
-            className={`flex min-h-19 flex-col items-center justify-center gap-1 border-l px-1 py-3 text-xs transition-colors hover:bg-muted/60 ${index === selectedDay ? "bg-muted/60 md:bg-transparent" : ""}`}
+            className={styles.day}
           >
             <span className="capitalize text-muted-foreground">
               {calendarDayLabel(day, { weekday: "short" })}
             </span>
             <span
-              className={`flex size-8 items-center justify-center rounded-full text-base font-semibold ${day === todayRome() ? "bg-foreground text-white" : ""}`}
+              className={`${styles.dayNumber} ${day === todayRome() ? styles.today : ""}`}
             >
               {calendarDayLabel(day, { day: "numeric" })}
             </span>
@@ -123,7 +126,9 @@ export function AvailabilityGrid({
         ))}
       </div>
       {lessons.length > 0 && (
-        <div className="grid grid-cols-[52px_minmax(0,1fr)] border-b bg-muted/15 md:grid-cols-[52px_repeat(7,minmax(0,1fr))]">
+        <div
+          className={`${styles.lessons} grid grid-cols-[64px_minmax(0,1fr)] md:grid-cols-[64px_repeat(7,minmax(0,1fr))]`}
+        >
           <p className="px-1 py-3 text-[10px] text-muted-foreground">Lezioni</p>
           {days.map((day, index) => (
             <div
@@ -136,12 +141,12 @@ export function AvailabilityGrid({
                   <Link
                     key={lesson.id}
                     href={`/admin/lezioni/${encodeURIComponent(lesson.id)}`}
-                    className={`block rounded-lg border bg-white px-2 py-2 text-xs hover:bg-muted ${lesson.cancelled ? "text-red-700" : ""}`}
+                    className={`${styles.lessonLink} ${lesson.cancelled ? "line-through" : ""}`}
                   >
                     <span className="block font-medium break-words">
                       {lesson.title}
                     </span>
-                    <span className="mt-1 block text-[11px] text-muted-foreground">
+                    <span className="mt-0.5 block text-[10px] opacity-80">
                       {romeLocal(lesson.startsAt).slice(11)} ·{" "}
                       {lesson.cancelled
                         ? "Annullata"
@@ -153,15 +158,15 @@ export function AvailabilityGrid({
           ))}
         </div>
       )}
-      <div className="grid grid-cols-[52px_minmax(0,1fr)] md:grid-cols-[52px_repeat(7,minmax(0,1fr))]">
-        <div className="relative bg-white" aria-hidden="true">
+      <div className="grid grid-cols-[64px_minmax(0,1fr)] md:grid-cols-[64px_repeat(7,minmax(0,1fr))]">
+        <div className={styles.axis} aria-hidden="true">
           {Array.from({ length: 24 }, (_, hour) => (
             <div
               key={hour}
               style={{ height: rowHeight * 2 }}
-              className="pr-2 pt-1 text-right text-[10px] tabular-nums text-muted-foreground"
+              className={styles.hour}
             >
-              {clockLabel(hour * 60)}
+              <span>{clockLabel(hour * 60)}</span>
             </div>
           ))}
           <span className="absolute right-2 bottom-0 text-[10px] text-muted-foreground">
@@ -177,7 +182,7 @@ export function AvailabilityGrid({
           return (
             <div
               key={day}
-              className={`relative border-l ${dayIndex !== selectedDay ? "hidden md:block" : ""}`}
+              className={`${styles.column} ${dayIndex !== selectedDay ? "hidden md:block" : ""}`}
             >
               {Array.from({ length: 48 }, (_, index) => {
                 const at = safeTime(day, index * 30);
@@ -214,7 +219,9 @@ export function AvailabilityGrid({
                         });
                     }}
                     style={{ height: rowHeight }}
-                    className={`block w-full border-t outline-none focus-visible:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-inset ${index % 2 ? "border-dashed border-border/50" : "border-border/80"} ${selected ? "bg-emerald-100" : past ? "bg-muted/35" : "hover:bg-emerald-50"}`}
+                    className={styles.cell}
+                    data-half={index % 2 === 1}
+                    data-selected={selected}
                   />
                 );
               })}
@@ -237,22 +244,19 @@ export function AvailabilityGrid({
                     style={{
                       top: (from / 30) * rowHeight,
                       height: ((to - from) / 30) * rowHeight,
-                      backgroundSize: `100% ${(duration / 30) * rowHeight}px`,
-                      backgroundImage:
-                        "linear-gradient(to bottom, transparent calc(100% - 1px), #a7d5c0 calc(100% - 1px))",
                     }}
-                    className="absolute right-1 left-1 overflow-hidden rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-left text-emerald-950 shadow-xs transition-colors hover:bg-emerald-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50"
+                    className={`${styles.event} ${to - from < 60 ? styles.compactEvent : ""}`}
                   >
                     {to - from >= 30 && (
-                      <>
-                        <span className="block text-[11px] font-semibold tabular-nums">
-                          {clockLabel(from)}–{clockLabel(to)}
-                        </span>
-                        <span className="mt-0.5 block text-[10px] leading-4">
-                          {availabilitySlotCount(slot)} slot ·{" "}
-                          {durationLabel(duration)}
-                        </span>
-                      </>
+                      <span className={styles.eventTime}>
+                        {clockLabel(from)}–{clockLabel(to)}
+                      </span>
+                    )}
+                    {to - from >= 60 && (
+                      <span className={styles.eventDetail}>
+                        {availabilitySlotCount(slot)} slot ·{" "}
+                        {durationLabel(duration)}
+                      </span>
                     )}
                   </button>
                 );
@@ -260,13 +264,13 @@ export function AvailabilityGrid({
               {day === romeLocal(new Date(now).toISOString()).slice(0, 10) && (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute right-0 left-0 z-10 border-t border-rose-400"
+                  className={styles.now}
                   style={{
                     top:
                       (minutesAt(new Date(now).toISOString()) / 30) * rowHeight,
                   }}
                 >
-                  <span className="absolute -top-1 -left-1 size-2 rounded-full bg-rose-400" />
+                  <span />
                 </div>
               )}
             </div>

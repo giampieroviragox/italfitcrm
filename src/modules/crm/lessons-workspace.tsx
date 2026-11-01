@@ -180,16 +180,25 @@ export function LessonsWorkspace() {
   const [editing, setEditing] = useState(false);
   return (
     <>
-      <PageHeading
-        title="Calendario"
-        description="Imposta le tue disponibilità e organizza le lezioni in sede."
-        action={
-          <Button onClick={() => setEditing(true)}>
-            <Plus className="size-4" />
-            Aggiungi lezione
-          </Button>
-        }
-      />
+      <header className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
+        <div>
+          <h1 className="text-2xl leading-8 font-semibold tracking-tight">
+            Calendario
+          </h1>
+          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
+            Disponibilità, lezioni e prenotazioni in sede.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-md"
+          onClick={() => setEditing(true)}
+        >
+          <Plus className="size-3.5" />
+          Aggiungi lezione
+        </Button>
+      </header>
       <LocalNotice />
       <AvailabilityCalendar />
       {editing && <LessonEditor close={() => setEditing(false)} />}

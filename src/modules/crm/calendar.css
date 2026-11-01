@@ -1,0 +1,454 @@
+/* Calendar surfaces use a tighter rhythm than the surrounding workspace. */
+.crm-cal-surface {
+  --calendar-ink: #203b31;
+  --calendar-accent: #44765c;
+  --calendar-line: #e6e9e7;
+  --calendar-fill: #edf4ef;
+  overflow: hidden;
+  border: 1px solid var(--calendar-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.crm-cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  min-height: 64px;
+  padding: 12px 16px;
+}
+.crm-cal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  min-height: 44px;
+  border-top: 1px solid var(--calendar-line);
+  padding: 4px 16px;
+  color: #69716d;
+  font-size: 12px;
+}
+.crm-cal-scroll {
+  position: relative;
+  isolation: isolate;
+  height: clamp(360px, calc(100dvh - 360px), 720px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c7cdca transparent;
+  background: #fff;
+}
+.crm-cal-day-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--calendar-line);
+  background: #fff;
+}
+.crm-cal-day {
+  display: flex;
+  min-width: 0;
+  min-height: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-left: 1px solid var(--calendar-line);
+  padding: 8px 4px;
+  color: #656e69;
+  font-size: 11px;
+  line-height: 16px;
+}
+.crm-cal-day:hover {
+  background: #f7f9f7;
+}
+.crm-cal-day-number {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #242d28;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.crm-cal-today {
+  background: #253d31;
+  color: #fff;
+}
+.crm-cal-axis {
+  position: relative;
+  color: #737b76;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.crm-cal-hour {
+  position: relative;
+}
+.crm-cal-hour span {
+  position: absolute;
+  top: 4px;
+  right: 10px;
+  line-height: 14px;
+}
+.crm-cal-column {
+  position: relative;
+  border-left: 1px solid var(--calendar-line);
+}
+.crm-cal-cell {
+  display: block;
+  width: 100%;
+  border-top: 1px solid #e7eae8;
+  padding: 0;
+  background: #fff;
+}
+.crm-cal-cell[data-half="true"] {
+  border-top-color: #f0f2f1;
+}
+.crm-cal-cell:disabled {
+  background: #fafbfa;
+}
+.crm-cal-cell:not(:disabled):hover {
+  background: #f0f5f1;
+}
+.crm-cal-cell[data-selected="true"] {
+  background: #dcebe0;
+}
+.crm-cal-cell:focus-visible {
+  outline: 2px solid #44765c;
+  outline-offset: -2px;
+}
+.crm-cal-event {
+  position: absolute;
+  right: 4px;
+  left: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 3px;
+  overflow: hidden;
+  border: 1px solid #d4e2d7;
+  border-left: 3px solid var(--calendar-accent);
+  border-radius: 4px;
+  padding: 7px 8px;
+  background: var(--calendar-fill);
+  color: var(--calendar-ink);
+  text-align: left;
+  line-height: 16px;
+  transition: background 120ms;
+}
+.crm-cal-event:not(:disabled):hover {
+  border-color: #a6c1ad;
+  background: #e4efe7;
+}
+.crm-cal-event:disabled {
+  border-color: #dce3de;
+  border-left-color: #93a59a;
+  background: #f0f3f0;
+  color: #4b5b50;
+}
+.crm-cal-event:focus-visible {
+  outline: 2px solid #264c37;
+  outline-offset: 1px;
+}
+.crm-cal-event-time {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.crm-cal-event-detail {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  color: #506857;
+  white-space: nowrap;
+}
+.crm-cal-compact-event {
+  padding-block: 4px;
+}
+.crm-cal-now {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 10;
+  border-top: 1px solid #bf6961;
+  pointer-events: none;
+}
+.crm-cal-now span {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #bf6961;
+}
+.crm-cal-footer {
+  display: flex;
+  min-height: 48px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  border-top: 1px solid var(--calendar-line);
+  padding: 8px 16px;
+  background: #fff;
+  color: #6a726d;
+  font-size: 12px;
+  line-height: 18px;
+}
+.crm-cal-footer[data-dirty="true"] {
+  min-height: 60px;
+  background: #fafbf9;
+  color: #353f37;
+}
+.crm-cal-lessons {
+  border-bottom: 1px solid var(--calendar-line);
+  background: #fafbfa;
+}
+.crm-cal-lesson-link {
+  display: block;
+  border-left: 2px solid #8e9fb0;
+  border-radius: 3px;
+  padding: 5px 7px;
+  background: #edf0f3;
+  color: #36495b;
+  font-size: 11px;
+  line-height: 16px;
+}
+.crm-cal-lesson-link:hover {
+  background: #e3e9ee;
+}
+.crm-cal-student-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--calendar-line);
+}
+.crm-cal-student-day {
+  position: relative;
+  border-left: 0;
+  border-right: 1px solid var(--calendar-line);
+}
+.crm-cal-student-day > span:last-child {
+  position: absolute;
+  bottom: 4px;
+}
+.crm-cal-student-day:last-child {
+  border-right: 0;
+}
+.crm-cal-student-columns {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 300px;
+}
+.crm-cal-student-column {
+  min-width: 0;
+  border-right: 1px solid var(--calendar-line);
+  padding: 8px;
+}
+.crm-cal-student-column:last-child {
+  border-right: 0;
+}
+.crm-cal-student-slot {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  border: 1px solid #e3e8e4;
+  border-radius: 5px;
+  padding: 10px;
+  background: #fff;
+  text-align: left;
+  transition:
+    border-color 120ms,
+    background 120ms;
+}
+.crm-cal-student-slot:hover {
+  border-color: #99b5a2;
+  background: #f7faf7;
+}
+.crm-cal-student-slot[data-enrolled="true"] {
+  border-color: #c5d9cb;
+  border-left: 3px solid #44765c;
+  background: #edf4ef;
+  padding-left: 8px;
+}
+.crm-cal-student-slot[data-cancelled="true"] {
+  background: #f6f7f6;
+  color: #777d79;
+}
+.crm-cal-slot-time {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.crm-cal-slot-duration {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 400;
+  color: #727b75;
+}
+.crm-cal-slot-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+  overflow-wrap: anywhere;
+}
+.crm-cal-slot-coach {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #737b76;
+  line-height: 16px;
+}
+.crm-cal-slot-status {
+  display: block;
+  margin-top: 8px;
+  color: #426a4e;
+  font-size: 10px;
+  line-height: 15px;
+}
+.crm-cal-empty-day {
+  padding: 28px 0;
+  text-align: center;
+  color: #9aa19c;
+  font-size: 12px;
+}
+.crm-cal-next-lesson {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-left: 3px solid #44765c;
+  padding: 12px 16px;
+  background: #f2f6f2;
+  text-align: left;
+  color: #294532;
+}
+.crm-cal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #e6e9e7;
+}
+.crm-cal-filter {
+  position: relative;
+  min-height: 44px;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 12px;
+  background: transparent;
+  color: #727a75;
+  font-size: 13px;
+  font-weight: 500;
+}
+.crm-cal-filter[aria-pressed="true"] {
+  color: #273c2e;
+}
+.crm-cal-filter[aria-pressed="true"]::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  background: #3e644c;
+  content: "";
+}
+@media (max-width: 767px) {
+  .crm-cal-scroll {
+    height: clamp(360px, calc(100dvh - 340px), 620px);
+  }
+  .crm-cal-day {
+    min-height: 64px;
+    border-left: 0;
+  }
+  .crm-cal-day[aria-pressed="true"] {
+    background: #f1f5f1;
+    box-shadow: inset 0 -2px #44765c;
+  }
+  .crm-cal-student-columns {
+    display: block;
+    min-height: 200px;
+  }
+  .crm-cal-student-column {
+    border-right: 0;
+    padding: 12px;
+  }
+  .crm-cal-student-slot {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .crm-cal-student-slot[data-enrolled="true"] {
+    padding-left: 12px;
+  }
+  .crm-cal-slot-time {
+    min-width: 60px;
+    padding-top: 1px;
+    font-size: 16px;
+  }
+  .crm-cal-slot-duration {
+    display: block;
+    margin-top: 3px;
+    margin-left: 0;
+    font-size: 11px;
+  }
+  .crm-cal-slot-title {
+    font-size: 13px;
+    line-height: 19px;
+  }
+  .crm-cal-slot-coach {
+    font-size: 12px;
+  }
+  .crm-cal-slot-status {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+  .crm-cal-student-column[data-hidden="true"] {
+    display: none;
+  }
+  .crm-cal-empty-day {
+    padding: 40px 0;
+  }
+}
+@media (max-width: 479px) {
+  .crm-cal-toolbar {
+    padding: 12px;
+    gap: 12px;
+  }
+  .crm-cal-meta {
+    padding-inline: 12px;
+  }
+  .crm-cal-footer {
+    padding-inline: 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1150px) {
+  .crm-cal-event {
+    padding-inline: 5px;
+  }
+  .crm-cal-event-time {
+    font-size: 11px;
+  }
+  .crm-cal-event-detail {
+    font-size: 10px;
+  }
+}

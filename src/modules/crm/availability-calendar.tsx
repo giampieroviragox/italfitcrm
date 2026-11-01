@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { CalendarPlus, Check, Clock3, RotateCcw } from "lucide-react";
+import styles from "./calendar-styles";
+import { Plus, Check, Clock3 } from "lucide-react";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { SelectControl } from "@/components/ui/select-control";
 import { Button } from "@/components/ui/button";
@@ -142,55 +143,57 @@ export function AvailabilityCalendar() {
     );
   return (
     <>
-      <section
-        className="overflow-hidden rounded-2xl border shadow-xs"
-        aria-label="Le tue disponibilità"
-      >
-        <div className="space-y-5 bg-white p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <WeekNavigation week={week} onChange={changeWeek} />
-            <Button
-              variant="outline"
-              onClick={() =>
-                setEditing({
-                  date:
-                    days.find((day) => day > todayRome()) ??
-                    addDays(todayRome(), 1),
-                  start: "07:00",
-                  end: "08:00",
-                })
-              }
-            >
-              <CalendarPlus className="size-4" />
-              Aggiungi disponibilità
-            </Button>
+      <section className={styles.surface} aria-label="Le tue disponibilità">
+        <div className={styles.toolbar}>
+          <WeekNavigation week={week} onChange={changeWeek} />
+          <Button
+            size="sm"
+            className="rounded-md max-sm:w-full"
+            onClick={() =>
+              setEditing({
+                date:
+                  days.find((day) => day > todayRome()) ??
+                  addDays(todayRome(), 1),
+                start: "07:00",
+                end: "08:00",
+              })
+            }
+          >
+            <Plus className="size-3.5" />
+            Aggiungi disponibilità
+          </Button>
+        </div>
+        <div className={styles.meta}>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2">
+              <span
+                className="h-3 w-1 rounded-sm bg-[#44765c]"
+                aria-hidden="true"
+              />
+              Disponibilità
+            </span>
+            <span className="text-[#969e98]">
+              {weekSlots.length} {weekSlots.length === 1 ? "fascia" : "fasce"}
+            </span>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <span className="size-2.5 rounded-sm border border-emerald-300 bg-emerald-100" />
-                Le tue disponibilità
-              </span>
-              <span>
-                {weekSlots.length} {weekSlots.length === 1 ? "fascia" : "fasce"}{" "}
-                questa settimana
-              </span>
-              <label className="flex items-center gap-2">
-                <CheckboxControl
-                  checked={showCancelled}
-                  onChange={(event) => setShowCancelled(event.target.checked)}
-                />
-                Mostra lezioni annullate
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <label className="flex items-center gap-2 text-[11px]">
+              <CheckboxControl
+                checked={showCancelled}
+                onChange={(event) => setShowCancelled(event.target.checked)}
+              />
+              Mostra annullate
+            </label>
+            <div className="flex items-center gap-1.5">
+              <Clock3 className="size-3.5" aria-hidden="true" />
+              <label htmlFor="calendar-hour" className="sr-only">
+                Vai alle
               </label>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock3 className="size-3.5" />
-              <label htmlFor="calendar-hour">Vai alle</label>
               <SelectControl
                 id="calendar-hour"
                 value={scrollHour}
                 onChange={(event) => setScrollHour(Number(event.target.value))}
-                className="h-8 min-w-24 rounded-lg border px-2 text-xs"
+                className="h-7 min-w-20 rounded-md border-0 bg-transparent px-1.5 text-xs shadow-none"
               >
                 {Array.from({ length: 24 }, (_, hour) => (
                   <option key={hour} value={hour}>
@@ -201,70 +204,75 @@ export function AvailabilityCalendar() {
             </div>
           </div>
         </div>
-        <div className="border-t">
-          <AvailabilityGrid
-            week={week}
-            slots={slots}
-            lessons={lessons}
-            bookings={state.bookings ?? []}
-            now={now}
-            scrollHour={scrollHour}
-            select={setEditing}
-          />
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-          <p>
-            Tocca un orario o trascina per creare una fascia. Tocca una
-            disponibilità per modificarne gli slot.
+        <AvailabilityGrid
+          week={week}
+          slots={slots}
+          lessons={lessons}
+          bookings={state.bookings ?? []}
+          now={now}
+          scrollHour={scrollHour}
+          select={setEditing}
+        />
+        <div className={styles.footer} data-dirty={dirty}>
+          <p aria-live="polite" className="flex items-center gap-2">
+            {dirty ? (
+              <>
+                <span
+                  className="size-1.5 rounded-full bg-[#a47730]"
+                  aria-hidden="true"
+                />
+                Modifiche non salvate
+              </>
+            ) : notice ? (
+              <>
+                <Check className="size-3.5 text-[#44765c]" />
+                {notice}
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline">
+                  Trascina per creare una fascia. Selezionala per modificarla.
+                </span>
+                <span className="sm:hidden">
+                  Tocca un orario per aggiungere una fascia.
+                </span>
+              </>
+            )}
           </p>
-          <span className="shrink-0 tabular-nums">
-            00:00–24:00 · Europe/Rome
-          </span>
+          {dirty ? (
+            <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  setDiscardAction(() => () => {
+                    setDraft(null);
+                    setNotice("");
+                  })
+                }
+              >
+                Annulla
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-md"
+                disabled={busy}
+                onClick={() => {
+                  setError("");
+                  setConfirming(true);
+                }}
+              >
+                Salva modifiche
+              </Button>
+            </div>
+          ) : (
+            <span className="hidden text-[11px] text-[#8a928d] sm:inline">
+              24 ore · Orari di Roma
+            </span>
+          )}
         </div>
       </section>
-      <div
-        className={`sticky bottom-3 z-40 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 shadow-sm ${dirty ? "border-amber-200 bg-amber-50" : "bg-white"}`}
-      >
-        <p aria-live="polite" className="flex items-center gap-2 text-sm">
-          {dirty ? (
-            <>
-              <span className="size-2 rounded-full bg-amber-500" />
-              Modifiche non salvate
-            </>
-          ) : (
-            <>
-              <Check className="size-4 text-emerald-700" />
-              {notice || "Calendario aggiornato"}
-            </>
-          )}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!dirty || busy}
-            onClick={() =>
-              setDiscardAction(() => () => {
-                setDraft(null);
-                setNotice("");
-              })
-            }
-          >
-            <RotateCcw className="size-3.5" />
-            Annulla
-          </Button>
-          <Button
-            size="sm"
-            disabled={!dirty || busy}
-            onClick={() => {
-              setError("");
-              setConfirming(true);
-            }}
-          >
-            Salva calendario
-          </Button>
-        </div>
-      </div>
       {!confirming && <FormError message={error} />}
       {editing && (
         <AvailabilityEditor
