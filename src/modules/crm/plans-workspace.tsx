@@ -36,9 +36,21 @@ export function WorkoutContent({
               {i + 1}
             </span>
             <h3 className="text-sm font-medium">
+              {session.week ? `Settimana ${session.week} · ` : ""}
+              {session.day ? `${session.day} · ` : ""}
               {session.name || "Sessione senza nome"}
             </h3>
           </div>
+          {(session.preparation || session.guidance) && (
+            <p className="whitespace-pre-line border-b px-5 py-4 text-sm leading-6 text-muted-foreground">
+              {[
+                session.preparation && `Riscaldamento\n${session.preparation}`,
+                session.guidance,
+              ]
+                .filter(Boolean)
+                .join("\n\n")}
+            </p>
+          )}
           <div className="divide-y">
             {session.exercises.map((ex) => (
               <div key={ex.id} className="px-5 py-4">
@@ -47,8 +59,8 @@ export function WorkoutContent({
                     {ex.name || "Esercizio da completare"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {ex.sets} serie × {ex.reps || "—"} · Recupero{" "}
-                    {ex.restSeconds}s
+                    {ex.sets} serie × {ex.reps || "—"}
+                    {ex.restSeconds > 0 ? ` · Recupero ${ex.restSeconds}s` : ""}
                   </p>
                 </div>
                 {ex.notes && (
@@ -70,6 +82,11 @@ export function WorkoutContent({
               </div>
             ))}
           </div>
+          {session.cooldown && (
+            <p className="whitespace-pre-line border-t px-5 py-4 text-sm leading-6 text-muted-foreground">
+              {`Defaticamento\n${session.cooldown}`}
+            </p>
+          )}
         </section>
       ))}
     </div>

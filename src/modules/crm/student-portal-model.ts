@@ -1,3 +1,4 @@
+import { isWorkoutEntries } from "./workout-entry-schema.ts";
 import { availabilityLessons } from "./availability-lessons.ts";
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
 import type { CrmState, TierAccess } from "./model.ts";
@@ -10,6 +11,7 @@ import {
 export interface StudentPortalData {
   student: { id: string; firstName: string; lastName: string; status: string };
   services: TierAccess;
+  workoutEntries?: import("./fitness-model.ts").WorkoutEntry[];
   assignments: PlanAssignment[];
   lessons: (Lesson & {
     enrolled: boolean;
@@ -35,6 +37,7 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
     !("lessons" in value) ||
     !Array.isArray(value.lessons) ||
     !isFitnessData(value as Record<string, unknown>) ||
+    ("workoutEntries" in value && !isWorkoutEntries(value.workoutEntries)) ||
     !value.lessons.every(
       (lesson) =>
         typeof lesson.enrolled === "boolean" &&
@@ -68,6 +71,7 @@ export function studentProjection(
   );
   return {
     services,
+    workoutEntries: services.plans ? (student.workoutEntries ?? []) : [],
     student: {
       id: student.id,
       firstName: student.firstName,

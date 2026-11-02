@@ -8,7 +8,7 @@ import { PageHeading } from "@/components/page-heading";
 import { useCrm, useHydrated } from "./store";
 import { Field, control, FormError, LocalNotice } from "./ui";
 import { todayRome } from "./fitness-logic";
-import { AssignedPlan } from "./plans-workspace";
+import { StudentPlan } from "./student-plan";
 import { updateCrm } from "./store";
 import { prepareStudentBooking } from "./student-booking";
 import { StudentCalendar } from "./student-calendar";
@@ -31,7 +31,7 @@ export function StudentPreview() {
   );
   const data = student ? studentProjection(state, student.id) : null;
   return (
-    <div className="min-h-dvh bg-[#fafafa]">
+    <div className="min-h-dvh bg-[#f8f9f6]">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-white px-5 py-4 sm:px-8">
         <Brand />
         <Button asChild variant="outline">
@@ -129,7 +129,11 @@ export function StudentPreview() {
               <>
                 <h2 className="mb-4 text-lg font-medium">Il tuo piano</h2>
                 {assignment ? (
-                  <AssignedPlan assignment={assignment} />
+                  <StudentPlan
+                    key={student.id + assignment.id + assignment.createdAt}
+                    assignment={assignment}
+                    entries={data?.workoutEntries}
+                  />
                 ) : (
                   <p className="rounded-xl border p-6 text-sm text-muted-foreground">
                     Nessun piano assegnato per questo mese.

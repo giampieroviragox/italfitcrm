@@ -96,6 +96,7 @@ export function validateStaffUpdate(
       return {
         ...s,
         access: old?.access ?? null,
+        workoutEntries: old?.workoutEntries ?? [],
         notes: s.notes ?? old?.notes ?? [],
         revision: old?.revision ?? 0,
         history: old?.history ?? [],

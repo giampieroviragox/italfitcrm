@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { Field, FormError } from "./ui";
 import { PlanMonthSelect } from "./plan-month-select";
-import { AssignedPlan } from "./plans-workspace";
+import { StudentPlan } from "./student-plan";
+import type { WorkoutInput } from "./workout-progress";
 import { todayRome } from "./fitness-logic";
 import { useClock } from "./use-clock";
 import {
@@ -92,11 +93,32 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
       pendingRef.current = false;
     }
   };
+  const saveWorkout = async (input: WorkoutInput) => {
+    if (pendingRef.current || refreshRef.current) return false;
+    pendingRef.current = true;
+    setError("");
+    try {
+      const next = await requestJson("/api/allenamenti", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      setData(parseStudentPortalData(next));
+      setAuthRequired(false);
+      return true;
+    } catch (e) {
+      setAuthRequired(e instanceof RequestError && e.status === 401);
+      setError((e as Error).message);
+      return false;
+    } finally {
+      pendingRef.current = false;
+    }
+  };
   const now = useClock();
   const upcoming = data.lessons.filter((l) => Date.parse(l.startsAt) > now);
   const assignment = data.assignments.find((a) => a.month === month);
   return (
-    <div className="min-h-dvh bg-[#fafafa]">
+    <div className="min-h-dvh bg-[#f8f9f6]">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-white px-5 py-4 sm:px-8">
         <Brand />
         <form method="POST" action="/auth/signout">
@@ -105,10 +127,10 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
           </Button>
         </form>
       </header>
-      <main className="mx-auto max-w-7xl px-5 py-9 sm:px-8">
+      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
         <PageHeading
           title={`Ciao, ${data.student.firstName}`}
-          description="I servizi e le attività del tuo percorso."
+          description="Il tuo percorso, un allenamento alla volta."
         />
         {message && (
           <p
@@ -151,7 +173,12 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
               </Field>
             </div>
             {assignment ? (
-              <AssignedPlan assignment={assignment} />
+              <StudentPlan
+                key={assignment.id + assignment.createdAt}
+                assignment={assignment}
+                entries={data.workoutEntries}
+                onSave={saveWorkout}
+              />
             ) : (
               <div className="rounded-xl border p-6">
                 <h2 className="text-sm font-medium">

@@ -66,6 +66,14 @@ function sessionsValid(value: unknown): boolean {
         obj(s) &&
         string(s.id) &&
         string(s.name) &&
+        (s.week === undefined ||
+          (Number.isInteger(s.week) &&
+            Number(s.week) >= 1 &&
+            Number(s.week) <= 52)) &&
+        ["day", "preparation", "cooldown", "guidance"].every(
+          (k) => s[k] === undefined || string(s[k]),
+        ) &&
+        (s.kind === undefined || s.kind === "run" || s.kind === "strength") &&
         list(s.exercises) &&
         s.exercises.every(
           (e: unknown) =>
@@ -78,6 +86,21 @@ function sessionsValid(value: unknown): boolean {
     )
   );
 }
+function programValid(value: unknown): boolean {
+  if (value === undefined) return true;
+  return (
+    obj(value) &&
+    ["goal", "startsOn", "endsOn", "guidance"].every((k) => string(value[k])) &&
+    validDate(String(value.startsOn)) &&
+    validDate(String(value.endsOn)) &&
+    String(value.endsOn) >= String(value.startsOn) &&
+    list(value.paceZones) &&
+    value.paceZones.length <= 12 &&
+    value.paceZones.every(
+      (z: unknown) => obj(z) && string(z.name) && string(z.pace),
+    )
+  );
+}
 export function isFitnessData(v: Record<string, unknown>): boolean {
   return (
     (v.plans === undefined ||
@@ -87,7 +110,8 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             obj(p) &&
             ["id", "title", "description"].every((k) => string(p[k])) &&
             ["draft", "published", "archived"].includes(String(p.status)) &&
-            sessionsValid(p.sessions),
+            sessionsValid(p.sessions) &&
+            programValid(p.program),
         ))) &&
     (v.assignments === undefined ||
       (list(v.assignments) &&
@@ -100,7 +124,8 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             obj(a.snapshot) &&
             string(a.snapshot.title) &&
             string(a.snapshot.description) &&
-            sessionsValid(a.snapshot.sessions),
+            sessionsValid(a.snapshot.sessions) &&
+            programValid(a.snapshot.program),
         ))) &&
     (v.lessons === undefined ||
       (list(v.lessons) &&
@@ -130,8 +155,10 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
   );
 }
 function validateSessions(plan: Pick<WorkoutPlan, "sessions" | "status">) {
-  if (plan.sessions.length > 7)
-    throw new Error("Un piano può avere al massimo 7 sessioni.");
+  if (!sessionsValid(plan.sessions))
+    throw new Error("Sessioni non valide: verifica settimane e campi.");
+  if (plan.sessions.length > 52)
+    throw new Error("Un piano può avere al massimo 52 sessioni.");
   if (
     plan.status === "published" &&
     (!plan.sessions.length ||
@@ -205,6 +232,8 @@ export function assertFitnessTransition(
   for (const plan of plans) {
     if (!plan.title.trim()) throw new Error("Inserisci il nome del piano.");
     validateSessions(plan);
+    if (!programValid(plan.program))
+      throw new Error("Periodo o dettagli del programma non validi.");
   }
   if (
     new Set(assignments.map((a) => `${a.studentId}:${a.month}`)).size !==
@@ -231,6 +260,8 @@ export function assertFitnessTransition(
         "Assegna solo piani pubblicati a studenti non archiviati.",
       );
     validateSessions({ sessions: a.snapshot.sessions, status: "published" });
+    if (!programValid(a.snapshot.program))
+      throw new Error("Programma assegnato non valido.");
     if (
       JSON.stringify(old) !== JSON.stringify(a) &&
       !studentAccess(next, student).plans

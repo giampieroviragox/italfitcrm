@@ -7,7 +7,28 @@ export interface WorkoutExercise {
   notes: string;
   videoUrl?: string;
 }
+export interface WorkoutProgram {
+  goal: string;
+  startsOn: string;
+  endsOn: string;
+  guidance: string;
+  paceZones: { name: string; pace: string }[];
+}
+export interface WorkoutEntry {
+  assignmentId: string;
+  assignmentCreatedAt: string;
+  sessionId: string;
+  completed: boolean;
+  notes: string;
+  updatedAt: string;
+}
 export interface WorkoutSession {
+  week?: number;
+  day?: string;
+  kind?: "strength" | "run";
+  preparation?: string;
+  cooldown?: string;
+  guidance?: string;
   id: string;
   name: string;
   exercises: WorkoutExercise[];
@@ -17,6 +38,7 @@ export interface WorkoutPlan {
   title: string;
   description: string;
   status: "draft" | "published" | "archived";
+  program?: WorkoutProgram;
   sessions: WorkoutSession[];
 }
 export interface PlanAssignment {
@@ -25,7 +47,12 @@ export interface PlanAssignment {
   planId: string;
   month: string;
   createdAt: string;
-  snapshot: { title: string; description: string; sessions: WorkoutSession[] };
+  snapshot: {
+    title: string;
+    description: string;
+    sessions: WorkoutSession[];
+    program?: WorkoutProgram;
+  };
 }
 export interface Lesson {
   availability?: { adminId: string };

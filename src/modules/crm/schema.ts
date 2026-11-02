@@ -1,4 +1,5 @@
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
+import { isWorkoutEntries } from "./workout-entry-schema.ts";
 import { isFitnessData } from "./fitness-logic.ts";
 import { isTierAccess } from "./tier-access.ts";
 import { isAvailability } from "./availability.ts";
@@ -122,6 +123,8 @@ export function isCrmState(v: unknown): v is CrmState {
           "coach",
         ].every((k) => typeof s[k] === "string") &&
         ["active", "invited", "paused"].includes(String(s.status)) &&
+        (s.workoutEntries === undefined ||
+          isWorkoutEntries(s.workoutEntries)) &&
         (s.phone === undefined || typeof s.phone === "string") &&
         (s.archived === undefined || typeof s.archived === "boolean") &&
         (s.accessDisabled === undefined ||

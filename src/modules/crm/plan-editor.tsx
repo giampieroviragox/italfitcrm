@@ -134,6 +134,111 @@ export function PlanEditor({
             }
           />
         </Field>
+        {draft.program && (
+          <details className="space-y-4 rounded-xl border p-4">
+            <summary className="cursor-pointer text-sm font-medium">
+              Dettagli del programma
+            </summary>
+            <div className="mt-4 space-y-4">
+              <Field label="Obiettivo">
+                <input
+                  className={control}
+                  value={draft.program.goal}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      program: { ...draft.program!, goal: e.target.value },
+                    })
+                  }
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Inizio originale">
+                  <input
+                    className={control}
+                    type="date"
+                    required
+                    value={draft.program.startsOn}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        program: {
+                          ...draft.program!,
+                          startsOn: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Fine originale">
+                  <input
+                    className={control}
+                    type="date"
+                    required
+                    value={draft.program.endsOn}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        program: { ...draft.program!, endsOn: e.target.value },
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <Field label="Indicazioni per il blocco">
+                <textarea
+                  className={control}
+                  rows={5}
+                  value={draft.program.guidance}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      program: { ...draft.program!, guidance: e.target.value },
+                    })
+                  }
+                />
+              </Field>
+              {draft.program.paceZones.map((zone, index) => (
+                <div key={index} className="grid grid-cols-2 gap-3">
+                  <Field label="Zona">
+                    <input
+                      className={control}
+                      value={zone.name}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          program: {
+                            ...draft.program!,
+                            paceZones: draft.program!.paceZones.map((z, i) =>
+                              i === index ? { ...z, name: e.target.value } : z,
+                            ),
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Passo">
+                    <input
+                      className={control}
+                      value={zone.pace}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          program: {
+                            ...draft.program!,
+                            paceZones: draft.program!.paceZones.map((z, i) =>
+                              i === index ? { ...z, pace: e.target.value } : z,
+                            ),
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         <Field label="Stato">
           <SelectControl
             className={control}
@@ -182,6 +287,81 @@ export function PlanEditor({
                 <Trash2 className="size-4" />
               </Button>
             </div>
+            <details className="rounded-lg border bg-white p-3">
+              <summary className="cursor-pointer text-xs font-medium">
+                Settimana, giornata e indicazioni
+              </summary>
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Settimana">
+                    <input
+                      className={control}
+                      type="number"
+                      min={1}
+                      max={52}
+                      value={s.week ?? 1}
+                      onChange={(e) =>
+                        setSession(s.id, { week: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                  <Field label="Giorno">
+                    <input
+                      className={control}
+                      value={s.day ?? ""}
+                      placeholder="Es. Lunedì"
+                      onChange={(e) =>
+                        setSession(s.id, { day: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Tipo di allenamento">
+                  <SelectControl
+                    className={control}
+                    value={s.kind ?? "strength"}
+                    onChange={(e) =>
+                      setSession(s.id, {
+                        kind: e.target.value as "strength" | "run",
+                      })
+                    }
+                  >
+                    <option value="strength">Forza</option>
+                    <option value="run">Corsa</option>
+                  </SelectControl>
+                </Field>
+                <Field label="Riscaldamento">
+                  <textarea
+                    className={control}
+                    rows={4}
+                    value={s.preparation ?? ""}
+                    onChange={(e) =>
+                      setSession(s.id, { preparation: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Indicazioni e progressione">
+                  <textarea
+                    className={control}
+                    rows={3}
+                    value={s.guidance ?? ""}
+                    onChange={(e) =>
+                      setSession(s.id, { guidance: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Defaticamento">
+                  <textarea
+                    className={control}
+                    rows={3}
+                    value={s.cooldown ?? ""}
+                    onChange={(e) =>
+                      setSession(s.id, { cooldown: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+            </details>
             {s.exercises.map((ex, j) => (
               <div
                 key={ex.id}
@@ -230,7 +410,7 @@ export function PlanEditor({
                       }
                     />
                   </Field>
-                  <Field label="Ripetizioni">
+                  <Field label="Ripetizioni / durata">
                     <input
                       className={control}
                       value={ex.reps}
@@ -293,7 +473,7 @@ export function PlanEditor({
         <Button
           type="button"
           variant="outline"
-          disabled={draft.sessions.length >= 7}
+          disabled={draft.sessions.length >= 52}
           onClick={() =>
             setDraft({
               ...draft,
@@ -376,6 +556,7 @@ export function AssignmentEditor({
                   title: source.title,
                   description: source.description,
                   sessions: source.sessions,
+                  ...(source.program ? { program: source.program } : {}),
                 }),
               };
               return {
