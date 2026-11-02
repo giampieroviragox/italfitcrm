@@ -165,6 +165,7 @@ export function StudentPortal({
         {view === "home" && (
           <StudentHome
             services={data.services}
+            hasPlan={Boolean(assignment)}
             hasBookings={data.lessons.length > 0}
           />
         )}

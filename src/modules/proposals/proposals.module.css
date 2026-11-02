@@ -1,0 +1,3292 @@
+.gallery {
+  background: #f3f2ee;
+  color: #272925;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+.gallery button,
+.gallery a,
+.gallery select {
+  touch-action: manipulation;
+}
+.gallery button {
+  cursor: pointer;
+}
+.gallery button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.gallery button:focus-visible,
+.gallery a:focus-visible,
+.gallery select:focus-visible,
+.gallery textarea:focus-visible {
+  outline: 3px solid #637eaa;
+  outline-offset: 3px;
+}
+.reviewHeader {
+  height: 76px;
+  border-bottom: 1px solid #deded8;
+  background: #fafaf7;
+  padding: 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.brand {
+  font-weight: 800;
+  text-decoration: none;
+  font-size: 15px;
+}
+.brand span {
+  font-weight: 400;
+  color: #82847b;
+}
+.reviewTag,
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  font-weight: 700;
+  color: #7b7e73;
+}
+.returnLink {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.galleryGrid {
+  max-width: 1740px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 42px;
+  padding: 40px 36px 70px;
+}
+.selector h1 {
+  font-size: 31px;
+  font-weight: 600;
+  letter-spacing: -1.3px;
+  line-height: 1.13;
+  margin: 18px 0;
+}
+.intro {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #7d8177;
+}
+.conceptList {
+  display: grid;
+  gap: 6px;
+  margin-top: 30px;
+}
+.conceptButton {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  padding: 15px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+.conceptButton:hover {
+  background: #eaeae3;
+}
+.conceptSelected {
+  background: #fff !important;
+  border-color: #d9dcd0;
+  box-shadow: 0 3px 8px #22222206;
+}
+.conceptNumber {
+  font-size: 10px;
+  color: #8b8d82;
+}
+.conceptButton strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.conceptButton small {
+  display: block;
+  font-size: 11px;
+  color: #7d8177;
+  margin-top: 4px;
+}
+.swatch {
+  margin-left: auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--swatch);
+}
+.recommendation {
+  margin: 32px 12px;
+  padding-top: 24px;
+  border-top: 1px solid #d9dcd0;
+}
+.recommendation > span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.recommendation p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #7d8177;
+}
+.recommendation strong {
+  color: #43473d;
+}
+.reviewMain {
+  min-width: 0;
+}
+.reviewTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.reviewTitle h2 {
+  margin: 7px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+.reviewTitle h2 span {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-left: 15px;
+  color: #808476;
+}
+.deviceControls {
+  display: flex;
+  padding: 4px;
+  background: #e8e9e2;
+  border-radius: 8px;
+}
+.deviceControls button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.deviceControls button[aria-pressed="true"] {
+  background: white;
+  box-shadow: 0 2px 4px #2221;
+}
+.testToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 11px;
+}
+.testToolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #777c70;
+}
+.reviewSelect {
+  height: 34px !important;
+  font-size: 11px !important;
+  background: #fafaf7 !important;
+  min-width: 160px;
+}
+.testToolbar > button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px;
+}
+.testToolbar > span {
+  margin-left: auto;
+  color: #8a8d82;
+  font-size: 10px;
+}
+.stage {
+  border: 1px solid #dedfd6;
+  border-radius: 16px;
+  background: radial-gradient(#d6d8cd 0.65px, transparent 0.65px) 0 0/14px 14px
+    #e9ebe3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  gap: 40px;
+  overflow: hidden;
+}
+.deviceFrame {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 18px 50px #25301b18;
+}
+.phone {
+  width: 390px;
+  height: 830px;
+  border: 8px solid #242621;
+  border-radius: 46px;
+  box-shadow:
+    0 0 0 1px #777b70,
+    0 25px 55px #25301b25;
+}
+.phoneTop {
+  height: 38px;
+  padding: 9px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.phoneTop > span:last-child {
+  display: flex;
+  gap: 5px;
+}
+.island {
+  width: 88px;
+  height: 22px;
+  background: #242621;
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 20px;
+}
+.homeIndicator {
+  height: 18px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.homeIndicator span {
+  height: 4px;
+  width: 110px;
+  background: #242621;
+  border-radius: 4px;
+}
+.computer {
+  width: 100%;
+  height: 790px;
+  border: 1px solid #cdd0c3;
+  border-radius: 12px;
+}
+.browserBar {
+  height: 36px;
+  flex-shrink: 0;
+  background: #fafbf8;
+  border-bottom: 1px solid #e4e6dd;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px;
+}
+.browserBar i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d4d8cd;
+}
+.browserBar span {
+  font-size: 9px;
+  color: #919789;
+  margin-left: 16px;
+}
+.browserBar span:last-child {
+  margin-left: auto;
+}
+.stageCaption {
+  max-width: 210px;
+  align-self: flex-end;
+  margin-bottom: 70px;
+}
+.stageCaption > span {
+  font-size: 10px;
+  letter-spacing: 1.3px;
+  font-weight: 700;
+}
+.stageCaption p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #7f8775;
+  margin: 12px 0;
+}
+.stageCaption svg {
+  transform: rotate(-90deg);
+}
+.decisionNotes {
+  background: #fafaf7;
+  padding: 30px;
+  border: 1px solid #dedfd6;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+.decisionNotes h3 {
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 10px 0 22px;
+  max-width: 690px;
+}
+.decisionNotes dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+}
+.decisionNotes dt {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.decisionNotes dd {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #7a8170;
+}
+.sourceLine {
+  border-top: 1px solid #e3e5db;
+  margin-top: 24px;
+  padding-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 10px;
+  color: #818777;
+}
+.sourceLine a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #454f39;
+}
+.research {
+  margin-top: 22px;
+  font-size: 12px;
+  color: #6e7662;
+}
+.research summary {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 12px 0;
+}
+.research > div {
+  padding: 16px 0;
+  line-height: 1.7;
+}
+.research ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+.research a {
+  font-weight: 700;
+  color: #35402b;
+}
+.research h4 {
+  font-weight: 700;
+  margin: 20px 0 8px;
+}
+.appRoot {
+  --appbg: #f6f7f2;
+  --surface: #fff;
+  --ink: #23332a;
+  --muted: #7d887f;
+  --accent: #365448;
+  --soft: #e7ede3;
+  --line: #e0e6da;
+  flex: 1;
+  min-height: 0;
+  container-type: inline-size;
+  position: relative;
+  isolation: isolate;
+  color: var(--ink);
+  background: var(--appbg);
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ritmo {
+  --appbg: #f4f5fa;
+  --ink: #202844;
+  --accent: #3658cf;
+  --soft: #e8ecfc;
+  --line: #e0e4ef;
+  --muted: #7d859d;
+}
+.vicino {
+  --appbg: #f9f4ed;
+  --ink: #493c30;
+  --accent: #9b4f35;
+  --soft: #efe3d4;
+  --line: #e8dfd2;
+  --muted: #968876;
+}
+.studio {
+  --appbg: #f1f7f7;
+  --ink: #183d40;
+  --accent: #087e84;
+  --soft: #ddefee;
+  --line: #d6e7e6;
+  --muted: #729194;
+}
+.essenziale {
+  --appbg: #fafaf8;
+  --ink: #252525;
+  --accent: #252525;
+  --soft: #efefea;
+  --line: #e4e4dd;
+  --muted: #84847c;
+}
+.team {
+  --appbg: #f4f4f2;
+  --ink: #20201e;
+  --accent: #e04438;
+  --soft: #f9e6e3;
+  --line: #e1e1db;
+  --muted: #83837b;
+}
+.appRoot button {
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+}
+.appRoot button:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+.appShell {
+  display: grid;
+  grid-template-columns: 162px minmax(0, 1fr);
+  height: 100%;
+}
+.appSidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 13px;
+  gap: 20px;
+}
+.appBrand {
+  height: 52px;
+}
+.appBrand img {
+  width: 112px;
+  height: 40px;
+  object-fit: contain;
+}
+.appSidebar > p {
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin: 0 10px;
+}
+.appSidebar nav {
+  display: grid;
+  gap: 6px;
+}
+.appSidebar nav button {
+  height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  text-align: left;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.appSidebar nav button[aria-current="page"] {
+  background: var(--soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+.sidebarPerson {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+}
+.sidebarPerson small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+}
+.appMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.appHeader {
+  height: 62px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: var(--appbg);
+}
+.desktopCrumb {
+  font-size: 10px;
+  color: var(--muted);
+}
+.desktopCrumb strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.profileButton {
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--accent);
+  width: 34px;
+  height: 34px;
+  font-size: 10px;
+}
+.mobileBrand {
+  display: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.mobileBrand span {
+  color: var(--accent);
+  font-size: 7px;
+  margin-left: 3px;
+}
+.appScroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.view {
+  padding: 30px;
+  animation: arrive 0.22s ease-out;
+}
+.bottomNav {
+  display: none;
+}
+.kicker {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.3px;
+  display: block;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.greeting {
+  margin-bottom: 28px;
+}
+.greeting h2,
+.pageTitle h2 {
+  font-weight: 500;
+  font-size: 34px;
+  letter-spacing: -1.6px;
+  line-height: 1.12;
+  margin: 0 0 9px;
+}
+.greeting > p:last-child,
+.pageTitle > p:last-child {
+  font-size: 12px;
+  color: var(--muted);
+}
+.homeSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 18px;
+}
+.secondaryStack {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.sessionTile {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 24px;
+  background: var(--surface);
+  min-height: 210px;
+}
+.sessionTile h3 {
+  font-size: 25px;
+  line-height: 1.13;
+  letter-spacing: -0.8px;
+  max-width: 210px;
+  font-weight: 500;
+  margin: 12px 0;
+}
+.sessionTile p {
+  font-size: 10px;
+  color: var(--muted);
+}
+.primaryTile {
+  background: var(--accent);
+  color: white;
+  border-color: transparent;
+}
+.primaryTile .kicker,
+.primaryTile p {
+  color: #ffffffaa;
+}
+.textAction {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 11px;
+  margin-top: 28px;
+  font-weight: 600;
+}
+.movement {
+  width: 90px;
+  flex-shrink: 0;
+  background: #ffffffc9;
+  border-radius: 50%;
+  padding: 8px;
+}
+.appointment {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: left;
+  width: 100%;
+}
+.dateBlock {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+  background: var(--soft);
+  width: 47px;
+  height: 57px;
+  border-radius: 9px;
+  color: var(--accent);
+}
+.dateBlock small {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.dateBlock strong {
+  font-size: 24px;
+  line-height: 1;
+}
+.appointment > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+.appointment > span > small {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+}
+.appointment > span > strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.appointment > span > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.appointment > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.coachNote {
+  display: flex;
+  gap: 12px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+.avatar {
+  width: 31px;
+  height: 31px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 10px;
+}
+.coachNote p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.coachNote small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.quickLinks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+}
+.quickLinks button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  font-size: 11px;
+}
+.quickLinks button svg:last-child {
+  margin-left: auto;
+}
+.progressLine {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 22px 0;
+}
+.progressLine > div {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+}
+.progressLine i {
+  height: 5px;
+  background: var(--line);
+  flex: 1;
+  border-radius: 5px;
+}
+.progressLine .doneBar {
+  background: var(--accent);
+}
+.weekHeading {
+  display: flex;
+  justify-content: space-between;
+  margin: 22px 0 15px;
+  font-size: 13px;
+}
+.weekHeading span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.dayStrip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  margin: 18px 0;
+}
+.dayStrip button {
+  min-height: 66px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  padding: 8px 1px;
+  gap: 3px;
+}
+.dayStrip button > span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.dayStrip button strong {
+  font-size: 17px;
+  font-weight: 500;
+}
+.dayStrip button i {
+  height: 3px;
+  width: 3px;
+  border-radius: 50%;
+}
+.dayStrip .activityDot {
+  background: var(--accent);
+}
+.dayStrip button[aria-pressed="true"] {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.dayStrip button[aria-pressed="true"] > span {
+  color: #ffffffa8;
+}
+.dayStrip button[aria-pressed="true"] i {
+  background: white;
+}
+.timeline {
+  margin-top: 28px;
+}
+.timelineDay {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: 13px;
+}
+.timelineDay > span {
+  width: 30px;
+  font-size: 11px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--muted);
+}
+.timelineDay > button {
+  display: flex;
+  flex: 1;
+  padding: 18px;
+  align-items: center;
+  text-align: left;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.timelineDay > button > span {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+}
+.timelineDay small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.timelineLine {
+  padding: 10px 0 18px 47px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.letterHero {
+  background: #f0e6d7;
+  padding: 28px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+.letterHero h3 {
+  font:
+    30px/1.25 Georgia,
+    serif;
+  letter-spacing: -0.5px;
+  margin: 20px 0;
+}
+.letterHero > p:not(.kicker) {
+  font-size: 13px;
+  line-height: 1.9;
+}
+.letterSignature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #dfd2bf;
+  padding-top: 20px;
+  margin-top: 24px;
+  font-size: 11px;
+}
+.letterSignature span:last-child {
+  display: grid;
+}
+.letterSignature small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.editorialDivider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+}
+.editorialDivider h3 {
+  font:
+    24px Georgia,
+    serif;
+}
+.editorialDivider span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.vicino .greeting h2,
+.vicino .pageTitle h2,
+.vicino .sessionTile h3 {
+  font-family: Georgia, serif;
+  letter-spacing: -0.6px;
+}
+.studioIntro {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.studioIntro h3 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.studioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.primaryButton,
+.secondaryButton,
+.cancelButton {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.primaryButton {
+  background: var(--accent);
+  color: white;
+}
+.secondaryButton {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+.bigChoices {
+  display: grid;
+  gap: 15px;
+}
+.bigChoices > button {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 30px;
+  text-align: left;
+}
+.bigChoices > button > span {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+.bigChoices strong {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+.bigChoices small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.quietNote {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 24px 0;
+  line-height: 1.7;
+}
+.teamHero {
+  background: #20201e;
+  color: #fff;
+  padding: 28px;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.teamHero > * {
+  position: relative;
+}
+.teamHero .kicker {
+  color: #aaa;
+}
+.teamWatermark {
+  position: absolute;
+  right: -10px;
+  top: 25px;
+  writing-mode: vertical-rl;
+  line-height: 1;
+  font-size: 130px;
+  font-weight: 900;
+  color: #ffffff07;
+  letter-spacing: -10px;
+}
+.teamHero h3 {
+  font-size: clamp(30px, 5cqw, 63px);
+  line-height: 0.98;
+  letter-spacing: -2px;
+  font-weight: 900;
+  font-style: italic;
+  margin: 30px 0;
+}
+.teamHero > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.teamHero > div > span {
+  font-size: 9px;
+  color: #aaa;
+  letter-spacing: 1px;
+}
+.teamHero .primaryButton {
+  border-radius: 3px;
+  font-size: 10px;
+}
+.teamBottom {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 30px;
+  margin-top: 25px;
+  align-items: center;
+}
+.teamBottom > div > strong {
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 700;
+}
+.teamBottom > div > strong span {
+  font-size: 24px;
+  color: #aaa;
+}
+.teamBottom > div > p {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.bookingShortcut {
+  background: var(--surface);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.bookingShortcut h3 {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+}
+.bookingShortcut .primaryButton {
+  width: 100%;
+}
+.pageTitle {
+  margin-bottom: 26px;
+}
+.planToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.appSelect {
+  height: 40px !important;
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  border-radius: 8px !important;
+  color: var(--ink) !important;
+  font-size: 11px !important;
+  min-width: 0;
+}
+.weekControl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.weekControl button {
+  height: 40px;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+.empty {
+  text-align: center;
+  padding: 50px 20px;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+}
+.empty > svg {
+  color: var(--accent);
+}
+.empty h3 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+.empty p {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 300px;
+}
+.planLayout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 20px;
+}
+.sessionList {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+.sessionList button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 16px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.sessionList button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+.sessionNumber {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+.sessionList button > span:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+.sessionList small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.sessionList strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.sessionList button > span > span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.sessionList svg:last-child {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.sessionDetail {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 24px;
+}
+.sessionDetailHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.sessionDetailHeading h3 {
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  font-weight: 500;
+}
+.sessionDetailHeading p:last-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.sessionDetailHeading img {
+  width: 75px;
+  height: 75px;
+  flex-shrink: 0;
+}
+.coachHint {
+  background: var(--appbg);
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin: 18px 0 24px;
+}
+.coachHint span {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.coachHint p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.sectionLabel {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin: 24px 0 15px;
+}
+.exerciseList {
+  margin-bottom: 24px;
+}
+.exerciseList li {
+  display: flex;
+  gap: 13px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.exerciseList li > span {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.exerciseList strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.exerciseList p {
+  font-size: 11px;
+  margin: 3px 0;
+}
+.exerciseList small {
+  font-size: 9px;
+  color: var(--muted);
+  display: block;
+}
+.sessionDetail > .primaryButton {
+  width: 100%;
+}
+.notesLabel {
+  display: grid;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 24px;
+}
+.notesLabel textarea {
+  padding: 12px;
+  font-size: 11px;
+  font-weight: 400;
+  background: var(--appbg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  width: 100%;
+  color: var(--ink);
+}
+.textButton {
+  font-size: 11px;
+  color: var(--accent);
+  min-height: 44px;
+  display: block;
+  margin: auto;
+  font-weight: 600;
+  padding: 10px 16px;
+}
+.listPlan {
+  grid-template-columns: 1fr;
+}
+.listPlan .sessionList {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.workout {
+  max-width: 500px;
+  margin: auto;
+}
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 11px;
+  margin-bottom: 18px;
+}
+.workoutProgress {
+  display: flex;
+  gap: 5px;
+  margin: 20px 0;
+}
+.workoutProgress i {
+  height: 4px;
+  flex: 1;
+  background: var(--line);
+  border-radius: 3px;
+}
+.workoutProgress .activeProgress {
+  background: var(--accent);
+}
+.workout h2 {
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin: 14px 0 24px;
+}
+.workoutVisual {
+  background: var(--soft);
+  border-radius: 20px;
+  height: 185px;
+  display: grid;
+  place-items: center;
+}
+.workoutVisual img {
+  width: 150px;
+  height: 150px;
+}
+.prescription {
+  padding: 22px 0;
+  text-align: center;
+}
+.prescription strong {
+  font-size: 23px;
+  letter-spacing: -0.5px;
+  font-weight: 500;
+}
+.prescription p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.restTimer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background: var(--surface);
+}
+.restTimer > div {
+  display: grid;
+}
+.restTimer span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.restTimer strong {
+  font-size: 30px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.restTimer button {
+  font-size: 10px;
+  padding: 10px;
+}
+.workout > .primaryButton {
+  width: 100%;
+}
+.workoutDone {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  padding: 35px 0;
+  gap: 12px;
+}
+.workoutDone > span {
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--accent);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.workoutDone > p {
+  color: var(--muted);
+}
+.workoutDone h2 {
+  font-size: 44px;
+}
+.workoutDone button {
+  margin-top: 20px;
+}
+.calendarFilters {
+  display: flex;
+  gap: 7px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 25px;
+  padding-bottom: 16px;
+}
+.calendarFilters button {
+  font-size: 10px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.calendarFilters button[aria-pressed="true"] {
+  background: var(--soft);
+  color: var(--accent);
+}
+.calendarFilters span {
+  font-size: 9px;
+}
+.calendarLayout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+}
+.calendarPicker {
+  min-width: 0;
+}
+.calendarPicker .dayStrip {
+  gap: 3px;
+}
+.calendarPicker .dayStrip button {
+  border-radius: 8px;
+  min-height: 59px;
+}
+.calendarPicker .dayStrip strong {
+  font-size: 14px;
+}
+.monthGrid {
+  background: var(--surface);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  margin-bottom: 20px;
+}
+.monthGrid > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 15px;
+}
+.monthCells {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+  font-size: 10px;
+}
+.monthCells span {
+  height: 25px;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+}
+.monthCells button {
+  height: 27px;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.monthCells .monthSelected {
+  background: var(--accent);
+  color: white;
+}
+.coachFilter {
+  display: grid;
+  gap: 7px;
+  font-size: 10px;
+  margin: 20px 0;
+}
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0 18px;
+}
+.sectionTitle h3 {
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.sectionTitle small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.slotList {
+  display: grid;
+  gap: 9px;
+}
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  padding: 18px 14px;
+  text-align: left;
+  min-width: 0;
+}
+.slot > strong {
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.slot small {
+  display: block;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.slot > span:nth-child(2) {
+  flex: 1;
+}
+.slot b {
+  font-size: 11px;
+  font-weight: 600;
+}
+.slotState {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.bookedSlot {
+  background: var(--soft);
+  border-color: var(--accent);
+}
+.calendarFootnote {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 18px 0;
+}
+.profileSummary {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  background: var(--surface);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+.bigAvatar {
+  width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 18px;
+}
+.profileSummary h3 {
+  font-weight: 600;
+  font-size: 15px;
+}
+.profileSummary p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.profileRows {
+  margin: 25px 0;
+}
+.profileRows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+.profileRows span {
+  color: var(--muted);
+}
+.profileRows strong {
+  font-weight: 500;
+  text-align: right;
+}
+.profileBooking {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 10px;
+  text-align: left;
+  font-size: 11px;
+}
+.profileBooking span {
+  flex: 1;
+}
+.profileBooking small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+.profileRows ~ .secondaryButton {
+  margin-top: 28px;
+}
+.notice {
+  position: sticky;
+  top: -10px;
+  z-index: 3;
+  background: var(--soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-bottom: 20px;
+}
+.notice > svg {
+  flex-shrink: 0;
+}
+.notice button {
+  margin-left: auto;
+}
+.bookingOverlay {
+  position: absolute;
+  inset: 0;
+  background: #18241f66;
+  z-index: 10;
+  animation: fade 0.15s ease;
+}
+.bookingSheet {
+  position: absolute;
+  z-index: 11;
+  bottom: 14px;
+  right: 14px;
+  width: min(420px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  overflow: auto;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 30px 24px 15px;
+  box-shadow: 0 20px 60px #0003;
+  animation: sheet 0.22s ease-out;
+  font-family: Arial, sans-serif;
+}
+.bookingSheet h2 {
+  font-size: 25px;
+  letter-spacing: -0.7px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 15px 0 9px;
+}
+.bookingSheet > p:not(.kicker) {
+  font-size: 11px;
+  color: var(--muted);
+}
+.sheetHandle {
+  height: 4px;
+  width: 32px;
+  background: var(--line);
+  border-radius: 5px;
+  margin: -18px auto 20px;
+}
+.sheetClose {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  padding: 10px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+.bookingDetails {
+  margin: 24px 0;
+}
+.bookingDetails > div {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 15px;
+  border-top: 1px solid var(--line);
+  padding: 13px 0;
+  font-size: 11px;
+}
+.bookingDetails dt {
+  color: var(--muted);
+}
+.bookingDetails dd {
+  text-transform: capitalize;
+}
+.bookingDetails strong {
+  display: block;
+  margin-top: 5px;
+  font-weight: 500;
+}
+.bookingSheet > .primaryButton,
+.bookingSheet > .cancelButton {
+  width: 100%;
+}
+.cancelButton {
+  background: #fae9e5;
+  color: #aa3c2b;
+  border: 1px solid #edc3b9;
+}
+.entry {
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  max-width: 500px;
+  margin: auto;
+  justify-content: center;
+}
+.entryBrand {
+  font-size: 23px;
+  line-height: 0.9;
+  letter-spacing: -1.5px;
+  font-weight: 900;
+  margin-bottom: 35px;
+}
+.entryBrand span {
+  font-size: 9px;
+  color: var(--accent);
+  margin-left: 3px;
+}
+.entry h2 {
+  font-size: 43px;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin: 10px 0 15px;
+  font-weight: 500;
+}
+.entry > p:not(.kicker) {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+.entry label {
+  display: grid;
+  gap: 7px;
+  font-size: 10px;
+  margin-bottom: 15px;
+}
+.entry input {
+  height: 45px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--ink);
+}
+.entry > small {
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 15px;
+}
+@container (max-width:800px) {
+  .homeSplit {
+    grid-template-columns: 1fr;
+  }
+  .calendarLayout {
+    grid-template-columns: 1fr;
+  }
+  .calendarPicker .dayStrip button {
+    min-height: 65px;
+  }
+  .monthGrid {
+    max-width: 320px;
+  }
+  .planLayout {
+    grid-template-columns: 1fr;
+  }
+  .sessionList {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 5px;
+  }
+  .sessionList button {
+    min-width: 177px;
+  }
+  .listPlan .sessionList {
+    display: flex;
+  }
+  .sessionDetail {
+    padding: 20px;
+  }
+  .teamHero h3 {
+    font-size: 49px;
+  }
+  .teamBottom {
+    gap: 18px;
+  }
+  .slot {
+    padding: 18px;
+  }
+  .studioIntro {
+    align-items: flex-start;
+  }
+  .studioIntro > .primaryButton {
+    font-size: 10px;
+    padding: 10px;
+  }
+  .secondaryStack .coachNote {
+    margin-top: 4px;
+  }
+}
+@container (max-width:640px) {
+  .appShell {
+    display: block;
+  }
+  .appSidebar {
+    display: none;
+  }
+  .appMain {
+    height: 100%;
+  }
+  .appHeader {
+    height: 54px;
+    padding: 0 20px;
+    border-bottom: 0;
+  }
+  .mobileBrand {
+    display: block;
+  }
+  .desktopCrumb {
+    display: none;
+  }
+  .profileButton {
+    width: 30px;
+    height: 30px;
+  }
+  .view {
+    padding: 17px 20px 26px;
+  }
+  .bottomNav {
+    display: flex;
+    flex-shrink: 0;
+    height: 68px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 5px 9px 2px;
+  }
+  .bottomNav button {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 9px;
+    position: relative;
+  }
+  .bottomNav button[aria-current="page"] {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .bottomNav button[aria-current="page"]:before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    width: 27px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .greeting {
+    margin-bottom: 23px;
+  }
+  .greeting h2,
+  .pageTitle h2 {
+    font-size: 31px;
+  }
+  .greeting > p:last-child {
+    font-size: 11px;
+  }
+  .sessionTile {
+    padding: 22px 20px;
+    min-height: 205px;
+  }
+  .sessionTile h3 {
+    font-size: 26px;
+    max-width: 175px;
+  }
+  .movement {
+    width: 85px;
+  }
+  .appointment {
+    padding: 16px;
+    gap: 12px;
+  }
+  .quickLinks {
+    gap: 8px;
+  }
+  .quickLinks button {
+    font-size: 10px;
+    padding: 15px 11px;
+    gap: 7px;
+  }
+  .quickLinks button svg {
+    width: 16px;
+  }
+  .coachNote {
+    padding: 18px 0;
+  }
+  .progressLine {
+    font-size: 9px;
+  }
+  .letterHero {
+    padding: 24px;
+  }
+  .letterHero h3 {
+    font-size: 29px;
+  }
+  .letterHero > p:not(.kicker) {
+    font-size: 12px;
+  }
+  .studioIntro {
+    display: block;
+  }
+  .studioIntro > .primaryButton {
+    margin-top: 20px;
+    width: 100%;
+    font-size: 12px;
+  }
+  .studioIntro h3 {
+    font-size: 32px;
+  }
+  .bigChoices > button {
+    padding: 25px 20px;
+    gap: 16px;
+    min-height: 140px;
+  }
+  .bigChoices strong {
+    font-size: 24px;
+  }
+  .bigChoices small {
+    font-size: 10px;
+  }
+  .teamHero {
+    padding: 25px 21px;
+  }
+  .teamHero h3 {
+    font-size: 43px;
+    letter-spacing: -1.8px;
+    margin: 30px 0;
+  }
+  .teamHero > div {
+    display: block;
+  }
+  .teamHero .primaryButton {
+    margin-top: 20px;
+    width: 100%;
+    min-height: 48px;
+  }
+  .teamWatermark {
+    font-size: 95px;
+    right: -6px;
+    top: 25px;
+  }
+  .teamBottom {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .teamBottom > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .teamBottom > div > .kicker {
+    flex-basis: 100%;
+  }
+  .teamBottom > div > strong {
+    font-size: 40px;
+  }
+  .teamBottom > div > p {
+    max-width: 180px;
+    margin: 0;
+  }
+  .planToolbar {
+    display: block;
+    margin-bottom: 20px;
+  }
+  .planToolbar > .appSelect {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .planToolbar .weekControl {
+    justify-content: space-between;
+  }
+  .sessionList button {
+    padding: 14px 10px;
+    min-width: 167px;
+  }
+  .sessionList button > svg:last-child {
+    display: none;
+  }
+  .sessionDetailHeading h3 {
+    font-size: 25px;
+  }
+  .sessionDetailHeading img {
+    width: 60px;
+    height: 60px;
+  }
+  .sessionDetail {
+    padding: 18px;
+  }
+  .sessionDetailHeading .kicker {
+    font-size: 8px;
+  }
+  .coachHint {
+    padding: 12px;
+  }
+  .exerciseList small {
+    line-height: 1.7;
+  }
+  .workout h2 {
+    font-size: 32px;
+  }
+  .workoutVisual {
+    height: 160px;
+  }
+  .workoutVisual img {
+    height: 135px;
+    width: 135px;
+  }
+  .workoutDone h2 {
+    font-size: 40px;
+  }
+  .restTimer {
+    padding: 13px;
+    gap: 10px;
+  }
+  .restTimer button {
+    font-size: 9px;
+  }
+  .calendarFilters {
+    gap: 3px;
+    margin-bottom: 18px;
+  }
+  .calendarFilters button {
+    padding: 10px 7px;
+    font-size: 9px;
+  }
+  .calendarLayout {
+    gap: 10px;
+  }
+  .monthGrid {
+    display: none;
+  }
+  .calendarPicker .dayStrip {
+    gap: 4px;
+    margin: 15px 0;
+  }
+  .calendarPicker .dayStrip button {
+    min-height: 62px;
+  }
+  .calendarPicker .dayStrip strong {
+    font-size: 17px;
+  }
+  .coachFilter {
+    margin: 10px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .coachFilter > .appSelect {
+    flex: 1;
+  }
+  .sectionTitle {
+    align-items: flex-start;
+  }
+  .sectionTitle h3 {
+    font-size: 14px;
+  }
+  .sectionTitle small {
+    font-size: 8px;
+    text-align: right;
+    max-width: 75px;
+  }
+  .slot {
+    gap: 10px;
+    padding: 16px 11px;
+  }
+  .slot > strong {
+    font-size: 18px;
+  }
+  .slot b {
+    font-size: 10px;
+  }
+  .slot small {
+    font-size: 8px;
+  }
+  .slotState {
+    font-size: 8px;
+    gap: 3px;
+  }
+  .slotState > svg:last-child {
+    display: none;
+  }
+  .calendarFootnote {
+    font-size: 9px;
+  }
+  .profileSummary {
+    padding: 17px;
+    gap: 12px;
+  }
+  .profileSummary p {
+    font-size: 10px;
+  }
+  .profileRows > div {
+    font-size: 10px;
+  }
+  .bookingSheet {
+    padding: 30px 22px 14px;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 23px 23px 0 0;
+    max-height: 95%;
+  }
+  .entry {
+    padding: 30px 26px;
+    justify-content: flex-start;
+  }
+  .entryBrand {
+    margin: 12px 0 35px;
+  }
+  .entry h2 {
+    font-size: 43px;
+  }
+  .timelineDay > button {
+    padding: 17px 13px;
+  }
+  .timelineDay {
+    gap: 10px;
+  }
+  .timelineLine {
+    padding-left: 40px;
+  }
+}
+@media (max-width: 1200px) {
+  .galleryGrid {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 25px;
+    padding: 30px 24px;
+  }
+  .stageCaption {
+    display: none;
+  }
+  .stage {
+    padding: 26px 18px;
+  }
+  .selector h1 {
+    font-size: 28px;
+  }
+  .reviewTitle h2 span {
+    display: block;
+    margin: 7px 0 0;
+  }
+  .testToolbar > span {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .computer {
+    height: 790px;
+  }
+  .reviewTag {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .reviewHeader {
+    height: 64px;
+    padding: 0 20px;
+  }
+  .brand span {
+    display: none;
+  }
+  .galleryGrid {
+    display: block;
+    padding: 24px 16px 40px;
+  }
+  .selector h1 {
+    font-size: 28px;
+  }
+  .selector h1 br {
+    display: none;
+  }
+  .intro {
+    max-width: 500px;
+  }
+  .conceptList {
+    display: flex;
+    overflow: auto;
+    margin: 20px -16px 25px;
+    padding: 0 16px 8px;
+    gap: 9px;
+  }
+  .conceptButton {
+    min-width: 153px;
+    background: #eaeae3;
+    gap: 9px;
+    padding: 13px;
+  }
+  .conceptButton small {
+    font-size: 9px;
+  }
+  .swatch {
+    width: 7px;
+    height: 7px;
+  }
+  .recommendation {
+    display: none;
+  }
+  .reviewTitle {
+    margin: 8px 0 20px;
+    align-items: flex-start;
+  }
+  .reviewTitle h2 {
+    font-size: 25px;
+  }
+  .reviewTitle h2 span {
+    font-size: 11px;
+    max-width: 160px;
+  }
+  .deviceControls button {
+    padding: 8px;
+    font-size: 10px;
+    gap: 4px;
+  }
+  .deviceControls button svg {
+    width: 13px;
+  }
+  .testToolbar {
+    gap: 8px;
+    font-size: 10px;
+  }
+  .reviewSelect {
+    min-width: 140px;
+  }
+  .stage {
+    padding: 20px 5px;
+    border-radius: 10px;
+  }
+  .phone {
+    width: min(390px, 100%);
+    height: 810px;
+    border-width: 6px;
+    border-radius: 39px;
+  }
+  .phoneTop {
+    padding: 8px 20px 0;
+  }
+  .desktopStage {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  .computer {
+    min-width: 940px;
+  }
+  .decisionNotes {
+    padding: 22px;
+  }
+  .decisionNotes h3 {
+    font-size: 17px;
+  }
+  .decisionNotes dl {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .research ul {
+    grid-template-columns: 1fr;
+  }
+  .reviewTag {
+    display: none;
+  }
+  .returnLink {
+    font-size: 10px;
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sheet {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view,
+  .bookingSheet,
+  .bookingOverlay {
+    animation: none;
+  }
+  .appRoot button {
+    transition: none;
+  }
+}
+/* The timeline and action cards keep the same reading order at both sizes. */
+.appBrand img {
+  width: 40px;
+  height: auto;
+  filter: brightness(0);
+  margin-left: 8px;
+}
+.appBrand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.appBrand:after {
+  content: "TEAM\A ITALFIT";
+  white-space: pre;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+}
+.timeline > button {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  text-align: left;
+  width: 100%;
+  min-height: 99px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.timelineDay {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  width: 35px;
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 9px;
+  color: var(--muted);
+}
+.timelineDay strong {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.timelineLine {
+  height: 44px;
+  width: 2px;
+  background: var(--soft);
+  padding: 0;
+  flex-shrink: 0;
+}
+.timeline > button > span:nth-child(3) {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+.timeline > button small {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  color: var(--accent);
+}
+.timeline > button strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.timeline > button p {
+  font-size: 10px;
+  color: var(--muted);
+}
+.timeline > button > svg {
+  width: 16px;
+  flex-shrink: 0;
+}
+.studioIntro {
+  display: block;
+  background: var(--surface);
+  padding: 25px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+.studioLabel {
+  margin: 0 0 18px;
+}
+.studioIntro > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.studioIntro > .primaryButton {
+  width: 100%;
+}
+.bigChoices {
+  grid-template-columns: 1fr 1fr;
+}
+.bigChoices > button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  padding: 25px;
+  min-height: 250px;
+  align-content: start;
+}
+.bigChoices > button > span:first-child {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.bigChoices > button > h3 {
+  grid-column: 1/-1;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.bigChoices > button > p {
+  grid-column: 1/-1;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.bigChoices > button > .textAction {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.letterHero .coachNote {
+  border: 0;
+  padding: 0;
+  display: block;
+}
+.letterHero .coachNote > .avatar {
+  margin-bottom: 18px;
+}
+.letterHero .coachNote p {
+  font:
+    26px/1.35 Georgia,
+    serif;
+  letter-spacing: -0.3px;
+  margin: 20px 0;
+}
+.letterSignature {
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+.editorialDivider > span:first-child {
+  font:
+    23px Georgia,
+    serif;
+  color: var(--ink);
+}
+@container (max-width:640px) {
+  .bigChoices {
+    grid-template-columns: 1fr;
+  }
+  .bigChoices > button {
+    min-height: 210px;
+    padding: 23px;
+    gap: 15px;
+  }
+  .bigChoices > button > h3 {
+    font-size: 28px;
+  }
+  .studioIntro {
+    padding: 22px 18px;
+  }
+  .studioIntro .dayStrip {
+    gap: 3px;
+  }
+  .studioIntro .dayStrip button {
+    min-height: 58px;
+  }
+  .letterHero .coachNote p {
+    font-size: 25px;
+  }
+}
+.expandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  font-size: 11px;
+}
+.standalone {
+  height: 100dvh;
+  background: #f6f7f2;
+  display: flex;
+  flex-direction: column;
+}
+.previewBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 24px;
+  border-bottom: 1px solid #ddd;
+  background: #fafaf7;
+  font:
+    11px Arial,
+    sans-serif;
+  flex-shrink: 0;
+  min-height: 48px;
+}
+.previewBar > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.previewBar > span {
+  color: #7d8177;
+}
+.previewBar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+}
+.previewBar select {
+  height: 30px;
+  font-size: 10px;
+}
+.standaloneApp {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.standaloneApp .view {
+  max-width: 1200px;
+  margin-inline: auto;
+  width: 100%;
+  padding: 42px;
+}
+.standaloneApp .appShell {
+  grid-template-columns: 210px minmax(0, 1fr);
+}
+.standaloneApp .appSidebar {
+  padding: 30px 20px;
+}
+.standaloneApp .appHeader {
+  padding-inline: 42px;
+}
+.standaloneApp .appSidebar nav button {
+  font-size: 13px;
+}
+.standaloneApp .appBrand:after {
+  font-size: 15px;
+}
+.standaloneApp .calendarLayout {
+  grid-template-columns: 290px minmax(0, 1fr);
+}
+.standaloneApp .planLayout {
+  grid-template-columns: 250px minmax(0, 1fr);
+}
+.standaloneApp .listPlan {
+  grid-template-columns: 1fr;
+}
+.standaloneApp .appSidebar > p {
+  font-size: 10px;
+}
+.standaloneApp .greeting h2,
+.standaloneApp .pageTitle h2 {
+  font-size: 44px;
+}
+.standaloneApp .slot {
+  padding: 22px;
+}
+.standaloneApp .slot b {
+  font-size: 13px;
+}
+.standaloneApp .slot small {
+  font-size: 11px;
+}
+.standaloneApp .slotState {
+  font-size: 11px;
+}
+.standaloneApp .sessionList strong {
+  font-size: 14px;
+}
+.standaloneApp .exerciseList strong {
+  font-size: 14px;
+}
+.standaloneApp .exerciseList p {
+  font-size: 13px;
+}
+.standaloneApp .exerciseList small {
+  font-size: 11px;
+}
+@media (max-width: 800px) {
+  .previewBar {
+    padding: 6px 12px;
+    gap: 10px;
+    font-size: 10px;
+  }
+  .previewBar > span {
+    display: none;
+  }
+  .previewBar label {
+    font-size: 0;
+  }
+  .previewBar select {
+    font-size: 10px;
+  }
+}
+@container (max-width:800px) {
+  .standaloneApp .planLayout,
+  .standaloneApp .calendarLayout {
+    grid-template-columns: 1fr;
+  }
+}
+@container (max-width:640px) {
+  .standaloneApp .appHeader {
+    padding-inline: 20px;
+  }
+  .standaloneApp .view {
+    padding: 18px 20px 28px;
+  }
+  .standaloneApp .greeting h2,
+  .standaloneApp .pageTitle h2 {
+    font-size: 34px;
+  }
+  .standaloneApp .slot {
+    padding: 18px 11px;
+  }
+  .standaloneApp .slot b {
+    font-size: 11px;
+  }
+  .standaloneApp .slot small,
+  .standaloneApp .slotState {
+    font-size: 9px;
+  }
+  .standaloneApp .sessionList strong {
+    font-size: 12px;
+  }
+  .standaloneApp .exerciseList strong {
+    font-size: 13px;
+  }
+  .standaloneApp .exerciseList p {
+    font-size: 12px;
+  }
+  .standaloneApp .exerciseList small {
+    font-size: 10px;
+  }
+}
+/* Different navigation models belong to the proposed experience, not its colour theme. */
+.quickNav {
+  display: none;
+}
+.compareScreens {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 15px 0 18px;
+  border-top: 1px solid #dedfd6;
+  padding-top: 15px;
+}
+.compareScreens button {
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #7d8175;
+}
+.compareScreens button[aria-pressed="true"] {
+  background: #fff;
+  color: #292e23;
+  box-shadow: 0 1px 5px #2221;
+}
+.compareScreens > span {
+  margin-left: auto;
+  color: #898e80;
+  font-size: 10px;
+}
+.studioGreeting {
+  display: none;
+}
+.ritmo .appShell {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.ritmo .appSidebar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 26px;
+  gap: 24px;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+}
+.ritmo .appBrand {
+  height: 35px;
+  flex-shrink: 0;
+}
+.ritmo .appBrand img {
+  width: 30px;
+}
+.ritmo .appSidebar > p,
+.ritmo .sidebarPerson {
+  display: none;
+}
+.ritmo .appSidebar nav {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.ritmo .appSidebar nav button {
+  font-size: 11px;
+  padding: 10px 14px;
+  height: 42px;
+}
+.ritmo .appHeader {
+  height: 40px;
+  border-bottom: 0;
+}
+.ritmo .profileButton {
+  width: 25px;
+  height: 25px;
+  font-size: 8px;
+}
+.ritmo .appHeader .desktopCrumb {
+  font-size: 9px;
+}
+.vicino .appSidebar {
+  background: #ece2d3;
+  border-right: 0;
+  padding: 30px 20px;
+}
+.vicino .appBrand:after {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+.vicino .appSidebar > p {
+  font-family: Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 35px 8px 0;
+}
+.vicino .appSidebar nav button {
+  font-family: Georgia, serif;
+  font-size: 16px !important;
+  border-radius: 0;
+  border-bottom: 1px solid #d9cdbb;
+  padding-inline: 5px;
+}
+.vicino .appSidebar nav button[aria-current="page"] {
+  background: none;
+}
+.vicino .appSidebar nav svg {
+  display: none;
+}
+.vicino .appHeader {
+  border-bottom: 0;
+  background: var(--appbg);
+}
+.vicino .appHeader .desktopCrumb {
+  font-family: Georgia, serif;
+  font-size: 13px;
+}
+.studio .appShell {
+  grid-template-columns: 75px minmax(0, 1fr);
+}
+.studio .appSidebar {
+  padding: 22px 10px;
+}
+.studio .appBrand img {
+  margin: 0;
+  width: 38px;
+}
+.studio .appBrand {
+  justify-content: center;
+}
+.studio .appBrand:after,
+.studio .appSidebar > p,
+.studio .sidebarPerson {
+  display: none;
+}
+.studio .appSidebar nav {
+  margin-top: 20px;
+  gap: 15px;
+}
+.studio .appSidebar nav button {
+  font-size: 0 !important;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  min-height: 50px;
+  border-radius: 50%;
+}
+.studio .appSidebar nav button > svg {
+  width: 21px;
+  height: 21px;
+}
+.studio .appHeader {
+  height: 48px;
+}
+.studio .view {
+  padding-top: 25px;
+}
+.essenziale .appShell,
+.team .appShell {
+  display: block;
+}
+.essenziale .appSidebar,
+.team .appSidebar {
+  display: none;
+}
+.essenziale .appMain,
+.team .appMain {
+  height: 100%;
+}
+.essenziale .appHeader,
+.team .appHeader {
+  height: 76px;
+  gap: 20px;
+}
+.essenziale .mobileBrand,
+.team .mobileBrand {
+  display: block;
+  flex-shrink: 0;
+}
+.essenziale .desktopCrumb,
+.team .desktopCrumb {
+  display: none;
+}
+.essenziale .quickNav,
+.team .quickNav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+}
+.quickNav > button {
+  min-height: 44px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.quickNav > button[aria-current="page"] {
+  color: var(--ink);
+  box-shadow: 0 2px var(--accent);
+}
+.essenziale .view {
+  max-width: 920px;
+}
+.essenziale .greeting {
+  text-align: center;
+  margin: 35px 0 40px;
+}
+.essenziale .greeting h2 {
+  font-weight: 400;
+  font-size: 42px;
+}
+.essenziale .greeting .kicker {
+  display: none;
+}
+.essenziale .bigChoices {
+  gap: 0;
+}
+.essenziale .bigChoices > button {
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-block: 1px solid var(--line);
+  padding: 35px;
+  min-height: 300px;
+}
+.essenziale .bigChoices > button + button {
+  border-left: 1px solid var(--line);
+}
+.essenziale .quietNote {
+  text-align: center;
+}
+.team {
+  --appbg: #161916;
+  --surface: #202420;
+  --ink: #f5f2eb;
+  --accent: #f45d46;
+  --line: #363b35;
+  --muted: #a0a89e;
+  --soft: #30372e;
+}
+.team .appHeader {
+  border-bottom: 1px solid var(--line);
+}
+.team .mobileBrand {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.7px;
+}
+.team .quickNav > button {
+  letter-spacing: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.team .quickNav > button[aria-current="page"] {
+  color: var(--accent);
+}
+.team .view {
+  padding-top: 40px;
+}
+.team .greeting h2 {
+  font-size: clamp(35px, 4cqw, 56px);
+  font-weight: 700;
+  letter-spacing: -2px;
+}
+.team .teamHero {
+  border: 1px solid var(--line);
+  background: #202420;
+}
+.team .teamHero .primaryButton {
+  color: #161916;
+  font-weight: 800;
+}
+.team .teamBottom .appointment {
+  border-radius: 0;
+}
+.team .primaryButton {
+  color: #161916;
+}
+.team .appointment .dateBlock {
+  border-radius: 0;
+}
+.team .bookingSheet {
+  background: var(--surface);
+}
+.team .bookingOverlay {
+  background: #000a;
+}
+.team .homeIndicator,
+.phone:has(.team) .phoneTop,
+.phone:has(.team) .homeIndicator {
+  background: #161916;
+  color: #fff;
+}
+.phone:has(.team) .homeIndicator span {
+  background: #aaa;
+}
+.team .bottomNav {
+  background: #161916;
+}
+.team .entry {
+  background: #161916;
+}
+.team .workoutVisual {
+  background: #30372e;
+}
+.team .cancelButton {
+  background: #422c28;
+  color: #ffb6a9;
+  border-color: #7a4c43;
+}
+.team .notice {
+  background: #30372e;
+}
+.team .teamWatermark {
+  color: #ffffff06;
+}
+@container (max-width:900px) {
+  .ritmo .appSidebar {
+    padding: 10px 18px;
+    gap: 12px;
+  }
+  .ritmo .appSidebar nav button {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .ritmo .appSidebar nav button > svg {
+    width: 15px;
+  }
+  .ritmo .appBrand:after {
+    font-size: 11px;
+  }
+  .vicino .appShell {
+    grid-template-columns: 155px minmax(0, 1fr);
+  }
+}
+@container (max-width:640px) {
+  .ritmo .appShell {
+    display: block;
+  }
+  .ritmo .appSidebar {
+    display: none;
+  }
+  .ritmo .appHeader {
+    height: 52px;
+  }
+  .ritmo .profileButton {
+    width: 30px;
+    height: 30px;
+    font-size: 10px;
+  }
+  .ritmo .bottomNav {
+    background: #e8ecfc;
+    border-top: 0;
+    height: 70px;
+  }
+  .ritmo .bottomNav button[aria-current="page"] {
+    background: #fff;
+    border-radius: 40px;
+  }
+  .ritmo .bottomNav button:before {
+    display: none;
+  }
+  .vicino .appShell {
+    display: block;
+  }
+  .vicino .appSidebar {
+    display: none;
+  }
+  .vicino .appHeader .desktopCrumb {
+    display: none;
+  }
+  .vicino .mobileBrand {
+    font:
+      14px Georgia,
+      serif;
+    letter-spacing: 0.2px;
+  }
+  .vicino .bottomNav {
+    background: #ece2d3;
+    height: 60px;
+    border: 0;
+  }
+  .vicino .bottomNav button > svg {
+    display: none;
+  }
+  .vicino .bottomNav button {
+    font:
+      14px Georgia,
+      serif;
+  }
+  .vicino .bottomNav button[aria-current="page"]:before {
+    top: auto;
+    bottom: 8px;
+    width: 16px;
+    height: 1px;
+  }
+  .studio .appShell {
+    display: block;
+  }
+  .studio .appSidebar {
+    display: none;
+  }
+  .studio .appHeader {
+    height: 52px;
+  }
+  .studio .bottomNav {
+    order: -1;
+    height: 53px;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    border-top: 0;
+    padding: 0 15px;
+  }
+  .studio .bottomNav button {
+    flex-direction: row;
+    font-size: 10px;
+    gap: 5px;
+  }
+  .studio .bottomNav button > svg {
+    width: 15px;
+  }
+  .studio .bottomNav button[aria-current="page"]:before {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+  }
+  .studio .appScroll {
+    order: 1;
+  }
+  .studio .view {
+    padding-top: 25px;
+  }
+  .essenziale .appHeader {
+    height: auto;
+    min-height: 96px;
+    padding: 15px 20px 0;
+    flex-wrap: wrap;
+    gap: 0 15px;
+    align-content: space-between;
+  }
+  .essenziale .mobileBrand {
+    font-size: 12px;
+  }
+  .essenziale .profileButton {
+    margin-left: auto;
+  }
+  .essenziale .quickNav {
+    order: 3;
+    flex-basis: 100%;
+    margin: 4px 0 0;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .essenziale .quickNav > button {
+    font-size: 11px;
+    min-height: 43px;
+  }
+  .essenziale .bottomNav {
+    display: none;
+  }
+  .essenziale .view {
+    padding-top: 28px;
+  }
+  .essenziale .greeting {
+    text-align: left;
+    margin: 5px 0 30px;
+  }
+  .essenziale .greeting h2 {
+    font-size: 35px;
+  }
+  .essenziale .bigChoices {
+    gap: 0;
+  }
+  .essenziale .bigChoices > button {
+    padding: 28px 0;
+    min-height: 230px;
+  }
+  .essenziale .bigChoices > button + button {
+    border-left: 0;
+    border-top: 0;
+  }
+  .essenziale .quietNote {
+    text-align: left;
+  }
+  .team .appHeader {
+    height: 60px;
+    gap: 15px;
+  }
+  .team .mobileBrand {
+    font-size: 15px;
+  }
+  .team .quickNav {
+    display: none;
+  }
+  .team .profileButton {
+    margin-left: auto;
+  }
+  .team .view {
+    padding-top: 25px;
+  }
+  .team .greeting h2 {
+    font-size: 34px;
+  }
+  .team .bottomNav {
+    border-top: 1px solid var(--line);
+    height: 70px;
+  }
+  .team .bottomNav button {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .team .bottomNav button[aria-current="page"]:before {
+    top: 0;
+    background: var(--accent);
+    width: 100%;
+  }
+  .team .bottomNav button[aria-current="page"] {
+    background: #252c24;
+  }
+  .team .teamHero {
+    padding: 25px 20px;
+    border: 0;
+    border-radius: 0;
+  }
+  .team .teamHero h3 {
+    font-size: 42px;
+  }
+  .team .teamBottom {
+    margin-top: 28px;
+  }
+  .team .bottomNav button svg {
+    width: 19px;
+  }
+  .team .bookingSheet {
+    border-radius: 0;
+  }
+  .team .workout h2 {
+    font-size: 38px;
+    font-weight: 700;
+  }
+  .team .workoutDone h2 {
+    font-size: 42px;
+  }
+}
+@media (max-width: 800px) {
+  .compareScreens {
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .compareScreens > span {
+    flex-basis: 100%;
+    margin: 9px 0 0;
+    font-size: 9px;
+  }
+  .compareScreens button {
+    padding: 8px 11px;
+    font-size: 10px;
+  }
+}
+@container (max-width:640px) {
+  .studio .appHeader {
+    order: -2;
+  }
+  .studio .bottomNav {
+    order: -1;
+  }
+}

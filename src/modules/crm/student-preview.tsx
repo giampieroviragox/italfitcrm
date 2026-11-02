@@ -107,6 +107,7 @@ export function StudentPreview({
                 </h2>
                 <StudentHome
                   services={services}
+                  hasPlan={Boolean(assignment)}
                   hasBookings={Boolean(data?.lessons.length)}
                   studentId={student.id}
                 />
