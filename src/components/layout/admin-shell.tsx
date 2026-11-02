@@ -11,7 +11,6 @@ import {
   CalendarDays,
   ChevronRight,
   Dumbbell,
-  Eye,
   Home,
   LogOut,
   PanelLeft,
@@ -48,7 +47,6 @@ const icons = {
 };
 const footerLinks = [
   { href: "/admin/impostazioni", label: "Impostazioni", icon: Settings2 },
-  { href: "/area-studente", label: "Anteprima studente", icon: Eye },
 ];
 const itemClass = (active: boolean, collapsed: boolean) =>
   cn(

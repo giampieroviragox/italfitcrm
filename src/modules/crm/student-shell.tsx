@@ -21,22 +21,20 @@ const paths = {
 export function StudentShell({
   view,
   items,
-  query = "",
   actions,
   children,
 }: {
   view: StudentView;
   items: StudentNavItem[];
-  query?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const href = (item: StudentNavItem) => paths[item.view] + query;
+  const href = (item: StudentNavItem) => paths[item.view];
   return (
     <div className="min-h-dvh min-w-0 bg-background">
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-8">
-          <Link href={paths.home + query} aria-label="Team Italfit, Home">
+          <Link href={paths.home} aria-label="Team Italfit, Home">
             <Brand />
           </Link>
           <nav

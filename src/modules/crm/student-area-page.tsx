@@ -1,21 +1,17 @@
 import { redirect } from "next/navigation";
-import { StudentPreview } from "@/modules/crm/student-preview";
 import { StudentPortal } from "@/modules/crm/student-portal";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { requireAccess, HttpError } from "@/modules/crm/server/auth";
 import { readCrm } from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
-import { RemoteCrmProvider } from "@/modules/crm/remote-store";
 import type { StudentView } from "./student-home";
 export async function StudentAreaPage({
   view = "home",
-  studentId,
 }: {
   view?: StudentView;
-  studentId?: string;
 }) {
-  if (!supabaseConfigured)
-    return <StudentPreview view={view} initialStudentId={studentId} />;
+  // The student area exists only for signed-in students; staff use the CRM.
+  if (!supabaseConfigured) redirect("/admin");
   let identity;
   try {
     identity = await requireAccess();
@@ -23,19 +19,8 @@ export async function StudentAreaPage({
     if (e instanceof HttpError) redirect("/login");
     throw e;
   }
+  if (identity.access.role !== "student") redirect("/admin");
   const initial = await readCrm(identity.user.id);
-  if (identity.access.role !== "student")
-    return (
-      <RemoteCrmProvider
-        initial={initial}
-        viewer={{
-          role: identity.access.role,
-          recordId: identity.access.record_id,
-        }}
-      >
-        <StudentPreview view={view} initialStudentId={studentId} />
-      </RemoteCrmProvider>
-    );
   return (
     <StudentPortal
       view={view}

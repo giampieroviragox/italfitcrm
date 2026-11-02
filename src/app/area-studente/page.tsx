@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { StudentAreaPage } from "@/modules/crm/student-area-page";
 export const metadata: Metadata = { title: "Area studente" };
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ studente?: string }>;
-}) {
-  const { studente } = await searchParams;
-  return <StudentAreaPage view="home" studentId={studente} />;
+export default function Page() {
+  return <StudentAreaPage view="home" />;
 }

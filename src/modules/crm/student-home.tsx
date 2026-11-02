@@ -12,19 +12,16 @@ export function StudentHome({
   services,
   hasBookings,
   hasPlan,
-  studentId,
 }: {
   services: TierAccess;
   hasBookings: boolean;
   hasPlan: boolean;
-  studentId?: string;
 }) {
-  const query = studentId ? `?studente=${encodeURIComponent(studentId)}` : "";
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {services.plans && hasPlan ? (
         <Link
-          href={`/area-studente/piano${query}`}
+          href="/area-studente/piano"
           className={`${tile} hover:bg-foreground/[.02]`}
         >
           <span className={icon}>
@@ -54,7 +51,7 @@ export function StudentHome({
       )}
       {(services.lessons || hasBookings) && (
         <Link
-          href={`/area-studente/prenotazioni${query}`}
+          href="/area-studente/prenotazioni"
           className={`${tile} hover:bg-foreground/[.02]`}
         >
           <span className={icon}>

@@ -1,6 +1,5 @@
 "use client";
 import { useContext, useSyncExternalStore } from "react";
-import { demoStudents } from "@/modules/students/demo-data";
 import { tiers } from "@/modules/students/config";
 import type { CrmState } from "./model";
 import { isCrmState } from "./schema";
@@ -12,9 +11,7 @@ const KEY = "italfit.crm.v1";
 const EVENT = "italfit-crm-change";
 export const initialState: CrmState = {
   version: 1,
-  students: supabaseConfigured
-    ? []
-    : demoStudents.map((s) => ({ ...s, properties: {} })),
+  students: [],
   tiers: Object.values(tiers).map((t) => ({ ...t, archived: false })),
   properties: [],
   admins: [
