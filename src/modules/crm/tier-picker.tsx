@@ -1,6 +1,6 @@
 "use client";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
-import { TierBadge } from "@/modules/students/components/tier-badge";
+import { tierDots } from "@/modules/students/components/tier-badge";
 import { useSaving } from "./store";
 import type { CrmTier } from "./model";
 
@@ -15,18 +15,18 @@ export function TierPicker({
 }) {
   const saving = useSaving();
   return (
-    <fieldset disabled={saving} className="space-y-3">
-      <legend className="mb-3 text-sm font-medium">Tier *</legend>
-      <p className="text-xs text-muted-foreground">
+    <fieldset disabled={saving}>
+      <legend className="text-sm font-medium">Tier *</legend>
+      <p className="mt-0.5 mb-2 text-xs text-muted-foreground">
         Seleziona uno o entrambi i servizi.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="divide-y overflow-hidden rounded-[10px] border">
         {tiers
           .filter((t) => !t.archived || value.includes(t.id))
           .map((t) => (
             <label
               key={t.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg border bg-background p-3"
+              className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-foreground/[.03] has-[:disabled]:cursor-not-allowed"
             >
               <CheckboxControl
                 checked={value.includes(t.id)}
@@ -40,7 +40,11 @@ export function TierPicker({
                   )
                 }
               />
-              <TierBadge tier={t} />
+              <span
+                aria-hidden
+                className={`size-2 shrink-0 rounded-full ${tierDots[t.id] ?? "bg-neutral-400"}`}
+              />
+              <span className="min-w-0 flex-1 text-sm">{t.name}</span>
               {t.archived && (
                 <span className="text-xs text-muted-foreground">
                   Archiviato

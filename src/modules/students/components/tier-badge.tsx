@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { CrmTier } from "@/modules/crm/model";
 
-const dots: Record<string, string> = {
+export const tierDots: Record<string, string> = {
   online: "bg-violet-500",
   studio: "bg-sky-500",
 };
@@ -19,7 +19,7 @@ export function TierBadge({ tier }: { tier?: Pick<CrmTier, "id" | "name"> }) {
           aria-hidden
           className={cn(
             "size-1.5 shrink-0 rounded-full",
-            dots[tier.id] ?? "bg-neutral-400",
+            tierDots[tier.id] ?? "bg-neutral-400",
           )}
         />
       )}
