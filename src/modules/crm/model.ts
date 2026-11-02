@@ -55,6 +55,7 @@ export interface CrmStudent extends Omit<Student, "tierId"> {
   revision?: number;
 }
 export interface AdminMember {
+  avatarUrl?: string;
   access?: AccountAccess | null;
   id: string;
   name: string;

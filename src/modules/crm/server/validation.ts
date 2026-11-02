@@ -34,6 +34,7 @@ export function validateStaffUpdate(
       admins.map((a) => ({
         id: a.id,
         name: a.name,
+        avatarUrl: a.avatarUrl,
         email: a.email,
         role: a.role,
         status: a.status,

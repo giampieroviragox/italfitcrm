@@ -13,6 +13,7 @@ export function PlanMonthSelect({
   value: string;
   months: readonly string[];
   onChange: (month: string) => void;
+  "aria-label"?: string;
   "aria-labelledby"?: string;
   "aria-describedby"?: string;
 }) {

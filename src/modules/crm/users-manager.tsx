@@ -216,6 +216,9 @@ function AdminEditor({
             email: String(f.get("email")).trim().toLowerCase(),
             role: member?.role || "admin",
             status: member?.status || "draft",
+            ...(String(f.get("avatarUrl") ?? "").trim()
+              ? { avatarUrl: String(f.get("avatarUrl")).trim() }
+              : {}),
             ...(member?.availability
               ? { availability: member.availability }
               : {}),
@@ -270,6 +273,18 @@ function AdminEditor({
             required
             type="email"
             defaultValue={member?.email}
+          />
+        </Field>
+        <Field
+          label="Foto profilo"
+          hint="Link HTTPS alla foto. Compare agli studenti che hanno questo coach assegnato."
+        >
+          <input
+            className={control}
+            name="avatarUrl"
+            type="url"
+            placeholder="https://…"
+            defaultValue={member?.avatarUrl}
           />
         </Field>
         <Field label="Ruolo">

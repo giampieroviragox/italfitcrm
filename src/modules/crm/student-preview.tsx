@@ -32,13 +32,13 @@ export function StudentPreview() {
   const data = student ? studentProjection(state, student.id) : null;
   return (
     <div className="min-h-dvh bg-[#f8f9f6]">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-white px-5 py-4 sm:px-8">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-3 sm:px-8 sm:py-4">
         <Brand />
         <Button asChild variant="outline">
           <Link href="/admin">Torna all’admin</Link>
         </Button>
       </header>
-      <main className="mx-auto max-w-7xl px-5 py-9 sm:px-8">
+      <main className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-8 sm:py-9">
         <PageHeading
           title="Anteprima studente"
           description="Seleziona uno studente. Le modifiche vengono salvate sul workspace."
@@ -52,7 +52,7 @@ export function StudentPreview() {
           </p>
         ) : (
           <>
-            <div className="mb-8 grid gap-4 rounded-xl border bg-muted/20 p-5 sm:grid-cols-2">
+            <div className="mb-6 grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
               <Field label="Studente">
                 <SelectControl
                   className={control}
@@ -133,6 +133,7 @@ export function StudentPreview() {
                     key={student.id + assignment.id + assignment.createdAt}
                     assignment={assignment}
                     entries={data?.workoutEntries}
+                    coach={data?.coach}
                   />
                 ) : (
                   <p className="rounded-xl border p-6 text-sm text-muted-foreground">

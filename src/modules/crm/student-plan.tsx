@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { CoachNote, ProgramReference, RecoveryNote } from "./plan-notes";
+import type { StudentCoach } from "./student-coach";
 import {
   ArrowRight,
-  ArrowUpRight,
   Check,
   ChevronLeft,
   ChevronRight,
-  Dumbbell,
-  Footprints,
   Play,
   RotateCcw,
   Timer,
@@ -32,47 +32,13 @@ import { formatMonth } from "@/lib/format";
 
 function MovementIllustration({ run = false }: { run?: boolean }) {
   return (
-    <svg
-      viewBox="0 0 120 120"
-      fill="none"
-      aria-hidden="true"
+    <Image
+      src={run ? "/illustrations/run.svg" : "/illustrations/strength.svg"}
+      alt=""
+      width={120}
+      height={120}
       className="size-full"
-    >
-      <circle
-        cx="60"
-        cy="60"
-        r="51"
-        stroke="currentColor"
-        strokeOpacity=".12"
-      />
-      <path d="M15 91h90" stroke="currentColor" strokeOpacity=".15" />
-      {run ? (
-        <g
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="73" cy="26" r="7" fill="currentColor" stroke="none" />
-          <path d="m67 42-14 20 18 11-7 23M55 59 40 76 24 72M65 44l15 13 17-4M61 46 44 43l-9 14" />
-          <path d="M15 39h15M12 50h12" strokeWidth="2" opacity=".35" />
-        </g>
-      ) : (
-        <g
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="60" cy="29" r="7" fill="currentColor" stroke="none" />
-          <path d="M60 44v25M44 52h32M60 69 43 86v13M60 69l17 17v13M44 52l-7-12M76 52l7-12" />
-          <path
-            d="M25 39h70M29 31v16M35 29v20M85 29v20M91 31v16"
-            strokeWidth="3"
-          />
-        </g>
-      )}
-    </svg>
+    />
   );
 }
 function secondsLabel(seconds: number) {
@@ -103,6 +69,7 @@ function RestTimer({ seconds }: { seconds: number }) {
       </div>
       <Button
         variant="outline"
+        className="h-11"
         onClick={() => {
           setRemaining(seconds);
           setDeadline(Date.now() + seconds * 1000);
@@ -124,7 +91,7 @@ function SessionCopy({ title, text }: { title: string; text?: string }) {
   return (
     <details
       className="group rounded-2xl border border-black/8 bg-white p-5"
-      open={title === "Riscaldamento"}
+      open
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium">
         {title}
@@ -191,7 +158,7 @@ function WorkoutGuide({
           if (pending) event.preventDefault();
         }}
       >
-        <SheetHeader className="border-b p-6 pr-16">
+        <SheetHeader className="border-b p-4 pr-14 sm:p-6 sm:pr-16">
           <SheetTitle>{session.name}</SheetTitle>
           <SheetDescription>
             {done
@@ -202,14 +169,14 @@ function WorkoutGuide({
         <Button
           size="icon"
           variant="ghost"
-          className="absolute top-5 right-4"
+          className="absolute top-3 right-3 size-11"
           aria-label="Chiudi allenamento"
           disabled={pending}
           onClick={leave}
         >
           <X />
         </Button>
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8f9f6] p-6 pb-10">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8f9f6] p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:p-6">
           {!done && exercise ? (
             <>
               <div className="mb-7 h-1 overflow-hidden rounded-full bg-black/5">
@@ -228,8 +195,8 @@ function WorkoutGuide({
                   />
                 </div>
               )}
-              <div className="rounded-3xl bg-white p-6 ring-1 ring-black/5">
-                <div className="mx-auto mb-7 size-36 rounded-full bg-[#edf1e8] p-3 text-[#536348]">
+              <div className="rounded-3xl bg-white p-5 ring-1 ring-black/5 sm:p-6">
+                <div className="mx-auto mb-5 size-28 rounded-full bg-[#edf1e8] p-4 sm:mb-7 sm:size-36">
                   <MovementIllustration run={session.kind === "run"} />
                 </div>
                 <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -262,6 +229,7 @@ function WorkoutGuide({
                 <Button
                   variant="outline"
                   disabled={index === 0}
+                  className="size-12"
                   aria-label="Passaggio precedente"
                   onClick={() => setIndex((i) => i - 1)}
                 >
@@ -294,7 +262,7 @@ function WorkoutGuide({
                 salva la sessione.
               </p>
               <div className="my-6 space-y-4">
-                <SessionCopy title="Defaticamento" text={session.cooldown} />
+                <RecoveryNote title="Defaticamento" text={session.cooldown} />
                 <SessionCopy
                   title="Indicazioni del coach"
                   text={session.guidance}
@@ -305,7 +273,7 @@ function WorkoutGuide({
                 hint="Carichi, ripetizioni, RPE, tempi e sensazioni."
               >
                 <textarea
-                  className={control}
+                  className={`${control} text-base sm:text-sm`}
                   rows={6}
                   maxLength={5000}
                   placeholder="Come ti sei sentita?"
@@ -368,9 +336,11 @@ export function StudentPlan({
   assignment,
   entries = [],
   onSave,
+  coach,
 }: {
   assignment: PlanAssignment;
   entries?: WorkoutEntry[];
+  coach?: StudentCoach;
   onSave?: (input: WorkoutInput) => Promise<boolean>;
 }) {
   const { snapshot: plan } = assignment;
@@ -402,19 +372,24 @@ export function StudentPlan({
       month: "short",
     }).format(new Date(date + "T12:00:00Z"));
   return (
-    <section aria-label="Il tuo piano" className="space-y-7 pb-6">
-      <div className="relative overflow-hidden rounded-[28px] bg-[#e9eedf] p-6 sm:p-9">
+    <section
+      aria-label="Il tuo piano"
+      className="min-w-0 space-y-5 pb-6 sm:space-y-7"
+    >
+      <div className="relative overflow-hidden rounded-3xl bg-[#e9eedf] p-5 sm:rounded-[28px] sm:p-9">
         <div className="relative z-10 max-w-xl">
           <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#536348]">
             Il tuo programma · {formatMonth(assignment.month)}
           </p>
-          <h2 className="mt-4 text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
+          <h2 className="mt-3 text-[32px] leading-[1.1] font-semibold tracking-[-.05em] sm:mt-4 sm:text-5xl">
             {plan.title}
           </h2>
           {plan.program?.goal && (
-            <p className="mt-3 text-base text-[#46513e]">{plan.program.goal}</p>
+            <p className="mt-3 text-sm leading-6 text-[#46513e] sm:text-base">
+              {plan.program.goal}
+            </p>
           )}
-          <div className="mt-7 flex flex-wrap gap-2 text-xs">
+          <div className="mt-5 flex flex-wrap gap-1.5 text-[11px] sm:mt-7 sm:gap-2 sm:text-xs">
             <span className="rounded-full bg-white/70 px-3 py-2">
               {weeks.length > 1
                 ? `${weeks.length} settimane`
@@ -451,7 +426,7 @@ export function StudentPlan({
           />
         </svg>
         {onSave && (
-          <div className="relative mt-8 max-w-xl border-t border-[#536348]/15 pt-5">
+          <div className="relative mt-5 max-w-xl border-t border-[#536348]/15 pt-4 sm:mt-8 sm:pt-5">
             <div className="mb-2 flex items-center justify-between text-xs text-[#46513e]">
               <span>
                 {completed} di {plan.sessions.length} allenamenti completati
@@ -474,20 +449,21 @@ export function StudentPlan({
           </div>
         )}
       </div>
-      {plan.description && (
-        <details className="border-b border-black/8 pb-5">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium">
-            Due parole dal coach
-            <ArrowUpRight className="size-4" />
-          </summary>
-          <p className="mt-4 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted-foreground">
-            {plan.description}
-          </p>
-        </details>
-      )}
+      {plan.description && <CoachNote text={plan.description} coach={coach} />}
       {weeks.length > 1 && (
         <div
-          className="flex gap-2 overflow-x-auto pb-1"
+          className={
+            weeks.length <= 4
+              ? "grid gap-1 rounded-2xl bg-[#ecefe7] p-1"
+              : "flex gap-2 overflow-x-auto pb-1"
+          }
+          style={
+            weeks.length <= 4
+              ? {
+                  gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
+                }
+              : undefined
+          }
           aria-label="Settimane del programma"
         >
           {weeks.map((week) => (
@@ -495,24 +471,26 @@ export function StudentPlan({
               key={week}
               type="button"
               aria-pressed={selectedWeek === week}
-              className={`shrink-0 rounded-full px-5 py-3 text-sm font-medium transition-colors ${selectedWeek === week ? "bg-[#253328] text-white" : "bg-white text-muted-foreground hover:bg-[#e9eedf]"}`}
+              aria-label={`Settimana ${week}`}
+              className={`min-h-11 min-w-0 shrink-0 rounded-xl px-2 py-3 text-xs font-medium transition-colors sm:px-5 sm:text-sm ${selectedWeek === week ? "bg-[#253328] text-white shadow-sm" : "text-muted-foreground hover:bg-white/70"}`}
               onClick={() => {
                 setWeek(week);
                 setSelected("");
               }}
             >
-              Settimana {week}
+              <span className="sm:hidden">Sett.</span>
+              <span className="hidden sm:inline">Settimana</span> {week}
             </button>
           ))}
         </div>
       )}
       {session && (
         <div className="grid items-start gap-6 lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-8">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold tracking-tight">
+          <div className="min-w-0">
+            <h3 className="mb-3 text-lg font-semibold tracking-tight">
               I tuoi allenamenti
             </h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-col lg:gap-3">
               {sessions.map((s, i) => {
                 const selected = s.id === session.id,
                   finished = ownEntries.some(
@@ -523,37 +501,35 @@ export function StudentPlan({
                     key={s.id}
                     type="button"
                     aria-pressed={selected}
-                    className={`flex min-w-64 flex-1 items-center gap-3 rounded-2xl border p-4 text-left transition-colors lg:min-w-0 ${selected ? "border-[#a8b895] bg-[#edf1e7]" : "border-black/7 bg-white hover:border-[#a8b895]"}`}
+                    className={`flex min-h-24 min-w-0 items-center gap-2 rounded-2xl border p-3 text-left transition-colors lg:min-h-20 lg:gap-3 lg:p-4 ${selected ? "border-[#a8b895] bg-[#edf1e7]" : "border-black/7 bg-white hover:border-[#a8b895]"}`}
                     onClick={() => setSelected(s.id)}
                   >
                     <span
-                      className={`flex size-11 shrink-0 items-center justify-center rounded-full ${selected ? "bg-white" : "bg-[#f4f5f0]"}`}
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-full p-1.5 lg:size-11 lg:p-2.5 ${selected ? "bg-white" : "bg-[#f4f5f0]"}`}
                     >
                       {finished ? (
                         <Check className="size-4 text-[#536348]" />
-                      ) : s.kind === "run" ? (
-                        <Footprints className="size-4" />
                       ) : (
-                        <Dumbbell className="size-4" />
+                        <MovementIllustration run={s.kind === "run"} />
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                         {s.day || `Sessione ${i + 1}`}
                       </span>
-                      <span className="mt-1 block text-sm font-medium">
+                      <span className="mt-1 block text-xs leading-5 font-medium lg:text-sm">
                         {s.name}
                       </span>
                     </span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                    <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground lg:block" />
                   </button>
                 );
               })}
             </div>
           </div>
           <div className="min-w-0 space-y-4">
-            <div className="flex items-center gap-5 rounded-3xl bg-white p-5 sm:p-6">
-              <div className="size-24 shrink-0 rounded-2xl bg-[#f2f4ec] p-1 text-[#627655] sm:size-28">
+            <div className="flex items-center gap-4 rounded-2xl bg-white p-4 sm:gap-5 sm:rounded-3xl sm:p-6">
+              <div className="size-16 shrink-0 rounded-2xl bg-[#f2f4ec] p-2.5 sm:size-24 sm:p-4">
                 <MovementIllustration run={session.kind === "run"} />
               </div>
               <div className="min-w-0">
@@ -561,7 +537,7 @@ export function StudentPlan({
                   {session.day || "Allenamento"}
                   {weeks.length > 1 ? ` · Settimana ${selectedWeek}` : ""}
                 </p>
-                <h3 className="mt-2 text-2xl font-semibold tracking-tight">
+                <h3 className="mt-2 text-xl leading-6 font-semibold tracking-tight sm:text-2xl">
                   {session.name}
                 </h3>
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -613,7 +589,7 @@ export function StudentPlan({
                 ))}
               </ol>
             </div>
-            <SessionCopy title="Defaticamento" text={session.cooldown} />
+            <RecoveryNote title="Defaticamento" text={session.cooldown} />
             {entry?.notes && (
               <div className="rounded-2xl border bg-white p-5">
                 <h4 className="text-sm font-medium">Le tue note</h4>
@@ -623,7 +599,7 @@ export function StudentPlan({
               </div>
             )}
             {onSave && (
-              <div className="sticky bottom-0 -mx-2 bg-[#f8f9f6]/95 px-2 py-4 backdrop-blur">
+              <div className="sticky bottom-0 z-10 -mx-1 bg-[#f8f9f6]/95 px-1 pt-3 pb-[max(.75rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <Button
                   className="h-13 w-full rounded-2xl text-sm"
                   ref={startButton}
@@ -644,32 +620,7 @@ export function StudentPlan({
           </div>
         </div>
       )}
-      {plan.program && (
-        <div className="grid gap-4 pt-2 sm:grid-cols-2">
-          {plan.program.paceZones.length > 0 && (
-            <details className="rounded-2xl border border-black/8 bg-white p-5">
-              <summary className="cursor-pointer text-sm font-medium">
-                Le tue zone di passo
-              </summary>
-              <dl className="mt-5 divide-y divide-black/6">
-                {plan.program.paceZones.map((z) => (
-                  <div
-                    key={z.name}
-                    className="flex justify-between gap-3 py-3 text-sm"
-                  >
-                    <dt className="text-muted-foreground">{z.name}</dt>
-                    <dd className="font-medium tabular-nums">{z.pace}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
-          )}
-          <SessionCopy
-            title="Indicazioni per il blocco"
-            text={plan.program.guidance}
-          />
-        </div>
-      )}
+      {plan.program && <ProgramReference program={plan.program} />}
       {guide && session && onSave && (
         <WorkoutGuide
           key={session.id}

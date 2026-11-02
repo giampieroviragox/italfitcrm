@@ -6,8 +6,7 @@ import { requestJson, RequestError } from "@/lib/request-json";
 import { StudentCalendar } from "./student-calendar";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
-import { PageHeading } from "@/components/page-heading";
-import { Field, FormError } from "./ui";
+import { FormError } from "./ui";
 import { PlanMonthSelect } from "./plan-month-select";
 import { StudentPlan } from "./student-plan";
 import type { WorkoutInput } from "./workout-progress";
@@ -118,20 +117,39 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
   const upcoming = data.lessons.filter((l) => Date.parse(l.startsAt) > now);
   const assignment = data.assignments.find((a) => a.month === month);
   return (
-    <div className="min-h-dvh bg-[#f8f9f6]">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-white px-5 py-4 sm:px-8">
+    <div className="min-h-dvh min-w-0 bg-[#f8f9f6]">
+      <header className="flex items-center justify-between gap-3 border-b bg-white px-4 py-3 sm:px-8 sm:py-4">
         <Brand />
         <form method="POST" action="/auth/signout">
-          <Button type="submit" variant="outline">
+          <Button type="submit" variant="outline" className="h-11 px-4">
             Esci
           </Button>
         </form>
       </header>
-      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
-        <PageHeading
-          title={`Ciao, ${data.student.firstName}`}
-          description="Il tuo percorso, un allenamento alla volta."
-        />
+      <main className="mx-auto min-w-0 max-w-6xl px-4 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-10">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[.15em] text-[#65725a]">
+              Il tuo spazio
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Ciao, {data.student.firstName}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Un allenamento alla volta.
+            </p>
+          </div>
+          {data.services.plans && (
+            <div className="w-full sm:w-64">
+              <PlanMonthSelect
+                value={month}
+                months={data.assignments.map((a) => a.month)}
+                onChange={setMonth}
+                aria-label="Mese del piano"
+              />
+            </div>
+          )}
+        </div>
         {message && (
           <p
             role="status"
@@ -161,22 +179,12 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
         )}
         {data.services.plans && (
           <>
-            <div className="mb-7 max-w-xs">
-              <Field label="Mese del piano">
-                <PlanMonthSelect
-                  value={month}
-                  months={data.assignments.map(
-                    (assignment) => assignment.month,
-                  )}
-                  onChange={setMonth}
-                />
-              </Field>
-            </div>
             {assignment ? (
               <StudentPlan
                 key={assignment.id + assignment.createdAt}
                 assignment={assignment}
                 entries={data.workoutEntries}
+                coach={data.coach}
                 onSave={saveWorkout}
               />
             ) : (
