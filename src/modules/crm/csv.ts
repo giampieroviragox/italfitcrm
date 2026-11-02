@@ -1,3 +1,5 @@
+import { studentAccessLabel } from "./student-access.ts";
+import { studentTierLabel } from "./student-tiers.ts";
 import type { Student } from "../../types/domain.ts";
 import {
   formatPropertyValue,
@@ -21,7 +23,7 @@ export function studentsCsv(
 ): string {
   const labels: Record<string, string> = {
     tier: "Tier",
-    status: "Stato",
+    access: "Accesso",
     joinedAt: "Aggiunto il",
     coach: "Coach",
     phone: "Telefono",
@@ -39,11 +41,6 @@ export function studentsCsv(
           : (labels[c] ?? c),
       ),
   ];
-  const statuses = {
-    active: "Attivo",
-    paused: "In pausa",
-    invited: "Da attivare",
-  };
   const rows = students.map((s) => [
     s.firstName,
     s.lastName,
@@ -56,9 +53,9 @@ export function studentsCsv(
         if (p) return formatPropertyValue(p, s.properties?.[p.id]);
         switch (c) {
           case "tier":
-            return tiers.find((t) => t.id === s.tierId)?.name ?? "";
-          case "status":
-            return statuses[s.status];
+            return studentTierLabel(s, tiers);
+          case "access":
+            return studentAccessLabel(s);
           case "joinedAt":
             return s.joinedAt;
           case "coach":

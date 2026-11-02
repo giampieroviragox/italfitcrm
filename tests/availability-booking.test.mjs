@@ -120,7 +120,7 @@ test("stale or forged slots are rejected, while a withdrawn slot preserves an ex
     1,
   );
 });
-test("monthly limits, inactive students and room conflicts also apply to availability slots", () => {
+test("monthly limits, archived students and room conflicts also apply to availability slots", () => {
   const initial = state();
   initial.tiers[0].entitlements.monthlyBookingLimit = 1;
   const [first, second] = availabilityLessons(initial);
@@ -130,10 +130,10 @@ test("monthly limits, inactive students and room conflicts also apply to availab
     /Limite/,
   );
   const inactive = state();
-  inactive.students[0].status = "paused";
+  inactive.students[0].archived = true;
   assert.throws(
     () => prepareStudentBooking(inactive, "a", first.id, false),
-    /attivi/,
+    /archiviati|disponibili|disponibile|non trovato/,
   );
   const conflict = state();
   conflict.lessons = [

@@ -36,6 +36,14 @@ function snapshot(): CrmState {
     const raw = localStorage.getItem(KEY);
     if (raw !== cachedRaw || issue) {
       const parsed: unknown = raw ? JSON.parse(raw) : initialState;
+      if (!supabaseConfigured && isCrmState(parsed)) {
+        parsed.tiers = parsed.tiers.map((tier) => ({
+          ...tier,
+          entitlements:
+            tier.entitlements ??
+            Object.values(tiers).find((t) => t.id === tier.id)?.entitlements,
+        }));
+      }
       if (!isCrmState(parsed)) throw new Error("Formato non valido");
       assertCrmTransition(parsed, parsed);
       cachedRaw = raw;

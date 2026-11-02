@@ -1,3 +1,4 @@
+import { studentTierIds, studentTierLabel } from "./student-tiers.ts";
 import {
   displayValue,
   formatPropertyValue,
@@ -85,58 +86,66 @@ export function studentChanges(
           ),
         ],
       });
-    if (old.tierId !== student.tierId)
+    if (
+      different(
+        studentTierIds(old).toSorted(),
+        studentTierIds(student).toSorted(),
+      )
+    )
       changes.push({
         text: "Tier aggiornato",
         details: [
           change(
             "Tier",
-            current.tiers.find((t) => t.id === old.tierId)?.name,
-            next.tiers.find((t) => t.id === student.tierId)?.name,
+            studentTierLabel(old, current.tiers),
+            studentTierLabel(student, next.tiers),
           ),
         ],
       });
-    const oldTier = current.tiers.find((t) => t.id === old.tierId);
-    const tier = next.tiers.find((t) => t.id === student.tierId);
-    if (
-      old.tierId === student.tierId &&
-      oldTier &&
-      tier &&
-      different(oldTier, tier)
-    )
-      changes.push({
-        text: "Configurazione del tier aggiornata",
-        details: [
-          ...(oldTier.name !== tier.name
-            ? [change("Nome", oldTier.name, tier.name)]
-            : []),
-          ...(oldTier.description !== tier.description
-            ? [change("Descrizione", oldTier.description, tier.description)]
-            : []),
-          ...(different(oldTier.entitlements, tier.entitlements)
-            ? [
-                change(
-                  "Accesso ai piani",
-                  oldTier.entitlements?.plans,
-                  tier.entitlements?.plans,
-                ),
-                change(
-                  "Accesso alle lezioni",
-                  oldTier.entitlements?.lessons,
-                  tier.entitlements?.lessons,
-                ),
-                change(
-                  "Limite lezioni al mese",
-                  oldTier.entitlements?.monthlyBookingLimit ?? "Nessun limite",
-                  tier.entitlements?.monthlyBookingLimit ?? "Nessun limite",
-                ),
-              ]
-            : []),
-          ...(oldTier.archived !== tier.archived
-            ? [tier.archived ? "Tier archiviato" : "Tier ripristinato"]
-            : []),
-        ],
-      });
+    for (const tierId of studentTierIds(student)) {
+      const oldTier = current.tiers.find((t) => t.id === tierId);
+      const tier = next.tiers.find((t) => t.id === tierId);
+      if (
+        studentTierIds(old).includes(tierId) &&
+        oldTier &&
+        tier &&
+        different(oldTier, tier)
+      )
+        changes.push({
+          text: "Configurazione del tier aggiornata",
+          details: [
+            ...(oldTier.name !== tier.name
+              ? [change("Nome", oldTier.name, tier.name)]
+              : []),
+            ...(oldTier.description !== tier.description
+              ? [change("Descrizione", oldTier.description, tier.description)]
+              : []),
+            ...(different(oldTier.entitlements, tier.entitlements)
+              ? [
+                  change(
+                    "Accesso ai piani",
+                    oldTier.entitlements?.plans,
+                    tier.entitlements?.plans,
+                  ),
+                  change(
+                    "Accesso alle lezioni",
+                    oldTier.entitlements?.lessons,
+                    tier.entitlements?.lessons,
+                  ),
+                  change(
+                    "Limite lezioni al mese",
+                    oldTier.entitlements?.monthlyBookingLimit ??
+                      "Nessun limite",
+                    tier.entitlements?.monthlyBookingLimit ?? "Nessun limite",
+                  ),
+                ]
+              : []),
+            ...(oldTier.archived !== tier.archived
+              ? [tier.archived ? "Tier archiviato" : "Tier ripristinato"]
+              : []),
+          ],
+        });
+    }
     const propertyIds = new Set([
       ...Object.keys(old.properties),
       ...Object.keys(student.properties),

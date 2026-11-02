@@ -1,4 +1,5 @@
 "use client";
+import { propertyKey } from "./property-key";
 import { useState } from "react";
 import { ConfirmDialog } from "./confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export function PropertyEditor({
   close: () => void;
   showInDirectory?: boolean;
 }) {
+  const state = useCrm();
   const [draft, setDraft] = useState<CrmProperty>(() =>
     property
       ? { ...property }
@@ -59,7 +61,7 @@ export function PropertyEditor({
           try {
             const next = {
               ...draft,
-              id: draft.id || crypto.randomUUID(),
+              id: draft.id,
               name: draft.name.trim(),
               group: draft.group.trim(),
               options: choiceTypes.includes(draft.type)
@@ -84,27 +86,8 @@ export function PropertyEditor({
                 throw new Error(
                   "Proprietà modificata altrove. Chiudi e riapri il form.",
                 );
+              if (!property) next.id = propertyKey(next.name, s.properties);
               if (!next.name) throw new Error("Il nome è obbligatorio.");
-              if (
-                [
-                  "nome",
-                  "cognome",
-                  "email",
-                  "telefono",
-                  "tier",
-                  "stato",
-                  "coach",
-                ].includes(next.name.toLowerCase()) ||
-                s.properties.some(
-                  (p) =>
-                    !p.deleted &&
-                    p.id !== next.id &&
-                    p.name.toLowerCase() === next.name.toLowerCase(),
-                )
-              )
-                throw new Error(
-                  "Questo nome è già utilizzato. Scegli un nome univoco.",
-                );
               if (choiceTypes.includes(next.type) && next.options.length < 2)
                 throw new Error("Inserisci almeno due opzioni distinte.");
               if (property && property.type !== next.type)
@@ -157,6 +140,22 @@ export function PropertyEditor({
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="Es. Obiettivo principale"
+          />
+        </Field>
+        <Field
+          label="Key"
+          hint="Generata automaticamente, univoca e stabile anche se cambi il nome."
+        >
+          <input
+            className={`${control} font-mono`}
+            readOnly
+            value={
+              property?.id ??
+              (draft.name.trim()
+                ? propertyKey(draft.name, state.properties)
+                : "")
+            }
+            placeholder="es. obiettivo-principale"
           />
         </Field>
         {property ? (

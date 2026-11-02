@@ -1,5 +1,6 @@
 import { availabilityIsPublished } from "./availability-lessons.ts";
 import type { CrmState, CrmStudent, TierAccess } from "./model.ts";
+import { studentTierIds } from "./student-tiers.ts";
 
 export function isTierAccess(value: unknown): value is TierAccess {
   if (!value || typeof value !== "object") return false;
@@ -19,17 +20,30 @@ export function studentAccess(
   state: CrmState,
   student: CrmStudent,
 ): TierAccess {
-  const tier = state.tiers.find((item) => item.id === student.tierId);
-  if (!tier || tier.archived || student.archived)
+  const tiers = studentTierIds(student).flatMap((id) =>
+    state.tiers.filter((t) => t.id === id && !t.archived),
+  );
+  if (!tiers.length || student.archived)
     return { plans: false, lessons: false, monthlyBookingLimit: null };
   // Compatibility for stored tiers; new tiers always save an explicit policy.
-  return (
-    tier.entitlements ?? {
-      plans: true,
-      lessons: true,
-      monthlyBookingLimit: null,
-    }
+  const policies = tiers.map(
+    (tier) =>
+      tier.entitlements ?? {
+        plans: true,
+        lessons: true,
+        monthlyBookingLimit: null,
+      },
   );
+  const lessons = policies.filter((policy) => policy.lessons);
+  return {
+    plans: policies.some((policy) => policy.plans),
+    lessons: lessons.length > 0,
+    monthlyBookingLimit:
+      !lessons.length ||
+      lessons.some((policy) => policy.monthlyBookingLimit === null)
+        ? null
+        : Math.max(...lessons.map((policy) => policy.monthlyBookingLimit!)),
+  };
 }
 
 export function lessonMonth(startsAt: string): string {

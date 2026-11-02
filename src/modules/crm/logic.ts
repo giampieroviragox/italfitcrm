@@ -1,3 +1,5 @@
+import { studentAccessLabel } from "./student-access.ts";
+import { studentTierIds, studentTierLabel } from "./student-tiers.ts";
 import { assertFitnessTransition } from "./fitness-logic.ts";
 import {
   emptyValue,
@@ -109,13 +111,16 @@ export function sanitizeDirectory(
   );
   return {
     ...config,
+    status: "all",
     tier:
       config.tier === "all" || state.tiers.some((t) => t.id === config.tier)
         ? config.tier
         : "all",
-    columns: config.columns.filter(
+    columns: [
+      ...new Set(config.columns.map((id) => (id === "status" ? "access" : id))),
+    ].filter(
       (id) =>
-        ["email", "tier", "status", "joinedAt", "phone", "coach"].includes(
+        ["email", "tier", "access", "joinedAt", "phone", "coach"].includes(
           id,
         ) ||
         (id.startsWith("property:") && ids.has(id.slice(9))),
@@ -123,26 +128,31 @@ export function sanitizeDirectory(
     ...(config.columnWidths
       ? {
           columnWidths: Object.fromEntries(
-            Object.entries(config.columnWidths).filter(
-              ([id]) =>
-                [
-                  "name",
-                  "email",
-                  "tier",
-                  "status",
-                  "joinedAt",
-                  "phone",
-                  "coach",
-                ].includes(id) ||
-                (id.startsWith("property:") && ids.has(id.slice(9))),
-            ),
+            Object.entries(config.columnWidths)
+              .map(
+                ([id, width]) =>
+                  [id === "status" ? "access" : id, width] as const,
+              )
+              .filter(
+                ([id]) =>
+                  [
+                    "name",
+                    "email",
+                    "tier",
+                    "access",
+                    "joinedAt",
+                    "phone",
+                    "coach",
+                  ].includes(id) ||
+                  (id.startsWith("property:") && ids.has(id.slice(9))),
+              ),
           ),
         }
       : {}),
     ...(config.groupBy !== undefined
       ? {
           groupBy:
-            ["tier", "status", "coach", "email", "phone", "joinedAt"].includes(
+            ["tier", "access", "coach", "email", "phone", "joinedAt"].includes(
               config.groupBy,
             ) ||
             (config.groupBy.startsWith("property:") &&
@@ -156,7 +166,9 @@ export function sanitizeDirectory(
       config.sortKey.startsWith("property:") &&
       !ids.has(config.sortKey.slice(9))
         ? "joinedAt"
-        : config.sortKey,
+        : config.sortKey === "status"
+          ? "access"
+          : config.sortKey,
   };
 }
 export function selectStudents(
@@ -170,8 +182,7 @@ export function selectStudents(
   const result = students.filter(
     (s) =>
       Boolean(s.archived) === config.archived &&
-      (config.status === "all" || s.status === config.status) &&
-      (config.tier === "all" || s.tierId === config.tier) &&
+      (config.tier === "all" || studentTierIds(s).includes(config.tier)) &&
       active.every(
         (p) =>
           !config.filters.some(
@@ -187,7 +198,7 @@ export function selectStudents(
             s.email,
             s.phone ?? "",
             s.coach,
-            tiers.find((t) => t.id === s.tierId)?.name ?? "",
+            studentTierLabel(s, tiers),
             ...active.flatMap((p) => {
               const v = s.properties[p.id];
               return v === undefined
@@ -205,11 +216,11 @@ export function selectStudents(
       : config.sortKey === "name"
         ? `${s.lastName} ${s.firstName}`
         : config.sortKey === "tier"
-          ? tiers.find((t) => t.id === s.tierId)?.name
+          ? studentTierLabel(s, tiers)
           : config.sortKey === "coach"
             ? s.coach
-            : config.sortKey === "status"
-              ? s.status
+            : config.sortKey === "access"
+              ? studentAccessLabel(s)
               : config.sortKey === "email"
                 ? s.email
                 : config.sortKey === "phone"
@@ -267,16 +278,13 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
     (t) => normalize((t as CrmState["tiers"][number]).name),
     "Nome tier",
   );
-  unique(
-    next.properties.filter((p) => !p.deleted),
-    (p) => normalize((p as CrmProperty).name),
-    "Nome proprietà",
-  );
   for (const tier of next.tiers) {
     if (!tier.name.trim()) throw new Error("Il nome del tier è obbligatorio.");
     if (
       tier.archived &&
-      next.students.some((s) => !s.archived && s.tierId === tier.id)
+      next.students.some(
+        (s) => !s.archived && studentTierIds(s).includes(tier.id),
+      )
     )
       throw new Error(
         "Riassegna prima gli studenti non archiviati a un altro tier.",
@@ -319,8 +327,16 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
       !validDate(s.joinedAt)
     )
       throw new Error("Anagrafica studente non valida.");
-    const tier = next.tiers.find((t) => t.id === s.tierId);
-    if (!tier || (!s.archived && tier.archived))
+    const assigned = studentTierIds(s);
+    if (
+      !assigned.length ||
+      new Set(assigned).size !== assigned.length ||
+      assigned[0] !== s.tierId ||
+      assigned.some(
+        (id) =>
+          !next.tiers.some((t) => t.id === id && (s.archived || !t.archived)),
+      )
+    )
       throw new Error("Seleziona un tier non archiviato.");
     if (old && JSON.stringify(old) === JSON.stringify(s)) continue;
     // Archive/restore and notes do not force unrelated missing required fields.
@@ -331,6 +347,7 @@ export function assertCrmTransition(previous: CrmState, next: CrmState) {
         v.email,
         v.phone,
         v.tierId,
+        v.tierIds,
         v.status,
         v.coach,
         v.properties,
@@ -364,7 +381,13 @@ export function bulkUpdate(
   return {
     ...state,
     students: state.students.map((s) =>
-      ids.includes(s.id) ? { ...s, ...patch } : s,
+      ids.includes(s.id)
+        ? {
+            ...s,
+            ...patch,
+            ...(patch.tierId ? { tierIds: [patch.tierId] } : {}),
+          }
+        : s,
     ),
   };
 }

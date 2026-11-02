@@ -1,6 +1,8 @@
 import type { CrmState, CrmStudent } from "./model.ts";
 
-export function studentAccessEnabled(student: CrmStudent) {
+export function studentAccessEnabled(
+  student: Pick<CrmStudent, "access" | "accessDisabled" | "archived">,
+) {
   return (
     Boolean(student.access) &&
     student.access?.enabled !== false &&
@@ -9,7 +11,9 @@ export function studentAccessEnabled(student: CrmStudent) {
   );
 }
 
-export function studentAccessLabel(student: CrmStudent) {
+export function studentAccessLabel(
+  student: Pick<CrmStudent, "access" | "accessDisabled" | "archived">,
+) {
   if (!student.access) return "Non attivato";
   if (!studentAccessEnabled(student)) return "Disattivato";
   return student.access.status === "active"

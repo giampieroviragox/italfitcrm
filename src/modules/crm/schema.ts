@@ -123,6 +123,14 @@ export function isCrmState(v: unknown): v is CrmState {
           "joinedAt",
           "coach",
         ].every((k) => typeof s[k] === "string") &&
+        (s.tierIds === undefined ||
+          (strings(s.tierIds) &&
+            s.tierIds.length > 0 &&
+            s.tierIds[0] === s.tierId &&
+            new Set(s.tierIds).size === s.tierIds.length &&
+            s.tierIds.every((id) =>
+              (v.tiers as Record<string, unknown>[]).some((t) => t.id === id),
+            ))) &&
         ["active", "invited", "paused"].includes(String(s.status)) &&
         (s.workoutEntries === undefined ||
           isWorkoutEntries(s.workoutEntries)) &&

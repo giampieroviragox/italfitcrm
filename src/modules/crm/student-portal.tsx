@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { StudentHome, type StudentView } from "./student-home";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Check } from "lucide-react";
 import { requestJson, RequestError } from "@/lib/request-json";
@@ -11,12 +12,17 @@ import { PlanMonthSelect } from "./plan-month-select";
 import { StudentPlan } from "./student-plan";
 import type { WorkoutInput } from "./workout-progress";
 import { todayRome } from "./fitness-logic";
-import { useClock } from "./use-clock";
 import {
   parseStudentPortalData,
   type StudentPortalData,
 } from "./student-portal-model";
-export function StudentPortal({ initial }: { initial: StudentPortalData }) {
+export function StudentPortal({
+  initial,
+  view = "home",
+}: {
+  initial: StudentPortalData;
+  view?: StudentView;
+}) {
   const [data, setData] = useState(initial),
     [month, setMonth] = useState(todayRome().slice(0, 7)),
     [pending, setPending] = useState<string | null>(null),
@@ -113,8 +119,6 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
       pendingRef.current = false;
     }
   };
-  const now = useClock();
-  const upcoming = data.lessons.filter((l) => Date.parse(l.startsAt) > now);
   const assignment = data.assignments.find((a) => a.month === month);
   return (
     <div className="min-h-dvh min-w-0 bg-[#f8f9f6]">
@@ -139,7 +143,7 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
               Un allenamento alla volta.
             </p>
           </div>
-          {data.services.plans && (
+          {view === "piano" && data.services.plans && (
             <div className="w-full sm:w-64">
               <PlanMonthSelect
                 value={month}
@@ -150,6 +154,20 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
             </div>
           )}
         </div>
+        {view !== "home" && (
+          <Link
+            className="mb-6 inline-block text-sm text-muted-foreground hover:underline"
+            href="/area-studente"
+          >
+            ← La mia home
+          </Link>
+        )}
+        {view === "home" && (
+          <StudentHome
+            services={data.services}
+            hasBookings={data.lessons.length > 0}
+          />
+        )}
         {message && (
           <p
             role="status"
@@ -165,19 +183,20 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
             <Link href="/login">Accedi di nuovo</Link>
           </Button>
         )}
-        {(data.services.lessons || upcoming.length > 0) && (
-          <div className="mb-10">
-            <StudentCalendar
-              data={data}
-              pending={pending}
-              refreshing={refreshing}
-              error={error}
-              refresh={() => void refresh()}
-              onChange={changeBooking}
-            />
-          </div>
-        )}
-        {data.services.plans && (
+        {view === "prenotazioni" &&
+          (data.services.lessons || data.lessons.length > 0) && (
+            <div className="mb-10">
+              <StudentCalendar
+                data={data}
+                pending={pending}
+                refreshing={refreshing}
+                error={error}
+                refresh={() => void refresh()}
+                onChange={changeBooking}
+              />
+            </div>
+          )}
+        {view === "piano" && data.services.plans && (
           <>
             {assignment ? (
               <StudentPlan
@@ -199,12 +218,16 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
             )}
           </>
         )}
-        {!data.services.plans && !data.services.lessons && !upcoming.length && (
-          <p className="rounded-xl border p-6 text-sm text-muted-foreground">
-            Il team non ha ancora abilitato servizi per il tuo percorso.
-            Contattalo per completare l’attivazione.
-          </p>
-        )}
+        {view !== "home" &&
+          ((view === "piano" && !data.services.plans) ||
+            (view === "prenotazioni" &&
+              !data.services.lessons &&
+              !data.lessons.length)) && (
+            <p className="rounded-xl border p-6 text-sm text-muted-foreground">
+              Il team non ha ancora abilitato servizi per il tuo percorso.
+              Contattalo per completare l’attivazione.
+            </p>
+          )}
         <Link
           href="/imposta-password"
           className="mt-8 inline-block text-xs text-muted-foreground underline underline-offset-4"

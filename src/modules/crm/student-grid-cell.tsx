@@ -1,8 +1,10 @@
 "use client";
+import { CoachSelect } from "./coach-select";
+import { TierPicker } from "./tier-picker";
+import { studentTierIds } from "./student-tiers";
 import { useRef, useState, type ReactNode } from "react";
 import { Popover } from "radix-ui";
 import { Button } from "@/components/ui/button";
-import { SelectControl } from "@/components/ui/select-control";
 import { PropertyField } from "./property-fields";
 import { Field, FormError, control } from "./ui";
 import { updateCrm, useSaving } from "./store";
@@ -36,6 +38,7 @@ export function StudentGridCell({
   const readOnly =
     student.archived ||
     column === "joinedAt" ||
+    column === "access" ||
     (column === "email" && !!student.access);
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
@@ -52,9 +55,17 @@ export function StudentGridCell({
                 ? "Campo in sola lettura"
                 : "Fai clic per modificare"
           }
-          className="flex h-11 w-full min-w-0 items-center overflow-hidden px-3 text-left text-xs outline-none hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-default disabled:hover:bg-transparent"
+          className="flex min-h-11 py-1 w-full min-w-0 items-center overflow-hidden px-3 text-left text-xs outline-none hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-default disabled:hover:bg-transparent"
         >
-          <span className="block w-full truncate">{children}</span>
+          <span
+            className={
+              column === "tier"
+                ? "block w-full whitespace-normal"
+                : "block w-full truncate"
+            }
+          >
+            {children}
+          </span>
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -101,7 +112,7 @@ function CellForm({
   const [value, setValue] = useState<PropertyValue>(() => {
     if (property) return student.properties[property.id] ?? "";
     if (column === "name") return student.firstName;
-    if (column === "tier") return student.tierId;
+    if (column === "tier") return studentTierIds(student);
     return student[column as "email" | "phone" | "coach" | "status"] ?? "";
   });
   const [lastName, setLastName] = useState(student.lastName);
@@ -144,31 +155,14 @@ function CellForm({
             value={value}
             onChange={setValue}
           />
-        ) : column === "tier" || column === "status" ? (
-          <Field label={label}>
-            <SelectControl
-              className={control}
-              required
-              value={String(value)}
-              onChange={(e) => setValue(e.target.value)}
-            >
-              {column === "tier" ? (
-                tiers
-                  .filter((t) => !t.archived || t.id === student.tierId)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))
-              ) : (
-                <>
-                  <option value="active">Attivo</option>
-                  <option value="invited">Da attivare</option>
-                  <option value="paused">In pausa</option>
-                </>
-              )}
-            </SelectControl>
-          </Field>
+        ) : column === "tier" ? (
+          <TierPicker
+            tiers={tiers}
+            value={Array.isArray(value) ? value : []}
+            onChange={setValue}
+          />
+        ) : column === "coach" ? (
+          <CoachSelect value={String(value)} onChange={setValue} />
         ) : (
           <>
             <Field label={column === "name" ? "Nome" : label}>

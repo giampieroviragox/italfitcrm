@@ -4,17 +4,11 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
-import { StatusBadge } from "@/modules/students/components/status-badge";
 import { formatDate } from "@/lib/format";
-import {
-  formatPropertyValue,
-  emptyValue,
-  validPropertyValue,
-  type CrmProperty,
-  type PropertyValue,
-} from "./model";
+import { validPropertyValue } from "./model";
 import { useCrm, useHydrated, addStudentComment } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
+import { useNavigationRequest } from "./use-unsaved-changes";
 import { StudentEditor } from "./student-editor";
 import { AssignmentEditor } from "./plan-editor";
 import { AssignedPlan } from "./plans-workspace";
@@ -27,39 +21,6 @@ const timestamp = (value: string) =>
     timeStyle: "short",
     timeZone: "Europe/Rome",
   }).format(new Date(value));
-function PropertyDisplay({
-  property: p,
-  value,
-}: {
-  property: CrmProperty;
-  value: PropertyValue | undefined;
-}) {
-  if (emptyValue(value))
-    return <span className="text-muted-foreground">Non compilato</span>;
-  if (p.type === "date" && typeof value === "string") return formatDate(value);
-  if (
-    p.type === "url" &&
-    typeof value === "string" &&
-    validPropertyValue(p, value)
-  )
-    return (
-      <a
-        className="text-primary underline underline-offset-4"
-        href={value}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {value}
-      </a>
-    );
-  if (p.type === "email" && typeof value === "string")
-    return (
-      <a className="underline underline-offset-4" href={`mailto:${value}`}>
-        {value}
-      </a>
-    );
-  return formatPropertyValue(p, value);
-}
 export function StudentProfile({
   id,
   embedded = false,
@@ -69,13 +30,15 @@ export function StudentProfile({
 }) {
   const state = useCrm(),
     hydrated = useHydrated();
+  const request = useNavigationRequest();
+  const [editorVersion, setEditorVersion] = useState(0);
+  const [savedMessage, setSavedMessage] = useState("");
   const commentLock = useRef(false);
   const commentList = useRef<HTMLOListElement>(null);
   const [commentPending, setCommentPending] = useState(false);
   const [commentResult, setCommentResult] = useState("");
   const [assigning, setAssigning] = useState(false);
-  const [editing, setEditing] = useState(false),
-    [tab, setTab] = useState("properties"),
+  const [tab, setTab] = useState("properties"),
     [note, setNote] = useState(""),
     [error, setError] = useState("");
   const student = state.students.find((s) => s.id === id);
@@ -98,7 +61,6 @@ export function StudentProfile({
       </>
     );
   const properties = state.properties.filter((p) => !p.archived),
-    tier = state.tiers.find((t) => t.id === student.tierId),
     missing = properties.filter(
       (p) => p.required && !validPropertyValue(p, student.properties[p.id]),
     );
@@ -121,20 +83,16 @@ export function StudentProfile({
         </Link>
       )}
       <LocalNotice />
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-5">
         <StudentIdentity student={student} large />
-        <div className="flex flex-wrap items-center gap-3">
-          {student.archived ? (
-            <span className="rounded-md border bg-muted px-3 py-2 text-xs">
-              Studente archiviato
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <p className="text-xs text-muted-foreground">
+            Accesso alla piattaforma:{" "}
+            <span className="font-medium text-foreground">
+              {studentAccessLabel(student)}
             </span>
-          ) : (
-            <StatusBadge status={student.status} />
-          )}
+          </p>
           <StudentAccessControl student={student} />
-          <Button disabled={student.archived} onClick={() => setEditing(true)}>
-            Modifica studente
-          </Button>
         </div>
       </div>
       <FormError message={error} />
@@ -144,48 +102,8 @@ export function StudentProfile({
           {missing.map((p) => p.name).join(", ")}.
         </p>
       )}
-      <div
-        className={`grid items-start gap-6 ${embedded ? "" : "xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]"}`}
-      >
+      <div className="grid items-start gap-6">
         <div className="min-w-0 space-y-5">
-          <Card className="gap-4 p-6 shadow-none">
-            <h1 className="text-lg font-semibold">Scheda studente</h1>
-            <dl className="divide-y">
-              {[
-                ["Email", student.email],
-                ["Telefono", student.phone || "Non compilato"],
-                ["Accesso", studentAccessLabel(student)],
-                ["Coach", student.coach || "Non assegnato"],
-                ["Aggiunto il", formatDate(student.joinedAt)],
-              ].map(([label, value]) => (
-                <div
-                  className="flex flex-wrap justify-between gap-3 py-4 text-xs"
-                  key={label}
-                >
-                  <dt className="text-muted-foreground">{label}</dt>
-                  <dd className="max-w-full break-words">
-                    {label === "Email" ? (
-                      <a
-                        className="hover:underline"
-                        href={`mailto:${student.email}`}
-                      >
-                        {value}
-                      </a>
-                    ) : label === "Telefono" && student.phone ? (
-                      <a
-                        className="hover:underline"
-                        href={`tel:${student.phone.replace(/[^+\d]/g, "")}`}
-                      >
-                        {value}
-                      </a>
-                    ) : (
-                      value
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </Card>
           <div
             role="tablist"
             aria-label="Dettagli studente"
@@ -204,10 +122,14 @@ export function StudentProfile({
                         : -1;
               if (next >= 0) {
                 e.preventDefault();
-                setTab(ids[next]!);
-                e.currentTarget
-                  .querySelectorAll<HTMLButtonElement>('[role="tab"]')
-                  [next]?.focus();
+                const target =
+                  e.currentTarget.querySelectorAll<HTMLButtonElement>(
+                    '[role="tab"]',
+                  )[next];
+                request(() => {
+                  setTab(ids[next]!);
+                  target?.focus();
+                });
               }
             }}
             className="flex gap-1 overflow-x-auto rounded-lg border bg-white p-1"
@@ -229,12 +151,75 @@ export function StudentProfile({
                 aria-selected={tab === t.id}
                 aria-controls={`panel-${t.id}`}
                 variant={tab === t.id ? "secondary" : "ghost"}
-                onClick={() => setTab(t.id)}
+                onClick={() => request(() => setTab(t.id))}
               >
                 {t.label}
               </Button>
             ))}
           </div>
+          {tab === "properties" ? (
+            <>
+              {savedMessage && (
+                <p
+                  role="status"
+                  className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800"
+                >
+                  {savedMessage}
+                </p>
+              )}
+              <StudentEditor
+                key={`${id}:${editorVersion}`}
+                student={student}
+                close={() => {
+                  setEditorVersion((v) => v + 1);
+                  setSavedMessage("");
+                }}
+                saved={() => {
+                  setEditorVersion((v) => v + 1);
+                  setSavedMessage("Modifiche salvate.");
+                }}
+              />
+            </>
+          ) : (
+            <Card className="gap-4 p-6 shadow-none">
+              <h1 className="text-lg font-semibold">Scheda studente</h1>
+              <dl className="divide-y">
+                {[
+                  ["Email", student.email],
+                  ["Telefono", student.phone || "Non compilato"],
+                  ["Accesso", studentAccessLabel(student)],
+                  ["Coach", student.coach || "Non assegnato"],
+                  ["Aggiunto il", formatDate(student.joinedAt)],
+                ].map(([label, value]) => (
+                  <div
+                    className="flex flex-wrap justify-between gap-3 py-4 text-xs"
+                    key={label}
+                  >
+                    <dt className="text-muted-foreground">{label}</dt>
+                    <dd className="max-w-full break-words">
+                      {label === "Email" ? (
+                        <a
+                          className="hover:underline"
+                          href={`mailto:${student.email}`}
+                        >
+                          {value}
+                        </a>
+                      ) : label === "Telefono" && student.phone ? (
+                        <a
+                          className="hover:underline"
+                          href={`tel:${student.phone.replace(/[^+\d]/g, "")}`}
+                        >
+                          {value}
+                        </a>
+                      ) : (
+                        value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </Card>
+          )}
           <section
             role="tabpanel"
             id={`panel-${tab}`}
@@ -253,41 +238,6 @@ export function StudentProfile({
                       schede del team.
                     </p>
                   </Card>
-                )}
-                {Array.from(new Set(properties.map((p) => p.group))).map(
-                  (group) => (
-                    <Card key={group} className="gap-3 p-6 shadow-none">
-                      <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-sm font-semibold">{group}</h2>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={student.archived}
-                          onClick={() => setEditing(true)}
-                        >
-                          Modifica
-                        </Button>
-                      </div>
-                      <dl className="divide-y">
-                        {properties
-                          .filter((p) => p.group === group)
-                          .map((p) => (
-                            <div key={p.id} className="py-4 text-sm">
-                              <dt className="text-xs text-muted-foreground">
-                                {p.name}
-                                {p.required ? " *" : ""}
-                              </dt>
-                              <dd className="mt-2 whitespace-pre-wrap break-words leading-6">
-                                <PropertyDisplay
-                                  property={p}
-                                  value={student.properties[p.id]}
-                                />
-                              </dd>
-                            </div>
-                          ))}
-                      </dl>
-                    </Card>
-                  ),
                 )}
               </>
             )}
@@ -513,35 +463,9 @@ export function StudentProfile({
             )}
           </section>
         </div>
-        <aside className="space-y-5">
-          <Card className="gap-4 p-6 shadow-none">
-            <p className="text-[10px] tracking-wider text-muted-foreground uppercase">
-              Tier assegnato
-            </p>
-            <h2 className="text-xl font-semibold">
-              {tier?.name || "Nessun tier"}
-            </h2>
-            {tier?.archived && (
-              <span className="text-xs text-amber-800">Tier archiviato</span>
-            )}
-            <p className="text-xs leading-6 text-muted-foreground">
-              {tier?.description}
-            </p>
-            <Button
-              variant="outline"
-              disabled={student.archived}
-              onClick={() => setEditing(true)}
-            >
-              Cambia tier
-            </Button>
-          </Card>
-        </aside>
       </div>
       {assigning && (
         <AssignmentEditor studentId={id} close={() => setAssigning(false)} />
-      )}
-      {editing && (
-        <StudentEditor student={student} close={() => setEditing(false)} />
       )}
     </>
   );

@@ -17,6 +17,14 @@ export interface Student {
   phone?: string;
   status: StudentStatus;
   tierId: string;
+  tierIds?: string[];
+  access?: {
+    status: "invited" | "active";
+    invitedAt: string;
+    enabled?: boolean;
+  } | null;
+  accessDisabled?: boolean;
+  archived?: boolean;
   properties?: Record<string, string | number | boolean | string[]>;
   joinedAt: string;
   coach: string;

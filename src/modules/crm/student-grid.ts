@@ -1,3 +1,4 @@
+import { studentTierIds, studentTierLabel } from "./student-tiers.ts";
 import {
   emptyValue,
   formatPropertyValue,
@@ -8,12 +9,12 @@ import {
   type PropertyValue,
 } from "./model.ts";
 import { formatDate } from "../../lib/format.ts";
-import { statusLabels } from "../students/config.ts";
+import { studentAccessLabel } from "./student-access.ts";
 
 export const studentColumns = [
   { id: "email", name: "Email", type: "email" },
   { id: "tier", name: "Tier", type: "select" },
-  { id: "status", name: "Stato", type: "select" },
+  { id: "access", name: "Accesso", type: "select" },
   { id: "joinedAt", name: "Aggiunto il", type: "date" },
   { id: "phone", name: "Telefono", type: "phone" },
   { id: "coach", name: "Coach", type: "text" },
@@ -28,6 +29,19 @@ export function moveColumn(
     return [...columns];
   const next = columns.filter((id) => id !== from);
   next.splice(columns.indexOf(to), 0, from);
+  return next;
+}
+
+export function placeColumn(
+  columns: readonly string[],
+  from: string,
+  to: string,
+  side: "before" | "after",
+) {
+  if (from === to || !columns.includes(from) || !columns.includes(to))
+    return [...columns];
+  const next = columns.filter((id) => id !== from);
+  next.splice(next.indexOf(to) + (side === "after" ? 1 : 0), 0, from);
   return next;
 }
 
@@ -52,6 +66,15 @@ export function editStudentCell(
     if (!state.properties.some((p) => p.id === id && !p.archived))
       throw new Error("Questa proprietà non è più disponibile.");
     next.properties = { ...latest.properties, [id]: value };
+  } else if (column === "tier") {
+    const ids = Array.isArray(value)
+      ? value
+      : typeof value === "string"
+        ? [value]
+        : [];
+    if (!ids.length) throw new Error("Seleziona almeno un tier.");
+    next.tierId = ids[0]!;
+    next.tierIds = ids;
   } else {
     if (typeof value !== "string") throw new Error("Valore non valido.");
     const text = value.trim();
@@ -64,9 +87,6 @@ export function editStudentCell(
         if (latest.access)
           throw new Error("L’email è collegata all’account personale.");
         next.email = text.toLowerCase();
-        break;
-      case "tier":
-        next.tierId = text;
         break;
       case "status":
         if (!["active", "paused", "invited"].includes(text))
@@ -116,11 +136,13 @@ export function groupStudents(
   for (const student of students) {
     const value = property
       ? student.properties[property.id]
-      : groupBy === "tier"
-        ? student.tierId
-        : student[
-            groupBy as "status" | "coach" | "email" | "phone" | "joinedAt"
-          ];
+      : groupBy === "access"
+        ? studentAccessLabel(student)
+        : groupBy === "tier"
+          ? studentTierIds(student).toSorted()
+          : student[
+              groupBy as "status" | "coach" | "email" | "phone" | "joinedAt"
+            ];
     const empty = emptyValue(value);
     const key = empty
       ? "empty"
@@ -130,9 +152,9 @@ export function groupStudents(
       : property
         ? formatPropertyValue(property, value)
         : groupBy === "tier"
-          ? (tiers.find((t) => t.id === value)?.name ?? "Senza tier")
-          : groupBy === "status"
-            ? statusLabels[student.status]
+          ? studentTierLabel(student, tiers)
+          : groupBy === "access"
+            ? studentAccessLabel(student)
             : groupBy === "joinedAt"
               ? formatDate(String(value))
               : String(value);

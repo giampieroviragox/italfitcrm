@@ -1,14 +1,16 @@
 "use client";
+import { studentAccessLabel } from "./student-access";
+import { TierPicker } from "./tier-picker";
+import { studentTierIds } from "./student-tiers";
 import Link from "next/link";
 import { InviteButton } from "./invite-button";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
-import { SelectControl } from "@/components/ui/select-control";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCrm, updateCrm, useViewer, useRemoteMode } from "./store";
 import type { AccountAccess, AdminMember, CrmStudent } from "./model";
-import { StudentCreateDialog, StudentEditor } from "./student-editor";
+import { StudentCreateDialog } from "./student-editor";
 import {
   EditorCancel,
   Editor,
@@ -31,17 +33,18 @@ function TierSelect({ student }: { student: CrmStudent }) {
   const [error, setError] = useState("");
   return (
     <div className="space-y-2">
-      <SelectControl
-        aria-label={`Permessi di ${student.firstName} ${student.lastName}`}
-        className={`${control} sm:w-52`}
-        value={student.tierId}
-        onChange={async (e) => {
-          const tierId = e.target.value;
+      <TierPicker
+        tiers={state.tiers}
+        value={studentTierIds(student)}
+        onChange={async (ids) => {
           try {
+            if (!ids.length) throw new Error("Seleziona almeno un tier.");
             await updateCrm((s) => ({
               ...s,
               students: s.students.map((x) =>
-                x.id === student.id ? { ...x, tierId } : x,
+                x.id === student.id
+                  ? { ...x, tierId: ids[0]!, tierIds: ids }
+                  : x,
               ),
             }));
             setError("");
@@ -49,25 +52,21 @@ function TierSelect({ student }: { student: CrmStudent }) {
             setError((err as Error).message);
           }
         }}
-      >
-        {state.tiers
-          .filter((t) => !t.archived || t.id === student.tierId)
-          .map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-      </SelectControl>
+      />
       <FormError message={error} />
     </div>
   );
 }
-export function UsersManager() {
+export function UsersManager({
+  initialTab = "admins",
+}: {
+  initialTab?: "admins" | "students";
+}) {
   const state = useCrm();
   const viewer = useViewer(),
     remote = useRemoteMode();
   const canManageAdmins = !remote || viewer?.role === "owner";
-  const [tab, setTab] = useState("admins");
+  const [tab, setTab] = useState<string>(initialTab);
   const [editingAdmin, setEditingAdmin] = useState<AdminMember | "new" | null>(
     null,
   );
@@ -153,14 +152,16 @@ export function UsersManager() {
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                 <TierSelect student={s} />
-                <span className={badge}>{accessLabel(s.access)}</span>
+                <span className={badge}>{studentAccessLabel(s)}</span>
                 <InviteButton
                   id={s.id}
                   kind="student"
                   label={s.access ? "Nuovo link" : "Dai accesso"}
                 />
-                <Button variant="outline" onClick={() => setEditingStudent(s)}>
-                  Modifica
+                <Button variant="outline" asChild>
+                  <Link href={`/admin/studenti/${encodeURIComponent(s.id)}`}>
+                    Modifica
+                  </Link>
                 </Button>
               </div>
             </article>
@@ -180,12 +181,6 @@ export function UsersManager() {
       )}
       {editingStudent === "new" && (
         <StudentCreateDialog close={() => setEditingStudent(null)} />
-      )}
-      {editingStudent && editingStudent !== "new" && (
-        <StudentEditor
-          student={editingStudent}
-          close={() => setEditingStudent(null)}
-        />
       )}
     </>
   );

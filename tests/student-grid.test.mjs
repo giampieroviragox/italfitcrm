@@ -156,7 +156,7 @@ test("le viste mantengono ordine e larghezze, rimuovendo i campi archiviati", ()
   ]);
   current.properties[0].archived = true;
   const clean = sanitizeDirectory(config, current);
-  assert.deepEqual(clean.columns, ["email", "status"]);
+  assert.deepEqual(clean.columns, ["email", "access"]);
   assert.deepEqual(clean.columnWidths, { name: 260, email: 300 });
   for (const width of [139, 561, Infinity, "200"]) {
     assert.equal(

@@ -129,6 +129,7 @@ export function Editor({
   children,
   dirty: explicitDirty,
   centered = false,
+  inline = false,
 }: {
   title: string;
   description: string;
@@ -136,6 +137,7 @@ export function Editor({
   children: ReactNode;
   dirty?: boolean;
   centered?: boolean;
+  inline?: boolean;
 }) {
   const saving = useSaving();
   const firstInvalid = useRef(false);
@@ -150,6 +152,56 @@ export function Editor({
     else close();
   };
   useUnsavedChanges(dirty, close);
+  const body = (
+    <div
+      className="crm-editor-body min-h-0 flex-1 overflow-y-auto px-6 pt-6 sm:px-8"
+      data-validation-error={validationError ? "true" : undefined}
+      onInvalidCapture={(e) => {
+        e.preventDefault();
+        if (firstInvalid.current) return;
+        firstInvalid.current = true;
+        setValidationError("Controlla i campi evidenziati prima di salvare.");
+        const target = e.target;
+        if (target instanceof HTMLElement) {
+          const visible =
+            target.getAttribute("aria-hidden") === "true"
+              ? (target.parentElement?.querySelector<HTMLElement>(
+                  '[role="combobox"]',
+                ) ??
+                target
+                  .closest('[role="radiogroup"]')
+                  ?.querySelector<HTMLElement>('[role="radio"]') ??
+                target
+                  .closest("label")
+                  ?.querySelector<HTMLElement>('[role="checkbox"]'))
+              : target;
+          (visible ?? target).focus();
+        }
+        // Browsers flush microtasks between native invalid events.
+        // Keep the first field focused for the entire validation pass.
+        setTimeout(() => {
+          firstInvalid.current = false;
+        }, 0);
+      }}
+      onChangeCapture={() => {
+        setDirty(true);
+        setValidationError("");
+      }}
+    >
+      <SyncNotice />
+      {validationError && (
+        <p
+          role="alert"
+          className="mb-5 rounded-lg bg-red-50 p-3 text-xs text-red-700"
+        >
+          {validationError}
+        </p>
+      )}
+      <fieldset disabled={saving} className="contents" aria-busy={saving}>
+        {children}
+      </fieldset>
+    </div>
+  );
   return (
     <CancelContext.Provider value={requestClose}>
       <FormChangeContext.Provider value={() => setDirty(true)}>
@@ -164,92 +216,51 @@ export function Editor({
             close();
           }}
         />
-        <Sheet
-          open
-          onOpenChange={(open) => {
-            if (!open) requestClose();
-          }}
-        >
-          <SheetContent
-            side={centered ? "center" : "right"}
-            onOpenAutoFocus={() => {
-              previousFocus.current =
-                document.activeElement instanceof HTMLElement
-                  ? document.activeElement
-                  : null;
-            }}
-            onCloseAutoFocus={(event) => {
-              if (previousFocus.current?.isConnected) {
-                event.preventDefault();
-                previousFocus.current.focus();
-              }
-            }}
-            className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[560px]"
-          >
-            <SheetHeader className="shrink-0 gap-3 border-b px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
-              <SheetTitle className="pr-10 text-[22px] leading-7 font-semibold tracking-tight">
-                {title}
-              </SheetTitle>
-              <SheetDescription className="pr-5 text-sm leading-6">
+        {inline ? (
+          <section className="crm-editor w-full rounded-xl border bg-white pb-2">
+            <header className="border-b p-6 sm:px-8">
+              <h1 className="text-lg font-semibold">{title}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
                 {description}
-              </SheetDescription>
-            </SheetHeader>
-            <div
-              className="crm-editor-body min-h-0 flex-1 overflow-y-auto px-6 pt-6 sm:px-8"
-              data-validation-error={validationError ? "true" : undefined}
-              onInvalidCapture={(e) => {
-                e.preventDefault();
-                if (firstInvalid.current) return;
-                firstInvalid.current = true;
-                setValidationError(
-                  "Controlla i campi evidenziati prima di salvare.",
-                );
-                const target = e.target;
-                if (target instanceof HTMLElement) {
-                  const visible =
-                    target.getAttribute("aria-hidden") === "true"
-                      ? (target.parentElement?.querySelector<HTMLElement>(
-                          '[role="combobox"]',
-                        ) ??
-                        target
-                          .closest('[role="radiogroup"]')
-                          ?.querySelector<HTMLElement>('[role="radio"]') ??
-                        target
-                          .closest("label")
-                          ?.querySelector<HTMLElement>('[role="checkbox"]'))
-                      : target;
-                  (visible ?? target).focus();
+              </p>
+            </header>
+            {body}
+          </section>
+        ) : (
+          <Sheet
+            open
+            onOpenChange={(open) => {
+              if (!open) requestClose();
+            }}
+          >
+            <SheetContent
+              side={centered ? "center" : "right"}
+              onOpenAutoFocus={() => {
+                previousFocus.current =
+                  document.activeElement instanceof HTMLElement
+                    ? document.activeElement
+                    : null;
+              }}
+              onCloseAutoFocus={(event) => {
+                if (previousFocus.current?.isConnected) {
+                  event.preventDefault();
+                  previousFocus.current.focus();
                 }
-                // Browsers flush microtasks between native invalid events.
-                // Keep the first field focused for the entire validation pass.
-                setTimeout(() => {
-                  firstInvalid.current = false;
-                }, 0);
               }}
-              onChangeCapture={() => {
-                setDirty(true);
-                setValidationError("");
-              }}
+              className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[560px]"
             >
-              <SyncNotice />
-              {validationError && (
-                <p
-                  role="alert"
-                  className="mb-5 rounded-lg bg-red-50 p-3 text-xs text-red-700"
-                >
-                  {validationError}
-                </p>
-              )}
-              <fieldset
-                disabled={saving}
-                className="contents"
-                aria-busy={saving}
-              >
-                {children}
-              </fieldset>
-            </div>
-          </SheetContent>
-        </Sheet>
+              <SheetHeader className="shrink-0 gap-3 border-b px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
+                <SheetTitle className="pr-10 text-[22px] leading-7 font-semibold tracking-tight">
+                  {title}
+                </SheetTitle>
+                <SheetDescription className="pr-5 text-sm leading-6">
+                  {description}
+                </SheetDescription>
+              </SheetHeader>
+              {body}
+            </SheetContent>
+          </Sheet>
+        )}
       </FormChangeContext.Provider>
     </CancelContext.Provider>
   );

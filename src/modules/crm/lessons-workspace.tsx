@@ -324,12 +324,11 @@ export function LessonDetail({ id }: { id: string }) {
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
               >
-                <option value="">Seleziona uno studente attivo…</option>
+                <option value="">Seleziona uno studente…</option>
                 {state.students
                   .filter(
                     (s) =>
                       !s.archived &&
-                      s.status === "active" &&
                       !bookingRestriction(state, s.id, id) &&
                       !bookings.some((b) => b.studentId === s.id),
                   )

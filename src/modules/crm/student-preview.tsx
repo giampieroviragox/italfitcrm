@@ -1,4 +1,5 @@
 "use client";
+import { StudentHome, type StudentView } from "./student-home";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,10 +16,16 @@ import { StudentCalendar } from "./student-calendar";
 import { studentProjection } from "./student-portal-model";
 import { studentAccess } from "./tier-access";
 import { PlanMonthSelect } from "./plan-month-select";
-export function StudentPreview() {
+export function StudentPreview({
+  view = "home",
+  initialStudentId = "",
+}: {
+  view?: StudentView;
+  initialStudentId?: string;
+}) {
   const state = useCrm(),
     hydrated = useHydrated();
-  const [selected, setSelected] = useState(""),
+  const [selected, setSelected] = useState(initialStudentId),
     [month, setMonth] = useState(todayRome().slice(0, 7)),
     [pending, setPending] = useState<string | null>(null),
     [message, setMessage] = useState(""),
@@ -71,16 +78,40 @@ export function StudentPreview() {
                   ))}
                 </SelectControl>
               </Field>
-              <Field label="Mese del piano">
-                <PlanMonthSelect
-                  value={month}
-                  months={(state.assignments ?? [])
-                    .filter((assignment) => assignment.studentId === student.id)
-                    .map((assignment) => assignment.month)}
-                  onChange={setMonth}
-                />
-              </Field>
+              {view === "piano" && services?.plans && (
+                <Field label="Mese del piano">
+                  <PlanMonthSelect
+                    value={month}
+                    months={(state.assignments ?? [])
+                      .filter(
+                        (assignment) => assignment.studentId === student.id,
+                      )
+                      .map((assignment) => assignment.month)}
+                    onChange={setMonth}
+                  />
+                </Field>
+              )}
             </div>
+            {view !== "home" && (
+              <Link
+                href={`/area-studente?studente=${encodeURIComponent(student.id)}`}
+                className="mb-6 inline-block text-sm text-muted-foreground hover:underline"
+              >
+                ← La mia home
+              </Link>
+            )}
+            {view === "home" && services && (
+              <>
+                <h2 className="mb-5 text-2xl font-semibold">
+                  Ciao, {student.firstName}
+                </h2>
+                <StudentHome
+                  services={services}
+                  hasBookings={Boolean(data?.lessons.length)}
+                  studentId={student.id}
+                />
+              </>
+            )}
             {message && (
               <p
                 role="status"
@@ -90,42 +121,44 @@ export function StudentPreview() {
               </p>
             )}
             <FormError message={error} />
-            {data && (services?.lessons || data.lessons.length > 0) && (
-              <div className="mb-10">
-                <StudentCalendar
-                  data={data}
-                  pending={pending}
-                  error={error}
-                  onChange={async (lessonId, cancelled) => {
-                    if (pending) return false;
-                    setPending(lessonId);
-                    setError("");
-                    try {
-                      await updateCrm((current) =>
-                        prepareStudentBooking(
-                          current,
-                          student.id,
-                          lessonId,
-                          cancelled,
-                        ),
-                      );
-                      setMessage(
-                        cancelled
-                          ? "Prenotazione annullata."
-                          : "Prenotazione confermata.",
-                      );
-                      return true;
-                    } catch (e) {
-                      setError((e as Error).message);
-                      return false;
-                    } finally {
-                      setPending(null);
-                    }
-                  }}
-                />
-              </div>
-            )}
-            {services?.plans && (
+            {view === "prenotazioni" &&
+              data &&
+              (services?.lessons || data.lessons.length > 0) && (
+                <div className="mb-10">
+                  <StudentCalendar
+                    data={data}
+                    pending={pending}
+                    error={error}
+                    onChange={async (lessonId, cancelled) => {
+                      if (pending) return false;
+                      setPending(lessonId);
+                      setError("");
+                      try {
+                        await updateCrm((current) =>
+                          prepareStudentBooking(
+                            current,
+                            student.id,
+                            lessonId,
+                            cancelled,
+                          ),
+                        );
+                        setMessage(
+                          cancelled
+                            ? "Prenotazione annullata."
+                            : "Prenotazione confermata.",
+                        );
+                        return true;
+                      } catch (e) {
+                        setError((e as Error).message);
+                        return false;
+                      } finally {
+                        setPending(null);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            {view === "piano" && services?.plans && (
               <>
                 <h2 className="mb-4 text-lg font-medium">Il tuo piano</h2>
                 {assignment ? (
@@ -142,11 +175,15 @@ export function StudentPreview() {
                 )}
               </>
             )}
-            {!services?.plans && !services?.lessons && (
-              <p className="rounded-xl border p-6 text-sm text-muted-foreground">
-                Nessun servizio abilitato per questo tier.
-              </p>
-            )}
+            {view !== "home" &&
+              ((view === "piano" && !services?.plans) ||
+                (view === "prenotazioni" &&
+                  !services?.lessons &&
+                  !data?.lessons.length)) && (
+                <p className="rounded-xl border p-6 text-sm text-muted-foreground">
+                  Nessun servizio abilitato per questo tier.
+                </p>
+              )}
           </>
         )}
       </main>

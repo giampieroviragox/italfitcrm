@@ -77,9 +77,7 @@ export function StudentCalendar({
   const blocked = (lesson: StudentLesson) =>
     lesson.cancelled ||
     (!lesson.enrolled &&
-      (lesson.occupied >= lesson.capacity ||
-        data.student.status !== "active" ||
-        Boolean(lesson.restriction)));
+      (lesson.occupied >= lesson.capacity || Boolean(lesson.restriction)));
   const status = (lesson: StudentLesson) =>
     lesson.cancelled
       ? "Annullata"
@@ -290,11 +288,6 @@ export function StudentCalendar({
             : "Il team pubblicherà qui i prossimi orari disponibili."}
         </p>
       )}
-      {data.student.status !== "active" && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          Potrai prenotare quando il team attiverà il tuo percorso.
-        </p>
-      )}
       {selected && (
         <Sheet
           open
@@ -369,11 +362,9 @@ export function StudentCalendar({
                       ? "Annulla prenotazione"
                       : selected.occupied >= selected.capacity
                         ? "Lezione completa"
-                        : data.student.status !== "active"
-                          ? "Percorso da attivare"
-                          : selected.restriction
-                            ? "Non disponibile per il percorso"
-                            : "Conferma prenotazione"}
+                        : selected.restriction
+                          ? "Non disponibile per il percorso"
+                          : "Conferma prenotazione"}
               </Button>
               <p className="text-center text-[11px] leading-5 text-muted-foreground">
                 La prenotazione è confermata solo dopo il salvataggio.

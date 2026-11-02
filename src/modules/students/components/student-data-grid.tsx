@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { DropdownMenu } from "radix-ui";
 import {
   ArrowDown,
@@ -20,11 +21,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "./status-badge";
+import { studentAccessLabel } from "@/modules/crm/student-access";
+import { StudentTierBadges } from "./tier-badge";
 import { StudentGridCell } from "@/modules/crm/student-grid-cell";
 import {
   studentColumns,
   moveColumn,
+  placeColumn,
   type StudentGroup,
 } from "@/modules/crm/student-grid";
 import {
@@ -36,6 +39,10 @@ import {
   type DirectoryConfig,
   type PropertyType,
 } from "@/modules/crm/model";
+import {
+  columnDragOffsets,
+  columnDragScrollSpeed,
+} from "@/modules/crm/column-drag";
 import { formatDate } from "@/lib/format";
 
 const typeIcons: Record<PropertyType, LucideIcon> = {
@@ -80,21 +87,55 @@ export function StudentDataGrid({
   activeCell: { studentId: string; column: string } | null;
   onCellChange: (studentId: string, column: string, open: boolean) => void;
   onOpenStudent: (id: string) => void;
-  onConfig: (patch: Partial<DirectoryConfig>) => void;
+  onConfig: (patch: Partial<DirectoryConfig>) => Promise<boolean>;
   onAddField: () => void;
   onEditField: (p: CrmProperty) => void;
   onFilter: (p: CrmProperty) => void;
   onAdd?: () => void;
 }) {
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [drag, setDrag] = useState<{
+    id: string;
+    x: number;
+    y: number;
+    widths: Record<string, number>;
+  } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    id: string;
+    side: "before" | "after";
+  } | null>(null);
+  const dragStart = useRef<{
+    id: string;
+    x: number;
+    y: number;
+    active: boolean;
+    scrollLeft: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    headers: { id: string; left: number; width: number }[];
+  } | null>(null);
+  const pointer = useRef({ x: 0, y: 0 });
+  const ghost = useRef<HTMLDivElement>(null);
+  const animationFrame = useRef<number | null>(null);
+  const [pendingColumns, setPendingColumns] = useState<string[] | null>(null);
+  useEffect(
+    () => () => {
+      if (animationFrame.current !== null)
+        cancelAnimationFrame(animationFrame.current);
+    },
+    [],
+  );
+  const dropRef = useRef<typeof dropTarget>(null);
+  const scrollRegion = useRef<HTMLDivElement>(null);
   const [resizing, setResizing] = useState<{
     id: string;
     width: number;
   } | null>(null);
   const menuOpensPanel = useRef(false);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
-  const columns = ["name", ...config.columns];
+  const visibleColumns = pendingColumns ?? config.columns;
+  const columns = ["name", ...visibleColumns];
   const propertyFor = (id: string) =>
     properties.find((p) => `property:${p.id}` === id);
   const labelFor = (id: string) =>
@@ -107,9 +148,95 @@ export function StudentDataGrid({
     resizing?.id === id
       ? resizing.width
       : (config.columnWidths?.[id] ?? (id === "name" ? 260 : 200));
+  const offsets =
+    drag && dropTarget
+      ? columnDragOffsets(
+          visibleColumns,
+          drag.widths,
+          drag.id,
+          dropTarget.id,
+          dropTarget.side,
+        )
+      : {};
+  const columnMotion = (id: string): CSSProperties => ({
+    transform:
+      drag && id !== drag.id && offsets[id]
+        ? `translate3d(${offsets[id]}px,0,0)`
+        : undefined,
+    transition: drag ? undefined : "none",
+  });
+  const stopDrag = () => {
+    if (animationFrame.current !== null)
+      cancelAnimationFrame(animationFrame.current);
+    animationFrame.current = null;
+    dragStart.current = null;
+    dropRef.current = null;
+    setDrag(null);
+    setDropTarget(null);
+  };
+  const animateDrag = (time: number, previousTime = time, schedule = true) => {
+    const start = dragStart.current;
+    const region = scrollRegion.current;
+    if (!start?.active || !region) return;
+    const { x, y } = pointer.current;
+    if (ghost.current)
+      ghost.current.style.transform = `translate3d(${x + 14}px,${y - 24}px,0) rotate(6deg)`;
+    const withinHeader = y >= start.top - 32 && y <= start.bottom + 48;
+    if (withinHeader)
+      region.scrollLeft +=
+        (columnDragScrollSpeed(x, start.left, start.right) *
+          Math.min(32, time - previousTime)) /
+        1000;
+    const scrollDelta = region.scrollLeft - start.scrollLeft;
+    const target =
+      withinHeader && x >= start.left && x <= start.right
+        ? start.headers.find(
+            (header) =>
+              x >= header.left - scrollDelta &&
+              x <= header.left + header.width - scrollDelta,
+          )
+        : undefined;
+    const next =
+      target && target.id !== start.id
+        ? {
+            id: target.id,
+            side:
+              x < target.left - scrollDelta + target.width / 2
+                ? ("before" as const)
+                : ("after" as const),
+          }
+        : null;
+    if (
+      next?.id !== dropRef.current?.id ||
+      next?.side !== dropRef.current?.side
+    ) {
+      dropRef.current = next;
+      setDropTarget(next);
+    }
+    if (schedule)
+      animationFrame.current = requestAnimationFrame((nextTime) =>
+        animateDrag(nextTime, time),
+      );
+  };
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {drag &&
+        createPortal(
+          <div
+            ref={ghost}
+            aria-hidden="true"
+            className="pointer-events-none fixed left-0 top-0 z-[100] flex w-52 will-change-transform items-center gap-3 rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm font-medium shadow-xl"
+            style={{
+              transform: `translate3d(${drag.x + 14}px,${drag.y - 24}px,0) rotate(6deg)`,
+            }}
+          >
+            <GripVertical className="size-4 text-muted-foreground" />
+            {labelFor(drag.id)}
+          </div>,
+          document.body,
+        )}
       <div
+        ref={scrollRegion}
         className="min-h-0 flex-1 overflow-auto overscroll-x-contain"
         role="region"
         aria-label="Griglia studenti"
@@ -145,10 +272,12 @@ export function StudentDataGrid({
                   <th
                     key={id}
                     scope="col"
+                    data-column-id={id}
                     style={{
                       width: widthFor(id),
                       minWidth: widthFor(id),
                       maxWidth: widthFor(id),
+                      ...columnMotion(id),
                     }}
                     aria-sort={
                       config.sortKey === id
@@ -157,42 +286,152 @@ export function StudentDataGrid({
                           : "descending"
                         : "none"
                     }
-                    className={`relative h-11 border-r border-b bg-[#f6f7f8] text-left font-medium ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget === id ? "shadow-[inset_3px_0_0_var(--primary)]" : ""} ${dragging === id ? "opacity-50" : ""}`}
-                    onDragOver={(e) => {
-                      if (dragging && id !== "name") {
-                        e.preventDefault();
-                        setDropTarget(id);
-                      }
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (dragging && id !== "name")
-                        onConfig({
-                          columns: moveColumn(config.columns, dragging, id),
-                        });
-                      setDragging(null);
-                      setDropTarget(null);
-                    }}
+                    className={`relative h-11 border-r border-b bg-[#f6f7f8] text-left font-medium transition-[transform,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget?.id === id ? (dropTarget.side === "before" ? "shadow-[inset_3px_0_0_var(--primary)]" : "shadow-[inset_-3px_0_0_var(--primary)]") : ""} ${drag?.id === id ? "opacity-20" : ""}`}
                   >
                     <div className="flex items-center gap-1 px-2">
                       {id !== "name" && (
-                        <span
-                          draggable={!saving}
+                        <button
+                          type="button"
+                          disabled={saving}
                           title={`Trascina ${labelFor(id)}`}
-                          aria-hidden="true"
-                          className="cursor-grab text-muted-foreground active:cursor-grabbing"
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", id);
-                            setDragging(id);
+                          aria-label={`Sposta colonna ${labelFor(id)}`}
+                          className="flex h-9 w-5 shrink-0 touch-none items-center justify-center rounded cursor-grab text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary active:cursor-grabbing"
+                          onPointerDown={(e) => {
+                            if (e.button !== 0 || saving || pendingColumns)
+                              return;
+                            const region = scrollRegion.current;
+                            if (!region) return;
+                            e.preventDefault();
+                            e.currentTarget.focus();
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                            const rect = region.getBoundingClientRect();
+                            const headerRect = e.currentTarget
+                              .closest("th")!
+                              .getBoundingClientRect();
+                            const nameHeader =
+                              region.querySelector<HTMLElement>(
+                                '[data-column-id="name"]',
+                              );
+                            const left =
+                              nameHeader &&
+                              getComputedStyle(nameHeader).position === "sticky"
+                                ? nameHeader.getBoundingClientRect().right
+                                : rect.left;
+                            pointer.current = { x: e.clientX, y: e.clientY };
+                            dragStart.current = {
+                              id,
+                              x: e.clientX,
+                              y: e.clientY,
+                              active: false,
+                              scrollLeft: region.scrollLeft,
+                              left,
+                              right: rect.right,
+                              top: headerRect.top,
+                              bottom: headerRect.bottom,
+                              headers: Array.from(
+                                region.querySelectorAll<HTMLElement>(
+                                  "[data-column-id]",
+                                ),
+                              )
+                                .filter(
+                                  (header) =>
+                                    header.dataset.columnId !== "name",
+                                )
+                                .map((header) => ({
+                                  id: header.dataset.columnId!,
+                                  left: header.getBoundingClientRect().left,
+                                  width: header.getBoundingClientRect().width,
+                                })),
+                            };
                           }}
-                          onDragEnd={() => {
-                            setDragging(null);
-                            setDropTarget(null);
+                          onPointerMove={(e) => {
+                            pointer.current = { x: e.clientX, y: e.clientY };
+                            const start = dragStart.current;
+                            if (
+                              !start ||
+                              start.active ||
+                              Math.hypot(
+                                e.clientX - start.x,
+                                e.clientY - start.y,
+                              ) < 5
+                            )
+                              return;
+                            start.active = true;
+                            setDrag({
+                              id,
+                              x: e.clientX,
+                              y: e.clientY,
+                              widths: Object.fromEntries(
+                                start.headers.map((header) => [
+                                  header.id,
+                                  header.width,
+                                ]),
+                              ),
+                            });
+                            animationFrame.current =
+                              requestAnimationFrame(animateDrag);
+                          }}
+                          onPointerUp={(e) => {
+                            pointer.current = { x: e.clientX, y: e.clientY };
+                            if (dragStart.current?.active)
+                              animateDrag(
+                                performance.now(),
+                                performance.now(),
+                                false,
+                              );
+                            const target = dropRef.current;
+                            if (
+                              dragStart.current?.active &&
+                              target &&
+                              !saving
+                            ) {
+                              const next = placeColumn(
+                                visibleColumns,
+                                id,
+                                target.id,
+                                target.side,
+                              );
+                              if (
+                                next.some(
+                                  (column, i) => column !== visibleColumns[i],
+                                )
+                              ) {
+                                setPendingColumns(next);
+                                void onConfig({ columns: next }).finally(() =>
+                                  setPendingColumns(null),
+                                );
+                              }
+                            }
+                            stopDrag();
+                            if (e.currentTarget.hasPointerCapture(e.pointerId))
+                              e.currentTarget.releasePointerCapture(
+                                e.pointerId,
+                              );
+                          }}
+                          onPointerCancel={stopDrag}
+                          onLostPointerCapture={stopDrag}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              stopDrag();
+                            }
+                            if (
+                              !saving &&
+                              (e.key === "ArrowLeft" || e.key === "ArrowRight")
+                            ) {
+                              e.preventDefault();
+                              const to =
+                                config.columns[
+                                  index + (e.key === "ArrowRight" ? 1 : -1)
+                                ];
+                              if (to)
+                                onConfig({
+                                  columns: moveColumn(config.columns, id, to),
+                                });
+                            }
                           }}
                         >
                           <GripVertical className="size-3" />
-                        </span>
+                        </button>
                       )}
                       <Icon
                         className="size-3.5 shrink-0 text-muted-foreground"
@@ -509,13 +748,14 @@ export function StudentDataGrid({
                       );
                     else if (id === "tier")
                       value = (
-                        <span className="rounded bg-violet-50 px-2 py-1 text-[11px] text-violet-800">
-                          {tiers.find((t) => t.id === student.tierId)?.name ??
-                            "—"}
+                        <StudentTierBadges student={student} tiers={tiers} />
+                      );
+                    else if (id === "access")
+                      value = (
+                        <span className="text-[11px]">
+                          {studentAccessLabel(student)}
                         </span>
                       );
-                    else if (id === "status")
-                      value = <StatusBadge status={student.status} />;
                     else if (id === "joinedAt")
                       value = formatDate(student.joinedAt);
                     else
@@ -526,8 +766,10 @@ export function StudentDataGrid({
                         style={{
                           width: widthFor(id),
                           maxWidth: widthFor(id),
+                          ...columnMotion(id),
+                          opacity: drag?.id === id ? 0.2 : undefined,
                         }}
-                        className={`overflow-hidden border-r border-b group-hover:bg-muted/20 ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
+                        className={`overflow-hidden border-r border-b bg-white transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none group-hover:bg-muted/20 ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
                       >
                         <div className="flex items-center">
                           {id === "name" ? (

@@ -8,6 +8,7 @@
 - Segreti soltanto in file ambiente ignorati: nessuna chiave server nei bundle client o nella documentazione. Resend invia soltanto quando l’admin sceglie esplicitamente l’invito email, con dominio verificato e mittente configurato; nessun invio massivo automatico.
 - Nessuna registrazione pubblica: gli studenti saranno creati e invitati dall’admin.
 - Il 1 novembre 2026 l’utente ha confermato Coaching online → piani, Allenamento in sede → lezioni, tier completo → entrambi. Le regole sono salvate esplicitamente nel tier e applicate sul server: non derivare permessi dai nomi. Limite mensile delle lezioni facoltativo, calcolato sul mese della lezione in Europe/Rome. Una riduzione dei servizi conserva lo storico e consente di annullare prenotazioni esistenti.
+- Il 2 novembre 2026 l’utente ha richiesto tier multipli per studente: `tierIds` contiene i tier assegnati, `tierId` conserva il primo ID per compatibilità. I servizi effettivi uniscono le policy esplicite dei tier; gli studenti precedenti con solo `tierId` restano compatibili. Lo stato CRM resta soltanto nei payload storici: la UI mostra l’accesso alla piattaforma e non Attivo/In pausa/Da attivare. Le nuove proprietà usano ID leggibili univoci (Key); gli ID esistenti restano immutati, anche se si rinomina il campo.
 - UI in italiano, date `Europe/Rome`, layout responsive e controlli accessibili.
 - Usare pnpm e preservare il lockfile. Prima della consegna: `pnpm check` e `pnpm build`, più verifica UI delle interazioni cambiate.
 

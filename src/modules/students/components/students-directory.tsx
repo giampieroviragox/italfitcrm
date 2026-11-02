@@ -115,10 +115,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
     config.pageSize,
   );
   const shown = groups.flatMap((g) => g.students);
-  const filterCount =
-    config.filters.length +
-    Number(config.status !== "all") +
-    Number(config.tier !== "all");
+  const filterCount = config.filters.length + Number(config.tier !== "all");
   const openPanel = (kind: Panel, open: boolean) => {
     if (open) {
       setDraft(structuredClone(config));
@@ -290,24 +287,6 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                 ) : kind === "filters" ? (
                   <>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Field label="Stato">
-                        <SelectControl
-                          className={control}
-                          value={draft.status}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              status: e.target
-                                .value as DirectoryConfig["status"],
-                            })
-                          }
-                        >
-                          <option value="all">Tutti gli stati</option>
-                          <option value="active">Attivi</option>
-                          <option value="invited">Da attivare</option>
-                          <option value="paused">In pausa</option>
-                        </SelectControl>
-                      </Field>
                       <Field label="Tier">
                         <SelectControl
                           className={control}
@@ -430,9 +409,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                 : current,
           )
         }
-        onConfig={(patch) => {
-          void setConfig(patch);
-        }}
+        onConfig={setConfig}
         onOpenStudent={(id) => setInteraction({ kind: "student", id })}
         onAddField={() => setInteraction({ kind: "property" })}
         onEditField={(property) =>

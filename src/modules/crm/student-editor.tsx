@@ -1,9 +1,10 @@
 "use client";
-import { SelectControl } from "@/components/ui/select-control";
+import { CoachSelect } from "./coach-select";
+import { TierPicker } from "./tier-picker";
+import { studentTierIds } from "./student-tiers";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
-import { statusLabels } from "@/modules/students/config";
 import { useCrm, updateCrm, useRemoteMode } from "./store";
 import {
   type CrmStudent,
@@ -34,7 +35,7 @@ export function StudentCreateDialog({
     [lastName, setLastName] = useState(""),
     [email, setEmail] = useState(""),
     [phone, setPhone] = useState(""),
-    [tierId, setTierId] = useState(""),
+    [tierIds, setTierIds] = useState<string[]>([]),
     [joinedAt] = useState(today),
     [properties, setProperties] = useState<Record<string, PropertyValue>>({}),
     [accessChoice, setAccessChoice] = useState(recordOnly),
@@ -81,7 +82,13 @@ export function StudentCreateDialog({
                 current.students.some((s) => s.email.toLowerCase() === address)
               )
                 throw new Error("Esiste già uno studente con questa email.");
-              if (!current.tiers.some((t) => t.id === tierId && !t.archived))
+              if (
+                !tierIds.length ||
+                tierIds.some(
+                  (id) =>
+                    !current.tiers.some((t) => t.id === id && !t.archived),
+                )
+              )
                 throw new Error("Seleziona un tier disponibile.");
               return {
                 ...current,
@@ -95,7 +102,8 @@ export function StudentCreateDialog({
                     coach: "",
 
                     status: "active",
-                    tierId,
+                    tierId: tierIds[0]!,
+                    tierIds,
                     joinedAt,
                     properties: { ...properties },
                   },
@@ -147,23 +155,7 @@ export function StudentCreateDialog({
           />
         </Field>
         <PhoneField value={phone} onChange={setPhone} />
-        <Field label="Tier *">
-          <SelectControl
-            className={control}
-            required
-            value={tierId}
-            onChange={(e) => setTierId(e.target.value)}
-          >
-            <option value="">Seleziona un tier…</option>
-            {state.tiers
-              .filter((t) => !t.archived)
-              .map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-          </SelectControl>
-        </Field>
+        <TierPicker tiers={state.tiers} value={tierIds} onChange={setTierIds} />
         <Field label="Data di creazione" hint="Compilata automaticamente.">
           <input className={control} readOnly value={formatDate(joinedAt)} />
         </Field>
@@ -208,9 +200,11 @@ export function StudentCreateDialog({
 export function StudentEditor({
   student,
   close,
+  saved,
 }: {
   student: CrmStudent;
   close: () => void;
+  saved: () => void;
 }) {
   const state = useCrm();
   const [draft, setDraft] = useState<CrmStudent>(() => ({
@@ -223,8 +217,9 @@ export function StudentEditor({
     setDraft((d) => ({ ...d, [key]: value }));
   return (
     <Editor
-      title="Modifica studente"
-      description="Anagrafica, tier e proprietà CRM. Dopo il salvataggio puoi preparare l’accesso dalla scheda."
+      inline
+      title="Scheda studente"
+      description={`Anagrafica e servizi · Aggiunto il ${formatDate(student.joinedAt)}`}
       close={close}
     >
       <form
@@ -243,7 +238,7 @@ export function StudentEditor({
               const latest = current.students.find((s) => s.id === item.id);
               if (!latest || (latest.revision ?? 0) !== baseRevision)
                 throw new Error(
-                  "Questa scheda è stata modificata altrove. Chiudi e riapri il form per caricare la versione aggiornata.",
+                  "Questa scheda è stata modificata altrove. Annulla le modifiche per caricare la versione aggiornata.",
                 );
               if (student.archived)
                 throw new Error(
@@ -263,13 +258,13 @@ export function StudentEditor({
               )
                 throw new Error("Esiste già uno studente con questa email.");
               if (
-                !current.tiers.some(
-                  (t) =>
-                    t.id === item.tierId &&
-                    (!t.archived || student.tierId === t.id),
+                !studentTierIds(item).length ||
+                studentTierIds(item).some(
+                  (id) =>
+                    !current.tiers.some((t) => t.id === id && !t.archived),
                 )
               )
-                throw new Error("Seleziona un tier disponibile.");
+                throw new Error("Seleziona almeno un tier disponibile.");
               for (const p of current.properties.filter((p) => !p.archived))
                 if (!validPropertyValue(p, item.properties[p.id]))
                   throw new Error(
@@ -282,7 +277,7 @@ export function StudentEditor({
                 ),
               };
             });
-            close();
+            saved();
           } catch (err) {
             setError(
               err instanceof Error ? err.message : "Salvataggio non riuscito",
@@ -307,70 +302,38 @@ export function StudentEditor({
               onChange={(e) => set("lastName", e.target.value)}
             />
           </Field>
-        </div>
-        <Field
-          label="Email *"
-          hint={
-            student.access
-              ? "Email collegata all’account personale."
-              : undefined
-          }
-        >
-          <input
-            className={control}
-            required
-            type="email"
-            value={draft.email}
-            readOnly={Boolean(student.access)}
-            onChange={(e) => set("email", e.target.value)}
-          />
-        </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Tier *">
-            <SelectControl
+          <Field
+            label="Email *"
+            hint={
+              student.access
+                ? "Email collegata all’account personale."
+                : undefined
+            }
+          >
+            <input
               className={control}
               required
-              value={draft.tierId}
-              onChange={(e) => set("tierId", e.target.value)}
-            >
-              <option value="">Seleziona un tier…</option>
-              {state.tiers
-                .filter((t) => !t.archived || t.id === draft.tierId)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                    {t.archived ? " (archiviato)" : ""}
-                  </option>
-                ))}
-            </SelectControl>
+              type="email"
+              value={draft.email}
+              readOnly={Boolean(student.access)}
+              onChange={(e) => set("email", e.target.value)}
+            />
           </Field>
-          <Field label="Stato">
-            <SelectControl
-              className={control}
-              value={draft.status}
-              onChange={(e) =>
-                set("status", e.target.value as CrmStudent["status"])
-              }
-            >
-              {Object.entries(statusLabels).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </SelectControl>
-          </Field>
+          <CoachSelect value={draft.coach} onChange={(v) => set("coach", v)} />
         </div>
         <PhoneField
           value={draft.phone ?? ""}
           onChange={(v) => set("phone", v)}
         />
-        <Field label="Coach di riferimento">
-          <input
-            className={control}
-            value={draft.coach}
-            onChange={(e) => set("coach", e.target.value)}
+        <section className="border-t pt-5">
+          <TierPicker
+            tiers={state.tiers}
+            value={studentTierIds(draft)}
+            onChange={(ids) =>
+              setDraft((d) => ({ ...d, tierId: ids[0] ?? "", tierIds: ids }))
+            }
           />
-        </Field>
+        </section>
         {Array.from(
           new Set(
             state.properties.filter((p) => !p.archived).map((p) => p.group),
@@ -400,7 +363,9 @@ export function StudentEditor({
         <FormError message={error} />
         <div className="crm-form-actions">
           <EditorCancel />
-          <Button type="submit">Salva modifiche</Button>
+          <Button type="submit" disabled={student.archived}>
+            Salva modifiche
+          </Button>
         </div>
       </form>
     </Editor>

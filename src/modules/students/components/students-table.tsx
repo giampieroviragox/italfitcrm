@@ -1,7 +1,7 @@
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Layers } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,7 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StudentIdentity } from "./student-identity";
-import { StatusBadge } from "./status-badge";
+import { studentAccessLabel } from "@/modules/crm/student-access";
+import { StudentTierBadges } from "./tier-badge";
 import { tiers } from "../config";
 import {
   formatPropertyValue,
@@ -41,14 +42,14 @@ export function StudentsTable({
 }) {
   const labels: Record<string, string> = {
     tier: "Tier",
-    status: "Stato",
+    access: "Accesso",
     joinedAt: "Aggiunto il",
     phone: "Telefono",
     coach: "Coach",
   };
   const columns = (
     columnKeys ??
-    (compact ? ["tier", "status"] : ["tier", "status", "joinedAt"])
+    (compact ? ["tier", "access"] : ["tier", "access", "joinedAt"])
   ).filter(
     (c) => labels[c] || propertyColumns.some((p) => `property:${p.id}` === c),
   );
@@ -72,14 +73,9 @@ export function StudentsTable({
     }
     switch (key) {
       case "tier":
-        return (
-          <span className="inline-flex items-center gap-2 whitespace-nowrap text-muted-foreground">
-            <Layers className="size-3.5" aria-hidden="true" />
-            {availableTiers.find((t) => t.id === student.tierId)?.name ?? "—"}
-          </span>
-        );
-      case "status":
-        return <StatusBadge status={student.status} />;
+        return <StudentTierBadges student={student} tiers={availableTiers} />;
+      case "access":
+        return studentAccessLabel(student);
       case "joinedAt":
         return (
           <span className="whitespace-nowrap text-muted-foreground">

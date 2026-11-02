@@ -202,7 +202,7 @@ test("lessons reject past dates, coach/room overlap and capacity below enrolled 
     }),
   );
 });
-test("booking enforces availability, active students, distinct slots and no student overlap", () => {
+test("booking enforces availability, non-archived students, distinct slots and no student overlap", () => {
   const s = { ...state(), lessons: [lesson("l")] };
   assert.doesNotThrow(() => check(s, { ...s, bookings: [booking("one")] }));
   assert.throws(
@@ -216,16 +216,16 @@ test("booking enforces availability, active students, distinct slots and no stud
         lessons: [{ ...lesson("l"), cancelled: true }],
         bookings: [booking("one")],
       }),
-    /attivi/,
+    /archiviati|disponibili|disponibile/,
   );
   assert.throws(
     () =>
       check(s, {
         ...s,
-        students: [{ ...student("a"), status: "paused" }, student("b")],
+        students: [{ ...student("a"), archived: true }, student("b")],
         bookings: [booking("one")],
       }),
-    /attivi/,
+    /archiviati|disponibili|disponibile/,
   );
   const two = {
     ...s,

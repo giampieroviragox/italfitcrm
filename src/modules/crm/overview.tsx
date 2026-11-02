@@ -4,7 +4,8 @@ import { UserPlus, Dumbbell, CalendarDays, ArrowUpRight } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Button } from "@/components/ui/button";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
-import { StatusBadge } from "@/modules/students/components/status-badge";
+import { studentAccessEnabled, studentAccessLabel } from "./student-access";
+import { studentAccess } from "./tier-access";
 import { useCrm } from "./store";
 import { validPropertyValue } from "./model";
 import { todayRome } from "./fitness-logic";
@@ -18,10 +19,11 @@ export default function OverviewPage() {
   const incomplete = students.filter((s) =>
     required.some((p) => !validPropertyValue(p, s.properties[p.id])),
   );
-  const active = students.filter((s) => s.status === "active");
+  const active = students.filter(studentAccessEnabled);
   const month = todayRome().slice(0, 7);
-  const unassigned = active.filter(
+  const unassigned = students.filter(
     (s) =>
+      studentAccess(state, s).plans &&
       !state.assignments?.some(
         (a) => a.studentId === s.id && a.month === month,
       ),
@@ -108,9 +110,9 @@ export default function OverviewPage() {
             detail: "Schede non archiviate",
           },
           {
-            label: "Attivi",
+            label: "Con accesso",
             value: active.length,
-            detail: "Studenti con stato attivo",
+            detail: "Accesso alla piattaforma abilitato",
           },
           {
             label: "Schede da completare",
@@ -120,7 +122,7 @@ export default function OverviewPage() {
           {
             label: "Senza piano mensile",
             value: unassigned.length,
-            detail: `Studenti attivi · ${formatMonth(month)}`,
+            detail: `Coaching online · ${formatMonth(month)}`,
           },
         ].map((item) => (
           <div key={item.label} className="rounded-xl border p-5">
@@ -153,7 +155,9 @@ export default function OverviewPage() {
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-muted/30"
               >
                 <StudentIdentity student={s} />
-                <StatusBadge status={s.status} />
+                <span className="text-xs text-muted-foreground">
+                  {studentAccessLabel(s)}
+                </span>
               </Link>
             ))}
           </div>

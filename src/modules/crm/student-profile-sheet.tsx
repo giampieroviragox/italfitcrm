@@ -8,6 +8,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useNavigationRequest } from "./use-unsaved-changes";
 import { StudentProfile } from "./student-profile";
 
 export function StudentProfileSheet({
@@ -17,11 +18,12 @@ export function StudentProfileSheet({
   id: string;
   close: () => void;
 }) {
+  const request = useNavigationRequest();
   return (
     <Sheet
       open
       onOpenChange={(open) => {
-        if (!open) close();
+        if (!open) request(close);
       }}
     >
       <SheetContent

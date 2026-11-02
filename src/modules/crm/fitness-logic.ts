@@ -352,14 +352,9 @@ export function assertFitnessTransition(
         old.lessonId !== b.lessonId ||
         old.studentId !== b.studentId)
     ) {
-      if (
-        l.cancelled ||
-        Date.parse(l.startsAt) <= now ||
-        s.archived ||
-        s.status !== "active"
-      )
+      if (l.cancelled || Date.parse(l.startsAt) <= now || s.archived)
         throw new Error(
-          "Puoi iscrivere solo studenti attivi a lezioni future disponibili.",
+          "Puoi iscrivere solo studenti non archiviati a lezioni future disponibili.",
         );
       const restriction = bookingRestriction(next, s.id, l.id, b.id);
       if (restriction) throw new Error(restriction);
