@@ -11,7 +11,7 @@ export function WeekNavigation({
 }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-      <span className="w-full text-sm font-semibold tracking-tight tabular-nums min-[380px]:w-auto sm:text-[15px]">
+      <span className="w-full text-sm font-medium tabular-nums min-[380px]:w-auto sm:text-[15px]">
         {new Intl.DateTimeFormat("it-IT", {
           day: "numeric",
           month: "short",
@@ -29,7 +29,7 @@ export function WeekNavigation({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="rounded-md"
+
           aria-label="Settimana precedente"
           onClick={() => onChange(addDays(week, -7))}
         >
@@ -38,7 +38,7 @@ export function WeekNavigation({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="rounded-md"
+
           aria-label="Settimana successiva"
           onClick={() => onChange(addDays(week, 7))}
         >
@@ -47,7 +47,7 @@ export function WeekNavigation({
         <Button
           variant="outline"
           size="sm"
-          className="ml-2 rounded-md text-xs"
+          className="ml-2"
           onClick={() => onChange(weekStart(todayRome()))}
         >
           Oggi

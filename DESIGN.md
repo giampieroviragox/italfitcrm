@@ -78,3 +78,16 @@ La revisione successiva ha sostituito tutti i select, le checkbox e le scelte ra
 ## Calendario: ritmo e densità
 
 La revisione del 1 novembre 2026 usa una superficie unica con raggio di 12px, toolbar compatta, intestazioni da 64px e un asse orario comune. Le fasce sono blocchi pieni con bordo laterale, testo allineato in alto e contrasto conservato anche nel passato. Evitare ombre, card sovrapposte, divisori decorativi dentro gli eventi e barre flottanti sempre visibili. Il salvataggio appare nel bordo inferiore quando ci sono modifiche. Su mobile: giorno selezionabile, controlli tattili e nessuno scorrimento orizzontale della pagina. Il calendario studenti condivide colori, intestazioni e spaziature; gli stati vuoti sono discreti e le prenotazioni confermate hanno un indicatore laterale.
+
+## Revisione 2 novembre 2026: allineamento ElevenLabs
+
+Misure rilevate nell’app autenticata (Home, Voices, Productions, Settings) tramite stili calcolati: sidebar 256px `#fafafa` con bordo `rgba(0,0,0,.075)`, voci di navigazione 32px, 14px/500, raggio 10px, inattive grigie e attive su `rgba(0,0,0,.045)`; header 50px con breadcrumb; contenuto centrato a 1152px; titoli 24/30px; pulsanti 32–36px con raggio 10px; tab a pillola bordata con sottolineatura; card azione 58px con icona 32px; impostazioni come righe separate da linee sottili.
+
+Applicato a entrambe le aree:
+
+- Token neutri (`#0f0f10`, muted `#6f6f6f`, bordi `#ececec`, input `#e3e3e3`) e componenti condivisi: `PageHeading`, `PageTabs`, `AuthLayout`, `StudentShell`.
+- Admin: breadcrumb nell’header, menu account con iniziali, stato del workspace mostrato solo quando serve, Home con azioni, metriche in un’unica striscia e liste senza card, piani come lista con tab di stato, impostazioni a righe (Team, Proprietà).
+- Area studente: navigazione in alto su desktop e tab bar su mobile, menu account con cambio password ed uscita, piano e calendario senza palette salvia né decorazioni.
+- Rimossi: tab Studenti in Impostazioni (duplicava scheda e griglia), riepilogo duplicato nella scheda studente, campo “Data di creazione” in creazione, eyebrow maiuscoli, slogan, frecce decorative, componenti `card`, `badge`, `table`, `tabs` e tabella studenti non più usati.
+- Nessun controllo nativo del browser per data, ora e mese: `DatePicker`, `TimePicker` e `MonthPicker` (Radix Popover) con validazione `required` tramite input nascosto. I campi numerici non mostrano le frecce native.
+- Tema chiaro, scuro o automatico dal selettore nell’header (admin, area studente, accesso). La scelta è salvata in `localStorage` (`italfit.theme`) e applicata prima del primo paint; i colori passano tutti dai token CSS, calendario incluso.

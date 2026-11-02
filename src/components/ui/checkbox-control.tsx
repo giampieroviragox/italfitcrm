@@ -47,7 +47,7 @@ export function CheckboxControl({
         changed();
       }}
       className={cn(
-        "relative after:absolute after:-inset-2 after:content-[''] inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border border-foreground/25 bg-white text-white outline-none transition-colors hover:border-foreground/50 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary",
+        "relative after:absolute after:-inset-2 after:content-[''] inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border border-foreground/25 bg-background text-primary-foreground outline-none transition-colors hover:border-foreground/50 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary",
         className,
       )}
     >

@@ -147,8 +147,9 @@ export function AvailabilityCalendar() {
         <div className={styles.toolbar}>
           <WeekNavigation week={week} onChange={changeWeek} />
           <Button
+            variant="outline"
             size="sm"
-            className="rounded-md max-sm:w-full"
+            className="max-sm:w-full"
             onClick={() =>
               setEditing({
                 date:
@@ -167,17 +168,17 @@ export function AvailabilityCalendar() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-2">
               <span
-                className="h-3 w-1 rounded-sm bg-[#44765c]"
+                className="h-3 w-1 rounded-sm bg-foreground/80"
                 aria-hidden="true"
               />
               Disponibilità
             </span>
-            <span className="text-[#969e98]">
+            <span className="text-muted-foreground">
               {weekSlots.length} {weekSlots.length === 1 ? "fascia" : "fasce"}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <label className="flex items-center gap-2 text-[11px]">
+            <label className="flex items-center gap-2 text-xs">
               <CheckboxControl
                 checked={showCancelled}
                 onChange={(event) => setShowCancelled(event.target.checked)}
@@ -218,14 +219,14 @@ export function AvailabilityCalendar() {
             {dirty ? (
               <>
                 <span
-                  className="size-1.5 rounded-full bg-[#a47730]"
+                  className="size-1.5 rounded-full bg-amber-500"
                   aria-hidden="true"
                 />
                 Modifiche non salvate
               </>
             ) : notice ? (
               <>
-                <Check className="size-3.5 text-[#44765c]" />
+                <Check className="size-3.5 text-emerald-600" />
                 {notice}
               </>
             ) : (
@@ -256,7 +257,6 @@ export function AvailabilityCalendar() {
               </Button>
               <Button
                 size="sm"
-                className="rounded-md"
                 disabled={busy}
                 onClick={() => {
                   setError("");
@@ -267,7 +267,7 @@ export function AvailabilityCalendar() {
               </Button>
             </div>
           ) : (
-            <span className="hidden text-[11px] text-[#8a928d] sm:inline">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
               24 ore · Orari di Roma
             </span>
           )}

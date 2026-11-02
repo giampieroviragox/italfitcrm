@@ -2,9 +2,14 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  pageTabActive,
+  pageTabIdle,
+  pageTabItem,
+  pageTabList,
+} from "@/components/ui/page-tabs";
+import { cn } from "@/lib/utils";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
-import { formatDate } from "@/lib/format";
 import { validPropertyValue } from "./model";
 import { useCrm, useHydrated, addStudentComment } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
@@ -14,7 +19,7 @@ import { AssignmentEditor } from "./plan-editor";
 import { AssignedPlan } from "./plans-workspace";
 import { lessonDate } from "./lessons-workspace";
 import { StudentAccessControl } from "./student-access-control";
-import { studentAccessLabel } from "./student-access";
+import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 const timestamp = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -74,36 +79,30 @@ export function StudentProfile({
   };
   return (
     <>
-      {!embedded && (
-        <Link
-          className="mb-6 inline-block text-xs text-muted-foreground"
-          href="/admin/studenti"
-        >
-          ← Tutti gli studenti
-        </Link>
-      )}
       <LocalNotice />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-5">
+      <div
+        className={`mb-6 flex flex-wrap items-center justify-between gap-4 ${embedded ? "pr-10" : ""}`}
+      >
         <StudentIdentity student={student} large />
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <p className="text-xs text-muted-foreground">
-            Accesso alla piattaforma:{" "}
-            <span className="font-medium text-foreground">
-              {studentAccessLabel(student)}
-            </span>
-          </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            <span
+              aria-hidden
+              className={`size-1.5 rounded-full ${studentAccessEnabled(student) ? "bg-emerald-500/100" : "bg-neutral-300"}`}
+            />
+            {studentAccessLabel(student)}
+          </span>
           <StudentAccessControl student={student} />
         </div>
       </div>
       <FormError message={error} />
       {missing.length > 0 && (
-        <p className="my-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
-          {missing.length} proprietà obbligatorie da compilare:{" "}
-          {missing.map((p) => p.name).join(", ")}.
+        <p className="mb-5 rounded-[10px] border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-[13px] text-amber-900 dark:text-amber-200">
+          Da compilare: {missing.map((p) => p.name).join(", ")}.
         </p>
       )}
       <div className="grid items-start gap-6">
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 space-y-6">
           <div
             role="tablist"
             aria-label="Dettagli studente"
@@ -132,29 +131,42 @@ export function StudentProfile({
                 });
               }
             }}
-            className="flex gap-1 overflow-x-auto rounded-lg border bg-white p-1"
+            className={pageTabList}
           >
             {[
               { id: "properties", label: "Proprietà" },
               { id: "plans", label: "Piani e lezioni" },
               {
                 id: "notes",
-                label: `Commenti (${student.notes?.length ?? 0})`,
+                label: (
+                  <>
+                    Commenti
+                    {student.notes?.length ? (
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {student.notes.length}
+                      </span>
+                    ) : null}
+                  </>
+                ),
               },
               { id: "history", label: "Cronologia" },
             ].map((t) => (
-              <Button
+              <button
+                type="button"
                 key={t.id}
                 role="tab"
                 tabIndex={tab === t.id ? 0 : -1}
                 id={`tab-${t.id}`}
                 aria-selected={tab === t.id}
                 aria-controls={`panel-${t.id}`}
-                variant={tab === t.id ? "secondary" : "ghost"}
+                className={cn(
+                  pageTabItem,
+                  tab === t.id ? pageTabActive : pageTabIdle,
+                )}
                 onClick={() => request(() => setTab(t.id))}
               >
                 {t.label}
-              </Button>
+              </button>
             ))}
           </div>
           {tab === "properties" ? (
@@ -162,7 +174,7 @@ export function StudentProfile({
               {savedMessage && (
                 <p
                   role="status"
-                  className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800"
+                  className="rounded-[10px] bg-emerald-500/10 px-3 py-2.5 text-[13px] text-emerald-800 dark:text-emerald-300"
                 >
                   {savedMessage}
                 </p>
@@ -180,46 +192,7 @@ export function StudentProfile({
                 }}
               />
             </>
-          ) : (
-            <Card className="gap-4 p-6 shadow-none">
-              <h1 className="text-lg font-semibold">Scheda studente</h1>
-              <dl className="divide-y">
-                {[
-                  ["Email", student.email],
-                  ["Telefono", student.phone || "Non compilato"],
-                  ["Accesso", studentAccessLabel(student)],
-                  ["Coach", student.coach || "Non assegnato"],
-                  ["Aggiunto il", formatDate(student.joinedAt)],
-                ].map(([label, value]) => (
-                  <div
-                    className="flex flex-wrap justify-between gap-3 py-4 text-xs"
-                    key={label}
-                  >
-                    <dt className="text-muted-foreground">{label}</dt>
-                    <dd className="max-w-full break-words">
-                      {label === "Email" ? (
-                        <a
-                          className="hover:underline"
-                          href={`mailto:${student.email}`}
-                        >
-                          {value}
-                        </a>
-                      ) : label === "Telefono" && student.phone ? (
-                        <a
-                          className="hover:underline"
-                          href={`tel:${student.phone.replace(/[^+\d]/g, "")}`}
-                        >
-                          {value}
-                        </a>
-                      ) : (
-                        value
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-          )}
+          ) : null}
           <section
             role="tabpanel"
             id={`panel-${tab}`}
@@ -229,24 +202,28 @@ export function StudentProfile({
             {tab === "properties" && (
               <>
                 {!properties.length && (
-                  <Card className="p-6 shadow-none">
-                    <h2 className="text-sm font-semibold">
-                      Nessuna proprietà personalizzata
-                    </h2>
-                    <p className="text-xs leading-6 text-muted-foreground">
-                      Configura i campi nelle impostazioni per completare le
-                      schede del team.
-                    </p>
-                  </Card>
+                  <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                    Nessuna proprietà personalizzata. Configura i campi in{" "}
+                    <Link
+                      href="/admin/impostazioni/proprieta"
+                      className="text-foreground underline underline-offset-4"
+                    >
+                      Impostazioni
+                    </Link>
+                    .
+                  </p>
                 )}
               </>
             )}
             {tab === "plans" && (
               <>
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-medium">Piani mensili</h2>
+                  <h2 className="text-sm font-medium text-muted-foreground">
+                    Piani mensili
+                  </h2>
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={student.archived}
                     onClick={() => setAssigning(true)}
                   >
@@ -260,13 +237,15 @@ export function StudentProfile({
                     <AssignedPlan key={a.id} assignment={a} />
                   ))}
                 {!state.assignments?.some((a) => a.studentId === id) && (
-                  <p className="rounded-xl border p-5 text-sm text-muted-foreground">
+                  <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                     Nessun piano assegnato.
                   </p>
                 )}
-                <section className="rounded-xl border p-5">
-                  <h2 className="text-sm font-medium">Lezioni prenotate</h2>
-                  <div className="mt-3 divide-y">
+                <section className="pt-4">
+                  <h2 className="text-sm font-medium text-muted-foreground">
+                    Lezioni prenotate
+                  </h2>
+                  <div className="mt-2 divide-y rounded-xl border px-4 empty:hidden">
                     {(state.bookings ?? [])
                       .filter((b) => b.studentId === id && !b.cancelled)
                       .map((b) => {
@@ -291,7 +270,7 @@ export function StudentProfile({
                   {!state.bookings?.some(
                     (b) => b.studentId === id && !b.cancelled,
                   ) && (
-                    <p className="mt-3 text-xs text-muted-foreground">
+                    <p className="mt-2 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                       Nessuna prenotazione.
                     </p>
                   )}
@@ -299,15 +278,7 @@ export function StudentProfile({
               </>
             )}
             {tab === "notes" && (
-              <Card className="gap-5 p-5 shadow-none sm:p-6">
-                <div className="space-y-2">
-                  <h2 className="text-sm font-semibold">Commenti interni</h2>
-                  <p className="text-xs leading-6 text-muted-foreground">
-                    Ogni commento conserva autore, data e testo originale. I
-                    commenti pubblicati non possono essere modificati o
-                    eliminati.
-                  </p>
-                </div>
+              <div className="space-y-6">
                 <form
                   className="space-y-4"
                   aria-busy={commentPending}
@@ -339,7 +310,7 @@ export function StudentProfile({
                 >
                   <Field
                     label="Nuovo commento"
-                    hint="Massimo 5000 caratteri. Visibile solo agli amministratori."
+                    hint="Visibile solo agli amministratori. I commenti pubblicati non si possono modificare."
                   >
                     <textarea
                       className={control}
@@ -361,16 +332,16 @@ export function StudentProfile({
                     {commentResult}
                   </p>
                 </form>
-                <div className="border-t pt-5">
-                  <h3 className="mb-3 text-xs font-medium">
-                    Commenti ({student.notes?.length ?? 0}) · Più recenti prima
+                <div>
+                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+                    Più recenti
                   </h3>
                   {student.notes?.length ? (
                     <ol
                       ref={commentList}
                       aria-label="Commenti salvati"
                       tabIndex={0}
-                      className="max-h-[32rem] space-y-4 overflow-y-auto overscroll-contain rounded-lg p-1 focus-visible:outline-2 focus-visible:outline-primary"
+                      className="max-h-[32rem] divide-y overflow-y-auto overscroll-contain rounded-xl border focus-visible:outline-2 focus-visible:outline-primary"
                       style={{ scrollbarGutter: "stable" }}
                     >
                       {student.notes
@@ -380,10 +351,7 @@ export function StudentProfile({
                             b.id.localeCompare(a.id),
                         )
                         .map((n) => (
-                          <li
-                            className="space-y-3 rounded-lg border bg-muted/20 p-4"
-                            key={n.id}
-                          >
+                          <li className="space-y-1.5 px-4 py-3.5" key={n.id}>
                             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                               <p className="break-words text-sm font-medium">
                                 {n.actorName || "Autore non disponibile"}
@@ -395,33 +363,26 @@ export function StudentProfile({
                                 {timestamp(n.createdAt)}
                               </time>
                             </div>
-                            <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                            <p className="whitespace-pre-wrap break-words text-sm leading-6">
                               {n.text}
                             </p>
                           </li>
                         ))}
                     </ol>
                   ) : (
-                    <p className="py-3 text-xs text-muted-foreground">
+                    <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                       Nessun commento ancora presente.
                     </p>
                   )}
                 </div>
-              </Card>
+              </div>
             )}
             {tab === "history" && (
-              <Card className="gap-3 p-6 shadow-none">
-                <h2 className="text-sm font-semibold">
-                  Cronologia della scheda
-                </h2>
-                <p className="text-xs leading-6 text-muted-foreground">
-                  Modifiche e attività della scheda con autore e data. Le più
-                  recenti sono in alto.
-                </p>
+              <div>
                 <ol
                   aria-label="Attività della scheda"
                   tabIndex={0}
-                  className="max-h-[40rem] divide-y overflow-y-auto overscroll-contain rounded focus-visible:outline-2 focus-visible:outline-primary"
+                  className="max-h-[40rem] divide-y overflow-y-auto empty:hidden overscroll-contain rounded-xl border px-4 focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   {(student.history ?? [])
                     .toSorted(
@@ -430,7 +391,7 @@ export function StudentProfile({
                         b.id.localeCompare(a.id),
                     )
                     .map((h) => (
-                      <li className="space-y-1 py-4" key={h.id}>
+                      <li className="space-y-1 py-3.5" key={h.id}>
                         <p className="text-sm font-medium">{h.text}</p>
                         {h.details && h.details.length > 0 && (
                           <ul className="space-y-1 text-xs leading-6 text-muted-foreground">
@@ -455,11 +416,11 @@ export function StudentProfile({
                     ))}
                 </ol>
                 {!student.history?.length && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                     Nessuna modifica registrata.
                   </p>
                 )}
-              </Card>
+              </div>
             )}
           </section>
         </div>

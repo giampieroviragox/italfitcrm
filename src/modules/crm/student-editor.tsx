@@ -156,9 +156,6 @@ export function StudentCreateDialog({
         </Field>
         <PhoneField value={phone} onChange={setPhone} />
         <TierPicker tiers={state.tiers} value={tierIds} onChange={setTierIds} />
-        <Field label="Data di creazione" hint="Compilata automaticamente.">
-          <input className={control} readOnly value={formatDate(joinedAt)} />
-        </Field>
         {required.map((p) => (
           <PropertyField
             key={p.id}
@@ -179,7 +176,7 @@ export function StudentCreateDialog({
               value={accessChoice}
               onChange={setAccessChoice}
             />
-            <p className="text-[11px] leading-5 text-muted-foreground">
+            <p className="text-xs leading-5 text-muted-foreground">
               {giveAccess
                 ? "Dopo la creazione prepari il link personale o l’invito via email."
                 : "Lo studente non potrà accedere. Potrai invitarlo in seguito dalla scheda."}
@@ -340,7 +337,7 @@ export function StudentEditor({
           ),
         ).map((group) => (
           <section key={group} className="space-y-5 border-t pt-6">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h3 className="text-sm font-medium text-muted-foreground">
               {group}
             </h3>
             {state.properties

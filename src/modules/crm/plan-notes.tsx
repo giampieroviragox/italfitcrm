@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useId, useState, useRef, useEffect } from "react";
-import { ArrowUpRight, ChevronRight, Flag, Gauge, X } from "lucide-react";
+import { ChevronRight, Flag, Gauge, Wind, X } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -48,17 +48,17 @@ export function CoachNote({
     .join("");
   return (
     <section
-      className="rounded-2xl border border-black/6 bg-white p-5 sm:p-6"
+      className="rounded-2xl border p-5"
       aria-label="Messaggio del coach"
     >
-      <div className="mb-4 flex items-center gap-3">
-        <span className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eedf] text-sm font-semibold text-[#46513e] ring-2 ring-white">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground text-xs font-medium text-background">
           {coach?.avatarUrl && failedImage !== coach.avatarUrl ? (
             <Image
               src={coach.avatarUrl}
               alt=""
-              width={44}
-              height={44}
+              width={36}
+              height={36}
               unoptimized
               className="size-full object-cover"
               onError={() => setFailedImage(coach.avatarUrl!)}
@@ -68,15 +68,15 @@ export function CoachNote({
               <Image
                 src="/brand/team-italfit.svg"
                 alt=""
-                width={28}
-                height={28}
+                width={22}
+                height={22}
               />
             )
           )}
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold">Due parole dal coach</h3>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          <h3 className="text-sm font-medium">Dal tuo coach</h3>
+          <p className="truncate text-xs text-muted-foreground">
             {coach?.name ?? "Team Italfit"}
           </p>
         </div>
@@ -84,7 +84,7 @@ export function CoachNote({
       <p
         ref={textRef}
         id={id}
-        className={`${expanded ? "" : "line-clamp-5"} whitespace-pre-line text-sm leading-7 text-[#565b53]`}
+        className={`${expanded ? "" : "line-clamp-5"} whitespace-pre-line text-sm leading-6 text-muted-foreground`}
       >
         {text}
       </p>
@@ -93,7 +93,7 @@ export function CoachNote({
           type="button"
           aria-expanded={expanded}
           aria-controls={id}
-          className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[#46513e]"
+          className="mt-1 inline-flex min-h-9 items-center gap-1 text-[13px] font-medium"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "Leggi di meno" : "Leggi di più"}
@@ -115,28 +115,14 @@ export function RecoveryNote({
   if (!text) return null;
   const lines = text.split("\n").filter((s) => s.trim());
   return (
-    <section className="rounded-2xl bg-[#eef1e8] p-5 sm:p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/80">
-          <Image
-            src="/illustrations/recovery.svg"
-            width={26}
-            height={26}
-            alt=""
-          />
-        </span>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-[#65725a]">
-            Prenditi il tuo tempo
-          </p>
-          <h4 className="mt-1 text-base font-semibold tracking-tight">
-            {title}
-          </h4>
-        </div>
-      </div>
-      <div className="space-y-3">
+    <section className="rounded-xl bg-muted px-4 py-3.5">
+      <h4 className="mb-1 flex items-center gap-2 text-sm font-medium">
+        <Wind className="size-4 text-muted-foreground" strokeWidth={1.75} />
+        {title}
+      </h4>
+      <div className="space-y-1">
         {lines.map((line, i) => (
-          <p key={i} className="text-sm leading-7 text-[#4b5742]">
+          <p key={i} className="text-sm leading-6 text-muted-foreground">
             {line.replace(/^[•]\s*/, "")}
           </p>
         ))}
@@ -147,35 +133,33 @@ export function RecoveryNote({
 export function ProgramReference({ program }: { program: WorkoutProgram }) {
   const zones = program.paceZones;
   return (
-    <section aria-label="Riferimenti del programma" className="space-y-3 pt-2">
-      <h3 className="text-lg font-semibold tracking-tight">
+    <section aria-label="Riferimenti del programma" className="space-y-3 pt-4">
+      <h3 className="text-sm font-medium text-muted-foreground">
         Da tenere a mente
       </h3>
       {zones.length > 0 && (
-        <section className="overflow-hidden rounded-2xl border border-black/6 bg-white">
-          <div className="flex items-center gap-3 px-5 pt-5">
-            <Gauge className="size-4 text-[#65725a]" />
-            <div>
-              <h4 className="text-sm font-semibold">Le tue zone di passo</h4>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Il ritmo giusto per ogni lavoro.
-              </p>
-            </div>
+        <section className="overflow-hidden rounded-xl border">
+          <div className="flex items-center gap-2 border-b px-4 py-3">
+            <Gauge
+              className="size-4 text-muted-foreground"
+              strokeWidth={1.75}
+            />
+            <h4 className="text-sm font-medium">Le tue zone di passo</h4>
           </div>
-          <dl className="mt-4 grid grid-cols-2 gap-px bg-black/6 sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
             {zones.map((zone, i) => (
               <div
                 key={`${zone.name}-${i}`}
-                className="min-w-0 bg-white p-4 sm:px-5"
+                className="min-w-0 bg-background px-4 py-3"
               >
-                <dt className="mb-2 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+                <dt className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
                   <span
-                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#70885f]"
-                    style={{ opacity: Math.min(1, 0.35 + i * 0.13) }}
+                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground"
+                    style={{ opacity: Math.min(1, 0.25 + i * 0.15) }}
                   />
                   {zone.name}
                 </dt>
-                <dd className="text-lg font-semibold tracking-tight tabular-nums">
+                <dd className="text-base font-medium tabular-nums">
                   {zone.pace}
                 </dd>
               </div>
@@ -188,20 +172,20 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="flex min-h-20 w-full items-center gap-4 rounded-2xl border border-black/6 bg-white p-5 text-left transition-colors hover:bg-[#edf1e7]"
+              className="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors hover:bg-foreground/[.02]"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#edf1e7]">
-                <Flag className="size-4 text-[#536348]" />
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
+                <Flag className="size-4" strokeWidth={1.75} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold">
+                <span className="block text-sm font-medium">
                   Indicazioni del percorso
                 </span>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                <span className="block text-xs leading-5 text-muted-foreground">
                   Obiettivo, indicazioni e check di fine blocco
                 </span>
               </span>
-              <ArrowUpRight className="size-4 shrink-0" />
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </button>
           </SheetTrigger>
           <SheetContent
@@ -226,7 +210,7 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
               {program.guidance.split(/\n\s*\n/).map((paragraph, i) => (
                 <p
                   key={i}
-                  className="whitespace-pre-line text-sm leading-7 text-muted-foreground"
+                  className="whitespace-pre-line text-sm leading-6 text-muted-foreground"
                 >
                   {paragraph}
                 </p>

@@ -39,7 +39,7 @@ import {
   useRemoteMode,
 } from "./store";
 export const control =
-  "crm-control block w-full min-w-0 rounded-lg border border-input bg-white px-3 py-2.5 text-sm leading-5 outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15 aria-invalid:border-destructive read-only:bg-muted/40 disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-muted-foreground";
+  "crm-control block w-full min-w-0 rounded-[10px] border border-input bg-background px-3 py-2 text-sm leading-5 outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground hover:border-(--border-hover) focus:border-(--border-focus) focus:ring-[3px] focus:ring-foreground/5 aria-invalid:border-destructive [&:is(input,textarea):read-only]:bg-muted disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
 export function Field({
   label,
   children,
@@ -72,7 +72,7 @@ export function Field({
     : children;
   return (
     <label
-      className="flex min-w-0 flex-col gap-2 text-sm font-medium"
+      className="flex min-w-0 flex-col gap-1.5 text-sm font-medium"
       onChangeCapture={() => setError("")}
       onInvalidCapture={(event) => {
         const target = event.target;
@@ -154,7 +154,7 @@ export function Editor({
   useUnsavedChanges(dirty, close);
   const body = (
     <div
-      className="crm-editor-body min-h-0 flex-1 overflow-y-auto px-6 pt-6 sm:px-8"
+      className="crm-editor-body min-h-0 flex-1 overflow-y-auto px-5 pt-5 sm:px-6 sm:pt-6"
       data-validation-error={validationError ? "true" : undefined}
       onInvalidCapture={(e) => {
         e.preventDefault();
@@ -192,7 +192,7 @@ export function Editor({
       {validationError && (
         <p
           role="alert"
-          className="mb-5 rounded-lg bg-red-50 p-3 text-xs text-red-700"
+          className="mb-5 rounded-[10px] bg-red-500/10 px-3 py-2.5 text-[13px] text-red-700 dark:text-red-400"
         >
           {validationError}
         </p>
@@ -217,10 +217,10 @@ export function Editor({
           }}
         />
         {inline ? (
-          <section className="crm-editor w-full rounded-xl border bg-white pb-2">
-            <header className="border-b p-6 sm:px-8">
-              <h1 className="text-lg font-semibold">{title}</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
+          <section className="crm-editor w-full rounded-xl border bg-background pb-2">
+            <header className="border-b p-5 sm:px-6">
+              <h1 className="text-base font-medium">{title}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {description}
               </p>
             </header>
@@ -247,13 +247,13 @@ export function Editor({
                   previousFocus.current.focus();
                 }
               }}
-              className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[560px]"
+              className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[520px]"
             >
-              <SheetHeader className="shrink-0 gap-3 border-b px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
-                <SheetTitle className="pr-10 text-[22px] leading-7 font-semibold tracking-tight">
+              <SheetHeader className="shrink-0 gap-1 border-b px-5 py-5 sm:px-6">
+                <SheetTitle className="pr-10 text-lg leading-6 font-medium tracking-[-0.01em]">
                   {title}
                 </SheetTitle>
-                <SheetDescription className="pr-5 text-sm leading-6">
+                <SheetDescription className="pr-5 text-[13px] leading-5">
                   {description}
                 </SheetDescription>
               </SheetHeader>
@@ -271,7 +271,7 @@ export function LocalNotice() {
   return issue && !remote ? (
     <div
       role="alert"
-      className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      className="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200"
     >
       <p>{issue}</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -297,7 +297,10 @@ export function LocalNotice() {
 }
 export function FormError({ message }: { message: string }) {
   return message ? (
-    <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs text-red-700">
+    <p
+      role="alert"
+      className="rounded-[10px] bg-red-500/10 px-3 py-2.5 text-[13px] text-red-700 dark:text-red-400"
+    >
       {message}
     </p>
   ) : null;

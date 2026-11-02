@@ -23,6 +23,7 @@ export function InviteButton({
     <>
       <Button
         variant="outline"
+        size="sm"
         disabled={disabled}
         onClick={() => setOpen(true)}
       >

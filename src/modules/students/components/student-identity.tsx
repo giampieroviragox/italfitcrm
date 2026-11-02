@@ -3,10 +3,10 @@ import { getInitials } from "@/lib/format";
 import type { Student } from "@/types/domain";
 
 const avatarColors = [
-  "bg-[#e8eee6] text-[#52644c]",
-  "bg-[#eee8e3] text-[#806352]",
-  "bg-[#e8eaf0] text-[#596482]",
-  "bg-[#efe6e8] text-[#8b5b65]",
+  "bg-foreground/[.07] text-foreground/80",
+  "bg-indigo-500/10 text-indigo-900 dark:text-indigo-200",
+  "bg-orange-500/10 text-orange-900 dark:text-orange-200",
+  "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200",
 ];
 
 export function StudentIdentity({
@@ -24,7 +24,7 @@ export function StudentIdentity({
         className={cn(
           "flex shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
           avatarColors[index % avatarColors.length],
-          large ? "size-16 text-lg" : "size-9",
+          large ? "size-14 text-base" : "size-8",
         )}
       >
         {getInitials(student.firstName, student.lastName)}
@@ -33,12 +33,12 @@ export function StudentIdentity({
         <span
           className={cn(
             "block truncate font-medium text-foreground",
-            large ? "text-xl" : "text-xs",
+            large ? "text-xl tracking-[-0.02em]" : "text-sm",
           )}
         >
           {student.firstName} {student.lastName}
         </span>
-        <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+        <span className="block truncate text-xs text-muted-foreground">
           {student.email}
         </span>
       </span>

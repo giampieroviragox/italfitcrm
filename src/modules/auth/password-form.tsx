@@ -14,7 +14,7 @@ export function PasswordForm({
 }) {
   const [state, action, pending] = useActionState(savePassword, { error: "" });
   return (
-    <form action={action} className="mt-7 space-y-5">
+    <form action={action} className="mt-8 space-y-4">
       {invite && <input type="hidden" name="invite" value={invite} />}
       {email && (
         <Field label="Email">
@@ -51,7 +51,12 @@ export function PasswordForm({
         />
       </Field>
       <FormError message={state.error} />
-      <Button type="submit" className="w-full" disabled={!ready || pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-2 w-full"
+        disabled={!ready || pending}
+      >
         {pending ? "Salvataggio…" : "Salva password e accedi"}
       </Button>
       {!ready && (

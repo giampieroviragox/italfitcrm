@@ -8,12 +8,12 @@ export function RecoveryForm() {
     done: false,
   });
   return state.done ? (
-    <p role="status" className="mt-5 text-sm leading-6 text-muted-foreground">
+    <p role="status" className="mt-2 text-sm leading-6 text-muted-foreground">
       Se l’indirizzo è associato a un account, riceverai un link per impostare
       una nuova password.
     </p>
   ) : (
-    <form action={action} className="mt-7 space-y-5">
+    <form action={action} className="mt-8 space-y-4">
       <Field label="Email">
         <input
           className={control}
@@ -23,7 +23,12 @@ export function RecoveryForm() {
           required
         />
       </Field>
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={pending}
+        className="mt-2 w-full"
+      >
         {pending ? "Invio…" : "Invia link di recupero"}
       </Button>
     </form>

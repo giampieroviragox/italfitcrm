@@ -5,20 +5,9 @@ import { DropdownMenu } from "radix-ui";
 import {
   ArrowDown,
   ArrowUp,
-  CalendarDays,
-  CheckSquare,
   ChevronDown,
-  CircleDot,
   GripVertical,
-  Hash,
-  Link2,
-  ListFilter,
-  Mail,
-  Phone,
   Plus,
-  Type,
-  WrapText,
-  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { studentAccessLabel } from "@/modules/crm/student-access";
@@ -37,7 +26,6 @@ import {
   type CrmStudent,
   type CrmTier,
   type DirectoryConfig,
-  type PropertyType,
 } from "@/modules/crm/model";
 import {
   columnDragOffsets,
@@ -45,21 +33,8 @@ import {
 } from "@/modules/crm/column-drag";
 import { formatDate } from "@/lib/format";
 
-const typeIcons: Record<PropertyType, LucideIcon> = {
-  text: Type,
-  textarea: WrapText,
-  number: Hash,
-  date: CalendarDays,
-  select: CircleDot,
-  radio: CircleDot,
-  multiselect: ListFilter,
-  boolean: CheckSquare,
-  url: Link2,
-  email: Mail,
-  phone: Phone,
-};
 const menuItem =
-  "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-xs outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40";
+  "flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[13px] outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40";
 export function StudentDataGrid({
   students,
   tiers,
@@ -225,7 +200,7 @@ export function StudentDataGrid({
           <div
             ref={ghost}
             aria-hidden="true"
-            className="pointer-events-none fixed left-0 top-0 z-[100] flex w-52 will-change-transform items-center gap-3 rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm font-medium shadow-xl"
+            className="pointer-events-none fixed left-0 top-0 z-[100] flex w-52 will-change-transform items-center gap-3 rounded-xl border border-primary/20 bg-card px-4 py-3 text-sm font-medium shadow-xl"
             style={{
               transform: `translate3d(${drag.x + 14}px,${drag.y - 24}px,0) rotate(6deg)`,
             }}
@@ -242,7 +217,7 @@ export function StudentDataGrid({
         aria-label="Griglia studenti"
         tabIndex={0}
       >
-        <table className="w-max min-w-full table-fixed border-separate border-spacing-0 text-xs">
+        <table className="w-max min-w-full table-fixed border-separate border-spacing-0 text-[13px]">
           <caption className="sr-only">
             Una riga per studente. Usa i menu delle colonne per ordinare,
             filtrare e gestire i campi.
@@ -256,7 +231,7 @@ export function StudentDataGrid({
           </colgroup>
           <thead className="sticky top-0 z-20">
             <tr>
-              <th className="sticky left-0 z-30 h-11 w-[44px] border-r border-b bg-[#f6f7f8] px-3">
+              <th className="sticky left-0 z-30 h-10 w-[44px] border-b bg-background px-3">
                 <span className="sr-only">Numero riga</span>
               </th>
               {columns.map((id) => {
@@ -265,7 +240,6 @@ export function StudentDataGrid({
                   property?.type ??
                   studentColumns.find((c) => c.id === id)?.type ??
                   "text";
-                const Icon = typeIcons[type];
                 const index = config.columns.indexOf(id);
                 const sortable = type !== "multiselect";
                 return (
@@ -286,7 +260,7 @@ export function StudentDataGrid({
                           : "descending"
                         : "none"
                     }
-                    className={`relative h-11 border-r border-b bg-[#f6f7f8] text-left font-medium transition-[transform,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget?.id === id ? (dropTarget.side === "before" ? "shadow-[inset_3px_0_0_var(--primary)]" : "shadow-[inset_-3px_0_0_var(--primary)]") : ""} ${drag?.id === id ? "opacity-20" : ""}`}
+                    className={`group/head relative h-10 border-b bg-background text-left font-medium text-muted-foreground transition-[transform,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget?.id === id ? (dropTarget.side === "before" ? "shadow-[inset_3px_0_0_var(--primary)]" : "shadow-[inset_-3px_0_0_var(--primary)]") : ""} ${drag?.id === id ? "opacity-20" : ""}`}
                   >
                     <div className="flex items-center gap-1 px-2">
                       {id !== "name" && (
@@ -295,7 +269,7 @@ export function StudentDataGrid({
                           disabled={saving}
                           title={`Trascina ${labelFor(id)}`}
                           aria-label={`Sposta colonna ${labelFor(id)}`}
-                          className="flex h-9 w-5 shrink-0 touch-none items-center justify-center rounded cursor-grab text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary active:cursor-grabbing"
+                          className="flex h-9 w-5 shrink-0 touch-none items-center justify-center rounded cursor-grab text-muted-foreground opacity-0 outline-none group-hover/head:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary active:cursor-grabbing"
                           onPointerDown={(e) => {
                             if (e.button !== 0 || saving || pendingColumns)
                               return;
@@ -433,14 +407,10 @@ export function StudentDataGrid({
                           <GripVertical className="size-3" />
                         </button>
                       )}
-                      <Icon
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button
-                            className="flex h-10 min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            className="flex h-10 min-w-0 flex-1 items-center gap-2 text-left outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
                             aria-label={`Menu colonna ${labelFor(id)}`}
                             disabled={saving}
                           >
@@ -453,7 +423,7 @@ export function StudentDataGrid({
                               ) : (
                                 <ArrowDown className="size-3 text-primary" />
                               ))}
-                            <ChevronDown className="size-3 shrink-0 text-muted-foreground" />
+                            <ChevronDown className="size-3 shrink-0 opacity-0 transition-opacity group-hover/head:opacity-100" />
                           </button>
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
@@ -466,7 +436,7 @@ export function StudentDataGrid({
                             }}
                             align="start"
                             sideOffset={4}
-                            className="z-50 min-w-56 rounded-xl border bg-white p-1.5 shadow-xl"
+                            className="z-50 min-w-56 rounded-xl border bg-card p-1 shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
                           >
                             <DropdownMenu.Label className="px-3 py-2 text-[11px] text-muted-foreground">
                               {propertyTypes[type]}
@@ -660,7 +630,7 @@ export function StudentDataGrid({
                   </th>
                 );
               })}
-              <th className="border-b bg-[#f6f7f8] px-2">
+              <th className="border-b bg-background px-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -695,11 +665,11 @@ export function StudentDataGrid({
                   <th
                     scope="rowgroup"
                     colSpan={columns.length + 2}
-                    className="border-b bg-muted/40 px-3 py-3 text-left font-medium"
+                    className="border-b bg-subtle px-3 py-2.5 text-left font-medium"
                   >
                     <span className="sticky left-3 inline-flex items-center gap-2">
                       {group.label}
-                      <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+                      <span className="rounded bg-background px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
                         {group.total}
                       </span>
                     </span>
@@ -707,8 +677,8 @@ export function StudentDataGrid({
                 </tr>
               )}
               {group.students.map((student) => (
-                <tr key={student.id} className="group bg-white">
-                  <td className="sticky left-0 z-10 border-r border-b bg-inherit px-2 text-center text-[10px] tabular-nums text-muted-foreground">
+                <tr key={student.id} className="group bg-background">
+                  <td className="sticky left-0 z-10 border-b bg-inherit px-2 text-center text-[11px] tabular-nums text-muted-foreground">
                     {offset +
                       students.findIndex((s) => s.id === student.id) +
                       1}
@@ -731,7 +701,7 @@ export function StudentDataGrid({
                             ).map((v) => (
                               <span
                                 key={v}
-                                className="rounded bg-sky-100 px-2 py-1 text-[11px] text-sky-900"
+                                className="rounded-full bg-foreground/[.045] px-2 py-0.5 text-xs"
                               >
                                 {v}
                               </span>
@@ -752,7 +722,7 @@ export function StudentDataGrid({
                       );
                     else if (id === "access")
                       value = (
-                        <span className="text-[11px]">
+                        <span className="text-[13px] text-muted-foreground">
                           {studentAccessLabel(student)}
                         </span>
                       );
@@ -769,7 +739,7 @@ export function StudentDataGrid({
                           ...columnMotion(id),
                           opacity: drag?.id === id ? 0.2 : undefined,
                         }}
-                        className={`overflow-hidden border-r border-b bg-white transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none group-hover:bg-muted/20 ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
+                        className={`overflow-hidden border-b bg-background transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none group-hover:bg-subtle ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
                       >
                         <div className="flex items-center">
                           {id === "name" ? (
@@ -777,7 +747,7 @@ export function StudentDataGrid({
                               type="button"
                               onClick={() => onOpenStudent(student.id)}
                               aria-label={`Apri scheda di ${student.firstName} ${student.lastName}`}
-                              className="h-11 w-full truncate px-3 text-left text-xs font-medium outline-none hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                              className="h-11 w-full truncate px-3 text-left text-[13px] font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                             >
                               {value}
                             </button>
@@ -816,7 +786,7 @@ export function StudentDataGrid({
                 </td>
                 <td colSpan={columns.length + 1} className="border-b">
                   <button
-                    className="flex h-10 w-full items-center px-3 text-left text-xs text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                    className="flex h-10 w-full items-center px-3 text-left text-[13px] text-muted-foreground hover:bg-subtle hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                     onClick={onAdd}
                   >
                     Aggiungi studente

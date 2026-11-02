@@ -36,7 +36,7 @@ export function ConfirmDialog({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="fixed inset-0 z-[70] bg-black/30 backdrop-blur-sm" />
+        <AlertDialog.Overlay className="fixed inset-0 z-[70] bg-black/20 dark:bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <AlertDialog.Content
           onOpenAutoFocus={() => {
             previousFocus.current =
@@ -53,12 +53,12 @@ export function ConfirmDialog({
               target.focus();
             }
           }}
-          className="fixed top-1/2 left-1/2 z-[71] max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border bg-white p-6 shadow-xl"
+          className="fixed top-1/2 left-1/2 z-[71] max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border bg-card p-6 shadow-[0_8px_40px_rgba(0,0,0,0.12)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98]"
         >
-          <AlertDialog.Title className="text-lg font-semibold">
+          <AlertDialog.Title className="text-base font-medium">
             {title}
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-3 text-sm leading-6 text-muted-foreground">
+          <AlertDialog.Description className="mt-2 text-sm leading-6 text-muted-foreground">
             {description}
           </AlertDialog.Description>
           <div className="mt-4">
@@ -67,12 +67,12 @@ export function ConfirmDialog({
           {error && (
             <p
               role="alert"
-              className="mt-4 rounded-lg bg-red-50 p-3 text-xs text-red-700"
+              className="mt-4 rounded-[10px] bg-red-500/10 px-3 py-2.5 text-[13px] text-red-700 dark:text-red-400"
             >
               {error}
             </p>
           )}
-          <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <div className="mt-6 flex flex-wrap justify-end gap-2">
             <AlertDialog.Cancel asChild>
               <Button variant="outline" disabled={saving} onClick={onCancel}>
                 Annulla

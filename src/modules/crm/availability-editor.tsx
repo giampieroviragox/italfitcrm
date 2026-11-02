@@ -1,4 +1,5 @@
 "use client";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
 import { useState } from "react";
 import { useClock } from "./use-clock";
 import {
@@ -92,38 +93,25 @@ export function AvailabilityEditor({
         }}
       >
         <Field label="Giorno">
-          <input
-            className={control}
-            type="date"
+          <DatePicker
             required
             value={values.date}
-            onChange={(e) => update("date", e.target.value)}
+            onChange={(v) => update("date", v)}
           />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Dalle">
-            <input
-              className={control}
-              type="time"
-              step={60}
+            <TimePicker
               required
               value={values.start}
-              onChange={(e) => update("start", e.target.value)}
+              onChange={(v) => update("start", v)}
             />
           </Field>
           <Field label="Alle" hint="00:00 indica mezzanotte, a fine giornata.">
-            <input
-              className={control}
-              type="time"
-              step={60}
+            <TimePicker
               required
               value={values.end === "24:00" ? "00:00" : values.end}
-              onChange={(e) =>
-                update(
-                  "end",
-                  e.target.value === "00:00" ? "24:00" : e.target.value,
-                )
-              }
+              onChange={(v) => update("end", v === "00:00" ? "24:00" : v)}
             />
           </Field>
         </div>
@@ -147,7 +135,7 @@ export function AvailabilityEditor({
           />
         </Field>
         <div
-          className="flex items-start gap-3 border-t border-b bg-[#f7f9f7] px-1 py-4 text-[#294532]"
+          className="flex items-start gap-3 rounded-xl bg-muted px-4 py-3.5"
           aria-live="polite"
         >
           <Clock3 className="mt-0.5 size-4 shrink-0" />

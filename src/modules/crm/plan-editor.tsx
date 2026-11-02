@@ -1,4 +1,5 @@
 "use client";
+import { DatePicker, MonthPicker } from "@/components/ui/date-time-picker";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { studentAccess } from "./tier-access";
 import { SelectControl } from "@/components/ui/select-control";
@@ -154,32 +155,25 @@ export function PlanEditor({
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Inizio originale">
-                  <input
-                    className={control}
-                    type="date"
+                  <DatePicker
                     required
                     value={draft.program.startsOn}
-                    onChange={(e) =>
+                    onChange={(v) =>
                       setDraft({
                         ...draft,
-                        program: {
-                          ...draft.program!,
-                          startsOn: e.target.value,
-                        },
+                        program: { ...draft.program!, startsOn: v },
                       })
                     }
                   />
                 </Field>
                 <Field label="Fine originale">
-                  <input
-                    className={control}
-                    type="date"
+                  <DatePicker
                     required
                     value={draft.program.endsOn}
-                    onChange={(e) =>
+                    onChange={(v) =>
                       setDraft({
                         ...draft,
-                        program: { ...draft.program!, endsOn: e.target.value },
+                        program: { ...draft.program!, endsOn: v },
                       })
                     }
                   />
@@ -258,10 +252,7 @@ export function PlanEditor({
           </SelectControl>
         </Field>
         {draft.sessions.map((s, i) => (
-          <section
-            key={s.id}
-            className="space-y-4 rounded-xl border bg-muted/20 p-4"
-          >
+          <section key={s.id} className="space-y-4 rounded-xl border p-4">
             <div className="flex items-end gap-2">
               <div className="min-w-0 flex-1">
                 <Field label={`Sessione ${i + 1}`}>
@@ -287,7 +278,7 @@ export function PlanEditor({
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <details className="rounded-lg border bg-white p-3">
+            <details className="rounded-lg border bg-background p-3">
               <summary className="cursor-pointer text-xs font-medium">
                 Settimana, giornata e indicazioni
               </summary>
@@ -365,7 +356,7 @@ export function PlanEditor({
             {s.exercises.map((ex, j) => (
               <div
                 key={ex.id}
-                className="space-y-3 rounded-xl border bg-white p-4"
+                className="space-y-3 rounded-xl border bg-background p-4"
               >
                 <div className="flex items-end gap-2">
                   <div className="min-w-0 flex-1">
@@ -595,13 +586,11 @@ export function AssignmentEditor({
           </SelectControl>
         </Field>
         <Field label="Mese *">
-          <input
-            className={control}
-            type="month"
+          <MonthPicker
             required
             value={month}
-            onChange={(e) => {
-              setMonth(e.target.value);
+            onChange={(v) => {
+              setMonth(v);
               setReplace(false);
             }}
           />
@@ -624,7 +613,7 @@ export function AssignmentEditor({
           </SelectControl>
         </Field>
         {existing && (
-          <div className="space-y-3 rounded-xl border bg-muted p-4 text-xs">
+          <div className="space-y-3 rounded-xl bg-muted p-4 text-xs">
             <p>
               Piano attuale: <strong>{existing.snapshot.title}</strong>
             </p>

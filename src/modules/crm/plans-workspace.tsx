@@ -1,14 +1,14 @@
 "use client";
-import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Dumbbell, ArrowUpRight } from "lucide-react";
+import { Plus, Dumbbell, ArrowUpRight, Search } from "lucide-react";
+import { PageTabs } from "@/components/ui/page-tabs";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { useCrm, updateCrm, useHydrated } from "./store";
 import { PlanEditor, AssignmentEditor } from "./plan-editor";
-import { LocalNotice, FormError } from "./ui";
+import { LocalNotice, FormError, control } from "./ui";
 import { ConfirmDialog } from "./confirm-dialog";
 import type { WorkoutPlan, PlanAssignment } from "./fitness-model";
 import { formatMonth } from "@/lib/format";
@@ -31,8 +31,8 @@ export function WorkoutContent({
       )}
       {plan.sessions.map((session, i) => (
         <section key={session.id} className="overflow-hidden rounded-xl border">
-          <div className="flex items-center gap-3 border-b bg-muted/40 px-5 py-4">
-            <span className="flex size-7 items-center justify-center rounded-lg border bg-white text-xs">
+          <div className="flex items-center gap-3 border-b px-4 py-3">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-foreground/[.045] text-xs font-medium tabular-nums">
               {i + 1}
             </span>
             <h3 className="text-sm font-medium">
@@ -42,7 +42,7 @@ export function WorkoutContent({
             </h3>
           </div>
           {(session.preparation || session.guidance) && (
-            <p className="whitespace-pre-line border-b px-5 py-4 text-sm leading-6 text-muted-foreground">
+            <p className="whitespace-pre-line border-b px-4 py-3.5 text-sm leading-6 text-muted-foreground">
               {[
                 session.preparation && `Riscaldamento\n${session.preparation}`,
                 session.guidance,
@@ -53,7 +53,7 @@ export function WorkoutContent({
           )}
           <div className="divide-y">
             {session.exercises.map((ex) => (
-              <div key={ex.id} className="px-5 py-4">
+              <div key={ex.id} className="px-4 py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-medium">
                     {ex.name || "Esercizio da completare"}
@@ -83,7 +83,7 @@ export function WorkoutContent({
             ))}
           </div>
           {session.cooldown && (
-            <p className="whitespace-pre-line border-t px-5 py-4 text-sm leading-6 text-muted-foreground">
+            <p className="whitespace-pre-line border-t px-4 py-3.5 text-sm leading-6 text-muted-foreground">
               {`Defaticamento\n${session.cooldown}`}
             </p>
           )}
@@ -98,7 +98,8 @@ export function PlansWorkspace() {
     [assign, setAssign] = useState<string | null>(null),
     [query, setQuery] = useState(""),
     [status, setStatus] = useState("all");
-  const plans = (state.plans ?? []).filter(
+  const all = state.plans ?? [];
+  const plans = all.filter(
     (p) =>
       (status === "all" || p.status === status) &&
       p.title.toLowerCase().includes(query.toLowerCase()),
@@ -116,41 +117,64 @@ export function PlansWorkspace() {
         }
       />
       <LocalNotice />
-      <div className="mb-6 flex flex-wrap gap-3">
-        <input
-          aria-label="Cerca piani"
-          placeholder="Cerca un piano…"
-          className="h-10 w-full rounded-xl border px-3 text-sm sm:max-w-xs"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <SelectControl
-          aria-label="Stato piani"
-          className="h-10 rounded-xl border bg-white px-3 text-sm"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="all">Tutti gli stati</option>
-          <option value="draft">Bozze</option>
-          <option value="published">Pubblicati</option>
-          <option value="archived">Archiviati</option>
-        </SelectControl>
-      </div>
+      {all.length > 0 && (
+        <>
+          <PageTabs
+            label="Stato dei piani"
+            className="mb-4"
+            value={status}
+            onChange={setStatus}
+            tabs={[
+              { value: "all", label: "Tutti", count: all.length },
+              {
+                value: "published",
+                label: "Pubblicati",
+                count: all.filter((p) => p.status === "published").length,
+              },
+              {
+                value: "draft",
+                label: "Bozze",
+                count: all.filter((p) => p.status === "draft").length,
+              },
+              {
+                value: "archived",
+                label: "Archiviati",
+                count: all.filter((p) => p.status === "archived").length,
+              },
+            ]}
+          />
+          <div className="relative mb-4">
+            <Search
+              className="absolute top-3 left-3 size-4 text-muted-foreground"
+              aria-hidden
+            />
+            <input
+              aria-label="Cerca piani"
+              placeholder="Cerca un piano…"
+              className={`${control} rounded-xl pl-9`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+        </>
+      )}
       {!plans.length ? (
-        <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center">
-          <Dumbbell className="mb-5 size-7 text-muted-foreground" />
-          <h2 className="text-lg font-medium">
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-12 text-center">
+          <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-foreground/[.045]">
+            <Dumbbell className="size-5" strokeWidth={1.75} />
+          </span>
+          <h2 className="text-base font-medium">
             {query || status !== "all"
               ? "Nessun piano trovato"
               : "Crea il primo piano"}
           </h2>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+          <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             {query || status !== "all"
               ? "Nessun piano corrisponde alla ricerca e allo stato selezionato."
               : "Crea le sessioni, aggiungi gli esercizi e pubblica il piano prima di assegnarlo."}
           </p>
           <Button
-            className="mt-6"
+            className="mt-5"
             variant="outline"
             onClick={() => {
               if (query || status !== "all") {
@@ -163,53 +187,66 @@ export function PlansWorkspace() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {plans.map((p) => (
-            <article
-              key={p.id}
-              className="flex flex-col rounded-2xl border p-5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex size-10 items-center justify-center rounded-xl border bg-muted/30">
-                  <Dumbbell className="size-4 text-muted-foreground" />
-                </span>
-                <span className="rounded-md bg-muted px-2 py-1 text-[11px] text-muted-foreground">
-                  {labels[p.status]}
-                </span>
-              </div>
-              <Link
-                className="mt-5 text-base font-medium tracking-tight hover:underline"
-                href={`/admin/piani/${encodeURIComponent(p.id)}`}
-              >
-                {p.title}
-              </Link>
-              <p className="mt-2 line-clamp-2 text-xs leading-6 text-muted-foreground">
-                {p.description || "Nessuna descrizione"}
-              </p>
-              <div className="mt-auto pt-6">
-                <p className="mb-4 text-xs text-muted-foreground">
-                  {p.sessions.length}{" "}
-                  {p.sessions.length === 1 ? "sessione" : "sessioni"} ·{" "}
-                  {state.assignments?.filter((a) => a.planId === p.id).length ??
-                    0}{" "}
-                  assegnazioni
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={p.status !== "published"}
-                    onClick={() => setAssign(p.id)}
-                  >
-                    Assegna
-                  </Button>
-                  <Button variant="ghost" onClick={() => setEditing(p)}>
-                    Modifica
-                  </Button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <>
+          <p className="mb-1 text-[13px] text-muted-foreground">
+            {plans.length} {plans.length === 1 ? "piano" : "piani"}
+          </p>
+          <ul className="-mx-2">
+            {plans.map((p) => {
+              const assigned =
+                state.assignments?.filter((a) => a.planId === p.id).length ?? 0;
+              return (
+                <li
+                  key={p.id}
+                  className="group relative flex items-center gap-3 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-foreground/[.03]"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
+                    <Dumbbell className="size-4" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <Link
+                      className="block truncate text-sm font-medium after:absolute after:inset-0"
+                      href={`/admin/piani/${encodeURIComponent(p.id)}`}
+                    >
+                      {p.title}
+                    </Link>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {p.description || "Nessuna descrizione"}
+                    </span>
+                  </span>
+                  <span className="hidden w-40 shrink-0 text-[13px] text-muted-foreground tabular-nums md:block">
+                    {p.sessions.length}{" "}
+                    {p.sessions.length === 1 ? "sessione" : "sessioni"} ·{" "}
+                    {assigned} {assigned === 1 ? "studente" : "studenti"}
+                  </span>
+                  <span className="hidden w-24 shrink-0 sm:block">
+                    <StatusChip status={p.status} />
+                  </span>
+                  <span className="relative flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={p.status !== "published"}
+                      onClick={() => setAssign(p.id)}
+                    >
+                      Assegna
+                    </Button>
+                    <ActionMenu
+                      label={`Azioni per ${p.title}`}
+                      items={[
+                        { label: "Modifica", onSelect: () => setEditing(p) },
+                        {
+                          label: "Apri dettaglio",
+                          href: `/admin/piani/${encodeURIComponent(p.id)}`,
+                        },
+                      ]}
+                    />
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
       {editing && (
         <PlanEditor
@@ -246,25 +283,25 @@ export function PlanDetail({ id }: { id: string }) {
     );
   return (
     <>
-      <Link
-        href="/admin/piani"
-        className="mb-6 inline-block text-xs text-muted-foreground"
-      >
-        ← Tutti i piani
-      </Link>
       <PageHeading
         title={plan.title}
-        description={`${labels[plan.status]} · ${plan.sessions.length} ${plan.sessions.length === 1 ? "sessione" : "sessioni"}`}
+        description={
+          <span className="flex items-center gap-2">
+            <StatusChip status={plan.status} />
+            {plan.sessions.length}{" "}
+            {plan.sessions.length === 1 ? "sessione" : "sessioni"}
+          </span>
+        }
         action={
           <>
+            <Button variant="outline" onClick={() => setEditing(true)}>
+              Modifica
+            </Button>
             <Button
               disabled={plan.status !== "published"}
               onClick={() => setAssign(true)}
             >
               Assegna piano
-            </Button>
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              Modifica
             </Button>
             <ActionMenu
               label="Azioni piano"
@@ -283,11 +320,13 @@ export function PlanDetail({ id }: { id: string }) {
       />
       <LocalNotice />
       <FormError message={error} />
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
+      <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
         <WorkoutContent plan={plan} />
-        <section className="rounded-xl border p-5">
-          <h2 className="text-sm font-medium">Assegnazioni</h2>
-          <div className="mt-4 divide-y">
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+            Assegnazioni
+          </h2>
+          <div className="-mx-2">
             {(state.assignments ?? [])
               .filter((a) => a.planId === id)
               .sort((a, b) => b.month.localeCompare(a.month))
@@ -297,12 +336,12 @@ export function PlanDetail({ id }: { id: string }) {
                   <Link
                     key={a.id}
                     href={`/admin/studenti/${encodeURIComponent(a.studentId)}`}
-                    className="flex items-center justify-between gap-3 py-3 text-xs"
+                    className="flex min-h-10 items-center justify-between gap-3 rounded-[10px] px-2 py-2 text-sm transition-colors hover:bg-foreground/[.03]"
                   >
-                    <span>
+                    <span className="truncate">
                       {s?.firstName} {s?.lastName}
                     </span>
-                    <span className="text-muted-foreground">
+                    <span className="shrink-0 text-xs text-muted-foreground first-letter:uppercase">
                       {formatMonth(a.month)}
                     </span>
                   </Link>
@@ -310,7 +349,7 @@ export function PlanDetail({ id }: { id: string }) {
               })}
           </div>
           {!state.assignments?.some((a) => a.planId === id) && (
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
               Nessuno studente assegnato.
             </p>
           )}
@@ -355,20 +394,36 @@ export function PlanDetail({ id }: { id: string }) {
 }
 export function AssignedPlan({ assignment }: { assignment: PlanAssignment }) {
   return (
-    <section className="rounded-2xl border p-5 sm:p-6">
+    <section className="rounded-xl border p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-medium">{assignment.snapshot.title}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Piano mensile · {formatMonth(assignment.month)}
+          <p className="text-[13px] text-muted-foreground first-letter:uppercase">
+            {formatMonth(assignment.month)}
           </p>
         </div>
-        <span className="rounded-md bg-muted px-2 py-1 text-[11px]">
+        <span className="rounded-full bg-foreground/[.045] px-2.5 py-0.5 text-xs">
           {assignment.snapshot.sessions.length}{" "}
           {assignment.snapshot.sessions.length === 1 ? "sessione" : "sessioni"}
         </span>
       </div>
       <WorkoutContent plan={assignment.snapshot} />
     </section>
+  );
+}
+const chipDots = {
+  draft: "bg-neutral-400",
+  published: "bg-emerald-500/100",
+  archived: "bg-neutral-300",
+};
+function StatusChip({ status }: { status: WorkoutPlan["status"] }) {
+  return (
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-foreground/[.045] px-2.5 text-xs font-medium text-foreground">
+      <span
+        aria-hidden
+        className={`size-1.5 rounded-full ${chipDots[status]}`}
+      />
+      {labels[status]}
+    </span>
   );
 }

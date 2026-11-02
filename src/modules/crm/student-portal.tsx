@@ -2,10 +2,13 @@
 import Link from "next/link";
 import { StudentHome, type StudentView } from "./student-home";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Check } from "lucide-react";
+import { Check, KeyRound, LogOut } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
+import { PageHeading } from "@/components/page-heading";
+import { getInitials } from "@/lib/format";
+import { StudentShell, studentNavItems } from "./student-shell";
 import { requestJson, RequestError } from "@/lib/request-json";
 import { StudentCalendar } from "./student-calendar";
-import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { FormError } from "./ui";
 import { PlanMonthSelect } from "./plan-month-select";
@@ -120,31 +123,32 @@ export function StudentPortal({
     }
   };
   const assignment = data.assignments.find((a) => a.month === month);
+  const titles = {
+    home: `Ciao, ${data.student.firstName}`,
+    piano: "Il mio piano",
+    prenotazioni: "Prenotazioni",
+  };
   return (
-    <div className="min-h-dvh min-w-0 bg-[#f8f9f6]">
-      <header className="flex items-center justify-between gap-3 border-b bg-white px-4 py-3 sm:px-8 sm:py-4">
-        <Brand />
-        <form method="POST" action="/auth/signout">
-          <Button type="submit" variant="outline" className="h-11 px-4">
-            Esci
-          </Button>
-        </form>
-      </header>
-      <main className="mx-auto min-w-0 max-w-6xl px-4 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-10">
-        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[.15em] text-[#65725a]">
-              Il tuo spazio
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Ciao, {data.student.firstName}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Un allenamento alla volta.
-            </p>
-          </div>
-          {view === "piano" && data.services.plans && (
-            <div className="w-full sm:w-64">
+    <StudentShell
+      view={view}
+      items={studentNavItems(data.services, data.lessons.length > 0)}
+      actions={<StudentAccountMenu student={data.student} />}
+    >
+      <PageHeading
+        title={titles[view]}
+        description={
+          view === "home" ? (
+            <span className="first-letter:uppercase">
+              {new Intl.DateTimeFormat("it-IT", {
+                dateStyle: "full",
+                timeZone: "Europe/Rome",
+              }).format(new Date())}
+            </span>
+          ) : undefined
+        }
+        action={
+          view === "piano" && data.services.plans ? (
+            <div className="w-full sm:w-72">
               <PlanMonthSelect
                 value={month}
                 months={data.assignments.map((a) => a.month)}
@@ -152,90 +156,123 @@ export function StudentPortal({
                 aria-label="Mese del piano"
               />
             </div>
-          )}
-        </div>
-        {view !== "home" && (
-          <Link
-            className="mb-6 inline-block text-sm text-muted-foreground hover:underline"
-            href="/area-studente"
-          >
-            ← La mia home
-          </Link>
-        )}
-        {view === "home" && (
-          <StudentHome
-            services={data.services}
-            hasPlan={Boolean(assignment)}
-            hasBookings={data.lessons.length > 0}
+          ) : undefined
+        }
+      />
+      {view === "home" && (
+        <StudentHome
+          services={data.services}
+          hasPlan={Boolean(assignment)}
+          hasBookings={data.lessons.length > 0}
+        />
+      )}
+      {message && (
+        <p
+          role="status"
+          className="mb-5 flex items-start gap-2 rounded-[10px] bg-emerald-500/10 px-3 py-2.5 text-[13px] text-emerald-900 dark:text-emerald-300"
+        >
+          <Check className="mt-0.5 size-4 shrink-0" />
+          {message}
+        </p>
+      )}
+      <FormError message={error} />
+      {authRequired && (
+        <Button asChild className="mt-3 mb-5">
+          <Link href="/login">Accedi di nuovo</Link>
+        </Button>
+      )}
+      {view === "prenotazioni" &&
+        (data.services.lessons || data.lessons.length > 0) && (
+          <StudentCalendar
+            data={data}
+            pending={pending}
+            refreshing={refreshing}
+            error={error}
+            refresh={() => void refresh()}
+            onChange={changeBooking}
           />
         )}
-        {message && (
-          <p
-            role="status"
-            className="mb-5 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"
-          >
-            <Check className="mt-0.5 size-4 shrink-0" />
-            {message}
-          </p>
-        )}
-        <FormError message={error} />
-        {authRequired && (
-          <Button asChild className="mb-5">
-            <Link href="/login">Accedi di nuovo</Link>
-          </Button>
-        )}
-        {view === "prenotazioni" &&
-          (data.services.lessons || data.lessons.length > 0) && (
-            <div className="mb-10">
-              <StudentCalendar
-                data={data}
-                pending={pending}
-                refreshing={refreshing}
-                error={error}
-                refresh={() => void refresh()}
-                onChange={changeBooking}
-              />
-            </div>
-          )}
-        {view === "piano" && data.services.plans && (
-          <>
-            {assignment ? (
-              <StudentPlan
-                key={assignment.id + assignment.createdAt}
-                assignment={assignment}
-                entries={data.workoutEntries}
-                coach={data.coach}
-                onSave={saveWorkout}
-              />
-            ) : (
-              <div className="rounded-xl border p-6">
-                <h2 className="text-sm font-medium">
-                  Nessun piano per questo mese
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Il team ti assegnerà il piano del tuo percorso.
-                </p>
-              </div>
-            )}
-          </>
-        )}
-        {view !== "home" &&
-          ((view === "piano" && !data.services.plans) ||
-            (view === "prenotazioni" &&
-              !data.services.lessons &&
-              !data.lessons.length)) && (
-            <p className="rounded-xl border p-6 text-sm text-muted-foreground">
-              Il team non ha ancora abilitato servizi per il tuo percorso.
-              Contattalo per completare l’attivazione.
+      {view === "piano" && data.services.plans && (
+        <>
+          {assignment ? (
+            <StudentPlan
+              key={assignment.id + assignment.createdAt}
+              assignment={assignment}
+              entries={data.workoutEntries}
+              coach={data.coach}
+              onSave={saveWorkout}
+            />
+          ) : (
+            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Nessun piano per questo mese. Il team ti assegnerà il piano del
+              tuo percorso.
             </p>
           )}
-        <Link
-          href="/imposta-password"
-          className="mt-8 inline-block text-xs text-muted-foreground underline underline-offset-4"
+        </>
+      )}
+      {view !== "home" &&
+        ((view === "piano" && !data.services.plans) ||
+          (view === "prenotazioni" &&
+            !data.services.lessons &&
+            !data.lessons.length)) && (
+          <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            Il team non ha ancora abilitato questo servizio per il tuo percorso.
+          </p>
+        )}
+    </StudentShell>
+  );
+}
+function StudentAccountMenu({
+  student,
+}: {
+  student: StudentPortalData["student"];
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          aria-label="Menu account"
+          className="flex size-8 items-center justify-center rounded-full bg-foreground text-[11px] font-medium text-background outline-none hover:opacity-85 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2"
         >
-          Cambia password
-        </Link>
-      </main>
-    </div>
+          {getInitials(student.firstName, student.lastName)}
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={8}
+          className="z-50 w-60 rounded-xl border bg-card p-1 text-sm shadow-[0_4px_24px_rgba(0,0,0,0.08)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+        >
+          <div className="m-1 mb-1.5 rounded-[10px] border px-3 py-2.5">
+            <p className="truncate font-medium">
+              {student.firstName} {student.lastName}
+            </p>
+            <p className="text-xs text-muted-foreground">Area studente</p>
+          </div>
+          <DropdownMenu.Item asChild>
+            <Link
+              href="/imposta-password"
+              className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 outline-none focus:bg-muted"
+            >
+              <KeyRound className="size-4 text-muted-foreground" />
+              Cambia password
+            </Link>
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator className="my-1 h-px bg-border" />
+          <form method="POST" action="/auth/signout">
+            <DropdownMenu.Item asChild>
+              <button
+                type="submit"
+                className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 outline-none focus:bg-muted"
+              >
+                <LogOut className="size-4 text-muted-foreground" />
+                Esci
+              </button>
+            </DropdownMenu.Item>
+          </form>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }

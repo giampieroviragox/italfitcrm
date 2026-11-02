@@ -1,4 +1,5 @@
 "use client";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useClock } from "./use-clock";
@@ -114,19 +115,13 @@ function LessonEditor({
             placeholder="Es. Functional training"
           />
         </Field>
-        <Field label="Data e ora *">
-          <input
-            className={control}
-            required
-            type="datetime-local"
-            name="date"
-            defaultValue={
-              lesson
-                ? romeLocal(lesson.startsAt)
-                : addDays(todayRome(), 1) + "T18:00"
-            }
-          />
-        </Field>
+        <LessonDateTime
+          initial={
+            lesson
+              ? romeLocal(lesson.startsAt)
+              : addDays(todayRome(), 1) + "T18:00"
+          }
+        />
         <div className="grid grid-cols-2 gap-4">
           <Field label="Durata (minuti) *">
             <input
@@ -176,29 +171,35 @@ function LessonEditor({
     </Editor>
   );
 }
+function LessonDateTime({ initial }: { initial: string }) {
+  const [date, setDate] = useState(initial.slice(0, 10)),
+    [time, setTime] = useState(initial.slice(11, 16));
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Field label="Data *">
+        <DatePicker required value={date} onChange={setDate} />
+      </Field>
+      <Field label="Ora *">
+        <TimePicker required value={time} onChange={setTime} />
+      </Field>
+      <input type="hidden" name="date" value={`${date}T${time}`} />
+    </div>
+  );
+}
 export function LessonsWorkspace() {
   const [editing, setEditing] = useState(false);
   return (
     <>
-      <header className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
-        <div>
-          <h1 className="text-2xl leading-8 font-semibold tracking-tight">
-            Calendario
-          </h1>
-          <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-            Disponibilità, lezioni e prenotazioni in sede.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-md"
-          onClick={() => setEditing(true)}
-        >
-          <Plus className="size-3.5" />
-          Aggiungi lezione
-        </Button>
-      </header>
+      <PageHeading
+        title="Calendario"
+        description="Disponibilità, lezioni e prenotazioni in sede."
+        action={
+          <Button onClick={() => setEditing(true)}>
+            <Plus className="size-4" />
+            Aggiungi lezione
+          </Button>
+        }
+      />
       <LocalNotice />
       <AvailabilityCalendar />
       {editing && <LessonEditor close={() => setEditing(false)} />}
@@ -241,15 +242,13 @@ export function LessonDetail({ id }: { id: string }) {
   };
   return (
     <>
-      <Link
-        href="/admin/lezioni"
-        className="mb-6 inline-block text-xs text-muted-foreground"
-      >
-        ← Calendario
-      </Link>
       <PageHeading
         title={lesson.title}
-        description={lessonDate(lesson.startsAt)}
+        description={
+          <span className="first-letter:uppercase">
+            {lessonDate(lesson.startsAt)} · {lesson.coach}
+          </span>
+        }
         action={
           <>
             {!lesson.availability && (
@@ -271,14 +270,14 @@ export function LessonDetail({ id }: { id: string }) {
       {lesson.cancelled && (
         <p
           role="status"
-          className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800"
+          className="mb-6 rounded-[10px] bg-red-500/10 px-3 py-2.5 text-[13px] text-red-800 dark:text-red-400"
         >
           Lezione annullata. Le iscrizioni sono conservate; non vengono
           accettati nuovi iscritti.
         </p>
       )}
       <FormError message={error} />
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-10 grid overflow-hidden rounded-xl border sm:grid-cols-3">
         {[
           {
             icon: Clock,
@@ -292,22 +291,29 @@ export function LessonDetail({ id }: { id: string }) {
             value: `${bookings.length} / ${lesson.capacity}`,
           },
         ].map((item) => (
-          <div key={item.label} className="rounded-xl border p-5">
-            <item.icon className="mb-3 size-4 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">{item.label}</p>
-            <p className="mt-2 text-sm font-medium">{item.value}</p>
+          <div
+            key={item.label}
+            className="flex items-center gap-3 border-b px-5 py-4 last:border-b-0 sm:border-b-0 sm:not-first:border-l"
+          >
+            <item.icon
+              className="size-4 shrink-0 text-muted-foreground"
+              strokeWidth={1.75}
+            />
+            <div className="min-w-0">
+              <p className="text-[13px] text-muted-foreground">{item.label}</p>
+              <p className="truncate text-sm font-medium tabular-nums">
+                {item.value}
+              </p>
+            </div>
           </div>
         ))}
       </div>
-      <section className="rounded-2xl border">
-        <div className="border-b p-5">
-          <h2 className="text-sm font-medium">Iscritti</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Coach: {lesson.coach}
-          </p>
-        </div>
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+          Iscritti
+        </h2>
         <form
-          className="flex flex-wrap items-end gap-3 border-b p-5"
+          className="mb-3 flex flex-wrap items-end gap-2"
           onSubmit={async (e) => {
             e.preventDefault();
             run(async () => {
@@ -317,7 +323,7 @@ export function LessonDetail({ id }: { id: string }) {
           }}
         >
           <div className="min-w-52 flex-1">
-            <Field label="Studente">
+            <Field label="Aggiungi uno studente">
               <SelectControl
                 className={control}
                 required
@@ -346,16 +352,16 @@ export function LessonDetail({ id }: { id: string }) {
               lesson.cancelled || !future || bookings.length >= lesson.capacity
             }
           >
-            Aggiungi iscritto
+            Iscrivi
           </Button>
         </form>
-        <div className="divide-y px-5">
+        <div className="divide-y rounded-xl border px-4 empty:hidden">
           {bookings.map((b) => {
             const student = state.students.find((s) => s.id === b.studentId);
             return (
               <div
                 key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 py-4"
+                className="flex flex-wrap items-center justify-between gap-3 py-2.5"
               >
                 <Link
                   href={`/admin/studenti/${encodeURIComponent(b.studentId)}`}
@@ -370,17 +376,17 @@ export function LessonDetail({ id }: { id: string }) {
                     run(async () => changeBooking(id, b.studentId, true))
                   }
                 >
-                  Rimuovi iscrizione
+                  Rimuovi
                 </Button>
               </div>
             );
           })}
-          {!bookings.length && (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Nessuno studente iscritto.
-            </p>
-          )}
         </div>
+        {!bookings.length && (
+          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+            Nessuno studente iscritto.
+          </p>
+        )}
       </section>
       {editing && (
         <LessonEditor lesson={lesson} close={() => setEditing(false)} />

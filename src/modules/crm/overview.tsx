@@ -1,19 +1,19 @@
 "use client";
 import Link from "next/link";
-import { UserPlus, Dumbbell, CalendarDays, ArrowUpRight } from "lucide-react";
+import { UserPlus, Dumbbell, CalendarDays } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
-import { Button } from "@/components/ui/button";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { studentAccess } from "./tier-access";
-import { useCrm } from "./store";
+import { useCrm, useViewer } from "./store";
 import { validPropertyValue } from "./model";
 import { todayRome } from "./fitness-logic";
 import { lessonDate } from "./lessons-workspace";
 import { LocalNotice } from "./ui";
 import { formatMonth } from "@/lib/format";
 export default function OverviewPage() {
-  const state = useCrm();
+  const state = useCrm(),
+    viewer = useViewer();
   const students = state.students.filter((s) => !s.archived);
   const required = state.properties.filter((p) => !p.archived && p.required);
   const incomplete = students.filter((s) =>
@@ -39,27 +39,27 @@ export default function OverviewPage() {
     .flatMap((s) => (s.history ?? []).map((h) => ({ ...h, student: s })))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5);
+  const owner = state.admins.find((a) =>
+    viewer ? a.id === viewer.recordId : a.role === "owner",
+  );
+  const firstName = owner?.name.split(/\s+/)[0];
   return (
     <>
       <PageHeading
-        title="Home"
-        description={new Intl.DateTimeFormat("it-IT", {
-          dateStyle: "full",
-          timeZone: "Europe/Rome",
-        }).format(new Date())}
-        action={
-          <Button asChild>
-            <Link href="/admin/studenti/nuovo">
-              <UserPlus className="size-4" />
-              Aggiungi studente
-            </Link>
-          </Button>
+        title={firstName ? `Ciao, ${firstName}` : "Home"}
+        description={
+          <span className="first-letter:uppercase">
+            {new Intl.DateTimeFormat("it-IT", {
+              dateStyle: "full",
+              timeZone: "Europe/Rome",
+            }).format(new Date())}
+          </span>
         }
       />
       <LocalNotice />
       <section
         aria-label="Azioni rapide"
-        className="mb-8 grid gap-3 sm:grid-cols-3"
+        className="mb-8 grid gap-2 sm:grid-cols-3"
       >
         {[
           {
@@ -81,198 +81,217 @@ export default function OverviewPage() {
             text: "Calendario e iscrizioni",
           },
         ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="group flex items-center gap-4 rounded-xl border p-5 transition-colors hover:bg-muted/40"
-          >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-white">
-              <item.icon className="size-4 text-muted-foreground" />
+          <Link key={item.href} href={item.href} className={tile}>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
+              <item.icon className="size-4" strokeWidth={1.75} />
             </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-medium">{item.title}</h2>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{item.title}</span>
+              <span className="block truncate text-xs text-muted-foreground">
                 {item.text}
-              </p>
-            </div>
-            <ArrowUpRight className="size-4 text-muted-foreground" />
+              </span>
+            </span>
           </Link>
         ))}
       </section>
       <section
         aria-label="Riepilogo"
-        className="mb-9 grid grid-cols-2 gap-4 lg:grid-cols-4"
+        className="mb-10 grid grid-cols-2 overflow-hidden rounded-xl border lg:grid-cols-4"
       >
         {[
           {
             label: "Studenti",
             value: students.length,
-            detail: "Schede non archiviate",
+            href: "/admin/studenti",
           },
           {
             label: "Con accesso",
             value: active.length,
-            detail: "Accesso alla piattaforma abilitato",
+            href: "/admin/studenti",
           },
           {
             label: "Schede da completare",
             value: incomplete.length,
-            detail: "Proprietà obbligatorie mancanti",
+            href: "/admin/studenti",
           },
           {
-            label: "Senza piano mensile",
+            label: `Senza piano · ${formatMonth(month).split(" ")[0]}`,
             value: unassigned.length,
-            detail: `Coaching online · ${formatMonth(month)}`,
+            href: "/admin/piani",
           },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border p-5">
-            <p className="text-xs text-muted-foreground">{item.label}</p>
-            <p className="mt-3 text-3xl font-medium tracking-tight">
+        ].map((item, i) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={`px-5 py-4 transition-colors hover:bg-foreground/[.02] ${i % 2 ? "border-l" : ""} ${i > 1 ? "border-t lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}
+          >
+            <p className="text-[13px] text-muted-foreground first-letter:uppercase">
+              {item.label}
+            </p>
+            <p className="mt-1 text-2xl font-medium tracking-[-0.02em] tabular-nums">
               {item.value}
             </p>
-            <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
-              {item.detail}
-            </p>
-          </div>
+          </Link>
         ))}
       </section>
-      <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
-        <section className="min-w-0 rounded-xl border">
-          <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
-            <h2 className="text-sm font-medium">Studenti recenti</h2>
-            <Link
+      <div className="grid items-start gap-x-12 gap-y-10 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
+        <div className="min-w-0 space-y-10">
+          <section>
+            <SectionHeader
+              title="Studenti recenti"
               href="/admin/studenti"
-              className="text-xs text-muted-foreground hover:underline"
-            >
-              Vedi tutti →
-            </Link>
-          </div>
-          <div className="divide-y">
-            {recent.map((s) => (
-              <Link
-                key={s.id}
-                href={`/admin/studenti/${encodeURIComponent(s.id)}`}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-muted/30"
-              >
-                <StudentIdentity student={s} />
-                <span className="text-xs text-muted-foreground">
-                  {studentAccessLabel(s)}
-                </span>
-              </Link>
-            ))}
-          </div>
-          {!recent.length && (
-            <p className="p-5 text-sm text-muted-foreground">
-              Nessuno studente presente.
-            </p>
-          )}
-        </section>
-        <section className="rounded-xl border">
-          <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
-            <h2 className="text-sm font-medium">Prossime lezioni</h2>
-            <Link
-              href="/admin/lezioni"
-              className="text-xs text-muted-foreground hover:underline"
-            >
-              Calendario →
-            </Link>
-          </div>
-          <div className="divide-y">
-            {lessons.map((l) => (
-              <Link
-                key={l.id}
-                href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
-                className="block px-5 py-4 hover:bg-muted/30"
-              >
-                <p className="text-sm font-medium">{l.title}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {lessonDate(l.startsAt)} · {l.location}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {state.bookings?.filter(
-                    (b) => b.lessonId === l.id && !b.cancelled,
-                  ).length ?? 0}
-                  /{l.capacity} iscritti · {l.coach}
-                </p>
-              </Link>
-            ))}
-          </div>
-          {!lessons.length && (
-            <div className="p-5">
-              <p className="text-sm text-muted-foreground">
-                Nessuna lezione in programma.
-              </p>
-              <Link
-                href="/admin/lezioni"
-                className="mt-4 inline-block text-xs underline underline-offset-4"
-              >
-                Programma una lezione
-              </Link>
-            </div>
-          )}
-        </section>
-        <section className="rounded-xl border">
-          <div className="border-b px-5 py-4">
-            <h2 className="text-sm font-medium">Attività recenti</h2>
-          </div>
-          <div className="divide-y">
-            {events.map((e) => (
-              <Link
-                key={e.id}
-                href={`/admin/studenti/${encodeURIComponent(e.student.id)}`}
-                className="flex items-start justify-between gap-5 px-5 py-4 hover:bg-muted/30"
-              >
-                <div>
-                  <p className="text-sm">{e.text}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {e.student.firstName} {e.student.lastName}
-                  </p>
-                </div>
-                <time
-                  className="shrink-0 text-[11px] text-muted-foreground"
-                  dateTime={e.createdAt}
+              link="Vedi tutti"
+            />
+            <div className="-mx-2">
+              {recent.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/admin/studenti/${encodeURIComponent(s.id)}`}
+                  className={row}
                 >
-                  {new Intl.DateTimeFormat("it-IT", {
-                    day: "numeric",
-                    month: "short",
-                    timeZone: "Europe/Rome",
-                  }).format(new Date(e.createdAt))}
-                </time>
-              </Link>
-            ))}
-          </div>
-          {!events.length && (
-            <p className="p-5 text-sm text-muted-foreground">
-              Le modifiche alle schede compariranno qui.
-            </p>
-          )}
-        </section>
-        <section className="rounded-xl border p-5">
-          <h2 className="text-sm font-medium">Da completare</h2>
-          <p className="mt-2 text-xs leading-6 text-muted-foreground">
-            Schede con proprietà obbligatorie mancanti.
-          </p>
-          <div className="mt-3 divide-y">
-            {incomplete.slice(0, 4).map((s) => (
-              <Link
-                key={s.id}
-                href={`/admin/studenti/${encodeURIComponent(s.id)}`}
-                className="flex justify-between gap-3 py-3 text-xs"
-              >
-                <span>
-                  {s.firstName} {s.lastName}
-                </span>
-                <ArrowUpRight className="size-3.5 text-muted-foreground" />
-              </Link>
-            ))}
-          </div>
-          {!incomplete.length && (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Nessuna scheda da completare.
-            </p>
-          )}
-        </section>
+                  <StudentIdentity student={s} />
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {studentAccessLabel(s)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {!recent.length && <Empty>Nessuno studente presente.</Empty>}
+          </section>
+          <section>
+            <SectionHeader title="Attività recenti" />
+            <div className="-mx-2">
+              {events.map((e) => (
+                <Link
+                  key={e.id}
+                  href={`/admin/studenti/${encodeURIComponent(e.student.id)}`}
+                  className={row}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm">{e.text}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {e.student.firstName} {e.student.lastName}
+                    </span>
+                  </span>
+                  <time
+                    className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    dateTime={e.createdAt}
+                  >
+                    {new Intl.DateTimeFormat("it-IT", {
+                      day: "numeric",
+                      month: "short",
+                      timeZone: "Europe/Rome",
+                    }).format(new Date(e.createdAt))}
+                  </time>
+                </Link>
+              ))}
+            </div>
+            {!events.length && (
+              <Empty>Le modifiche alle schede compariranno qui.</Empty>
+            )}
+          </section>
+        </div>
+        <div className="min-w-0 space-y-10">
+          <section>
+            <SectionHeader
+              title="Prossime lezioni"
+              href="/admin/lezioni"
+              link="Calendario"
+            />
+            <div className="-mx-2">
+              {lessons.map((l) => (
+                <Link
+                  key={l.id}
+                  href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
+                  className={row}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">
+                      {l.title}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {lessonDate(l.startsAt)} · {l.coach}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {state.bookings?.filter(
+                      (b) => b.lessonId === l.id && !b.cancelled,
+                    ).length ?? 0}
+                    /{l.capacity}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {!lessons.length && (
+              <Empty>
+                Nessuna lezione in programma.{" "}
+                <Link
+                  href="/admin/lezioni"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Programma una lezione
+                </Link>
+              </Empty>
+            )}
+          </section>
+          <section>
+            <SectionHeader title="Da completare" />
+            <div className="-mx-2">
+              {incomplete.slice(0, 5).map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/admin/studenti/${encodeURIComponent(s.id)}`}
+                  className={row}
+                >
+                  <span className="truncate text-sm">
+                    {s.firstName} {s.lastName}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    Proprietà mancanti
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {!incomplete.length && (
+              <Empty>Tutte le schede sono complete.</Empty>
+            )}
+          </section>
+        </div>
       </div>
     </>
+  );
+}
+const tile =
+  "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors hover:bg-foreground/[.02]";
+const row =
+  "flex min-h-12 items-center justify-between gap-4 rounded-[10px] px-2 py-2 transition-colors hover:bg-foreground/[.03]";
+function SectionHeader({
+  title,
+  href,
+  link,
+}: {
+  title: string;
+  href?: string;
+  link?: string;
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between gap-3">
+      <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+      {href && (
+        <Link
+          href={href}
+          className="text-[13px] font-medium text-muted-foreground hover:text-foreground"
+        >
+          {link}
+        </Link>
+      )}
+    </div>
+  );
+}
+function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+      {children}
+    </p>
   );
 }

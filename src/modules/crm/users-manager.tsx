@@ -1,16 +1,10 @@
 "use client";
-import { studentAccessLabel } from "./student-access";
-import { TierPicker } from "./tier-picker";
-import { studentTierIds } from "./student-tiers";
-import Link from "next/link";
 import { InviteButton } from "./invite-button";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeading } from "@/components/page-heading";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCrm, updateCrm, useViewer, useRemoteMode } from "./store";
-import type { AccountAccess, AdminMember, CrmStudent } from "./model";
-import { StudentCreateDialog } from "./student-editor";
+import type { AccountAccess, AdminMember } from "./model";
 import {
   EditorCancel,
   Editor,
@@ -25,164 +19,113 @@ const accessLabel = (access?: AccountAccess | null) =>
     : access
       ? "Invito preparato"
       : "Accesso non creato";
-const row =
-  "flex flex-col gap-5 rounded-xl border bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6";
-const badge = "rounded-md bg-muted px-2 py-1 text-[11px]";
-function TierSelect({ student }: { student: CrmStudent }) {
-  const state = useCrm();
-  const [error, setError] = useState("");
-  return (
-    <div className="space-y-2">
-      <TierPicker
-        tiers={state.tiers}
-        value={studentTierIds(student)}
-        onChange={async (ids) => {
-          try {
-            if (!ids.length) throw new Error("Seleziona almeno un tier.");
-            await updateCrm((s) => ({
-              ...s,
-              students: s.students.map((x) =>
-                x.id === student.id
-                  ? { ...x, tierId: ids[0]!, tierIds: ids }
-                  : x,
-              ),
-            }));
-            setError("");
-          } catch (err) {
-            setError((err as Error).message);
-          }
-        }}
-      />
-      <FormError message={error} />
-    </div>
-  );
-}
-export function UsersManager({
-  initialTab = "admins",
-}: {
-  initialTab?: "admins" | "students";
-}) {
+export function UsersManager() {
   const state = useCrm();
   const viewer = useViewer(),
     remote = useRemoteMode();
   const canManageAdmins = !remote || viewer?.role === "owner";
-  const [tab, setTab] = useState<string>(initialTab);
   const [editingAdmin, setEditingAdmin] = useState<AdminMember | "new" | null>(
     null,
   );
-  const [editingStudent, setEditingStudent] = useState<
-    CrmStudent | "new" | null
-  >(null);
-  const students = state.students.filter((s) => !s.archived);
   return (
     <>
-      <PageHeading
-        eyebrow="Impostazioni"
-        title="Utenti"
-        description="Gestisci accessi e permessi. Il ruolo si sceglie alla creazione e non può essere cambiato."
-        action={
-          tab === "admins" ? (
-            <Button
-              disabled={!canManageAdmins}
-              onClick={() => setEditingAdmin("new")}
-            >
-              Aggiungi amministratore
-            </Button>
-          ) : (
-            <Button onClick={() => setEditingStudent("new")}>
-              Aggiungi studente
-            </Button>
-          )
-        }
-      />
       <LocalNotice />
-      <Tabs value={tab} onValueChange={setTab} className="gap-5">
-        <TabsList className="group-data-horizontal/tabs:h-10">
-          <TabsTrigger className="px-4" value="admins">
-            Amministratori ({state.admins.length})
-          </TabsTrigger>
-          <TabsTrigger className="px-4" value="students">
-            Studenti ({students.length})
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="admins" className="space-y-3">
-          {state.admins.map((a) => (
-            <article key={a.id} className={row}>
-              <div className="min-w-[180px] flex-1 break-words">
-                <h2 className="text-sm font-semibold">{a.name}</h2>
-                <p className="mt-1 text-xs text-muted-foreground">{a.email}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                <span className="text-xs">
-                  {a.role === "owner" ? "Proprietario" : "Amministratore"}
-                </span>
-                <span className={badge}>{accessLabel(a.access)}</span>
-                {a.role !== "owner" && (
-                  <InviteButton
-                    id={a.id}
-                    kind="admin"
-                    disabled={!canManageAdmins}
-                    label={a.access ? "Nuovo link" : "Dai accesso"}
-                  />
-                )}
-                <Button
-                  variant="outline"
-                  disabled={!canManageAdmins}
-                  onClick={() => setEditingAdmin(a)}
-                >
-                  Modifica
-                </Button>
-              </div>
-            </article>
-          ))}
-        </TabsContent>
-        <TabsContent value="students" className="space-y-3">
-          {students.map((s) => (
-            <article key={s.id} className={row}>
-              <div className="min-w-[180px] flex-1 break-words">
-                <h2 className="text-sm font-semibold">
-                  <Link
-                    className="hover:underline"
-                    href={`/admin/studenti/${encodeURIComponent(s.id)}`}
-                  >
-                    {s.firstName} {s.lastName}
-                  </Link>
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">{s.email}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                <TierSelect student={s} />
-                <span className={badge}>{studentAccessLabel(s)}</span>
-                <InviteButton
-                  id={s.id}
-                  kind="student"
-                  label={s.access ? "Nuovo link" : "Dai accesso"}
-                />
-                <Button variant="outline" asChild>
-                  <Link href={`/admin/studenti/${encodeURIComponent(s.id)}`}>
-                    Modifica
-                  </Link>
-                </Button>
-              </div>
-            </article>
-          ))}
-          {!students.length && (
-            <p className="rounded-xl border border-dashed bg-white px-6 py-16 text-center text-sm text-muted-foreground">
-              Nessuno studente ancora presente.
-            </p>
-          )}
-        </TabsContent>
-      </Tabs>
+      <SettingsSection
+        title="Amministratori"
+        description="Il ruolo si sceglie alla creazione e non può essere cambiato."
+        action={
+          <Button
+            size="sm"
+            disabled={!canManageAdmins}
+            onClick={() => setEditingAdmin("new")}
+          >
+            <Plus className="size-3.5" />
+            Aggiungi
+          </Button>
+        }
+      >
+        {state.admins.map((a) => (
+          <SettingsRow
+            key={a.id}
+            title={a.name}
+            description={`${a.email} · ${a.role === "owner" ? "Proprietario" : accessLabel(a.access)}`}
+          >
+            {a.role !== "owner" && (
+              <InviteButton
+                id={a.id}
+                kind="admin"
+                disabled={!canManageAdmins}
+                label={a.access ? "Nuovo link" : "Dai accesso"}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!canManageAdmins}
+              onClick={() => setEditingAdmin(a)}
+            >
+              Modifica
+            </Button>
+          </SettingsRow>
+        ))}
+      </SettingsSection>
       {editingAdmin && (
         <AdminEditor
           member={editingAdmin === "new" ? undefined : editingAdmin}
           close={() => setEditingAdmin(null)}
         />
       )}
-      {editingStudent === "new" && (
-        <StudentCreateDialog close={() => setEditingStudent(null)} />
-      )}
     </>
+  );
+}
+/** A titled group of settings rows, separated by hairlines. */
+export function SettingsSection({
+  title,
+  description,
+  action,
+  children,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-2 flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-base font-medium">{title}</h2>
+          {description && (
+            <p className="text-[13px] text-muted-foreground">{description}</p>
+          )}
+        </div>
+        {action}
+      </div>
+      <div className="divide-y border-t">{children}</div>
+    </section>
+  );
+}
+export function SettingsRow({
+  title,
+  description,
+  children,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 break-words">
+        <p className="text-sm font-medium">{title}</p>
+        {description && (
+          <p className="text-[13px] text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {children}
+      </div>
+    </div>
   );
 }
 function AdminEditor({

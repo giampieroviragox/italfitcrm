@@ -1,4 +1,5 @@
 "use client";
+import { DatePicker } from "@/components/ui/date-time-picker";
 import { SelectControl } from "@/components/ui/select-control";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
@@ -21,7 +22,7 @@ export function PropertyField({
       <fieldset className="space-y-3 rounded-lg border p-4">
         <legend className="px-1 text-xs font-medium">{label}</legend>
         {p.description && (
-          <p className="text-[11px] text-muted-foreground">{p.description}</p>
+          <p className="text-xs text-muted-foreground">{p.description}</p>
         )}
         {p.type === "radio" ? (
           <RadioChoiceGroup
@@ -110,6 +111,13 @@ export function PropertyField({
             p.options.map((o) => <option key={o}>{o}</option>)
           )}
         </SelectControl>
+      ) : p.type === "date" ? (
+        <DatePicker
+          aria-label={label}
+          required={p.required}
+          value={stringValue}
+          onChange={onChange}
+        />
       ) : (
         <input
           aria-label={label}

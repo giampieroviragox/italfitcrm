@@ -20,7 +20,7 @@ export function StudentsWorkspace() {
       {message && (
         <p
           role="status"
-          className="mb-4 rounded-lg bg-green-50 p-3 text-xs text-green-800"
+          className="mb-4 rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300"
         >
           {message}
         </p>

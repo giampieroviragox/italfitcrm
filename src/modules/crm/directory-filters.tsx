@@ -1,4 +1,5 @@
 "use client";
+import { DatePicker } from "@/components/ui/date-time-picker";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { SelectControl } from "@/components/ui/select-control";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ export function DirectoryFilters({
           return (
             <fieldset
               key={f.id}
-              className="grid gap-3 rounded-lg border bg-white p-4 sm:grid-cols-2"
+              className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-2"
             >
               <legend className="px-1 text-xs text-muted-foreground">
                 Condizione {index + 1}
@@ -117,16 +118,15 @@ export function DirectoryFilters({
                         p.options.map((o) => <option key={o}>{o}</option>)
                       )}
                     </SelectControl>
+                  ) : p.type === "date" ? (
+                    <DatePicker
+                      value={f.value}
+                      onChange={(v) => update(f.id, { value: v })}
+                    />
                   ) : (
                     <input
                       className={control}
-                      type={
-                        p.type === "number"
-                          ? "number"
-                          : p.type === "date"
-                            ? "date"
-                            : "text"
-                      }
+                      type={p.type === "number" ? "number" : "text"}
                       step={p.type === "number" ? "any" : undefined}
                       value={f.value}
                       onChange={(e) => update(f.id, { value: e.target.value })}
@@ -146,7 +146,7 @@ export function DirectoryFilters({
                 (p.type === "multiselect"
                   ? !f.values?.length
                   : !f.value.trim()) && (
-                  <p className="text-xs text-amber-800 sm:col-span-2">
+                  <p className="text-xs text-amber-800 dark:text-amber-200 sm:col-span-2">
                     Completa la condizione per ottenere risultati, oppure
                     rimuovila.
                   </p>

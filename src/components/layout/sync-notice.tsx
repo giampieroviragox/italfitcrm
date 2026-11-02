@@ -17,7 +17,7 @@ export function SyncNotice() {
     <section
       role="status"
       aria-label="Stato del workspace"
-      className="mb-6 flex flex-wrap items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"
+      className="mb-6 flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-200"
     >
       <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0 flex-1 text-sm leading-6">

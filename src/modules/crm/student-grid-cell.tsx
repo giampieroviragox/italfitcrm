@@ -55,7 +55,7 @@ export function StudentGridCell({
                 ? "Campo in sola lettura"
                 : "Fai clic per modificare"
           }
-          className="flex min-h-11 py-1 w-full min-w-0 items-center overflow-hidden px-3 text-left text-xs outline-none hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-default disabled:hover:bg-transparent"
+          className="flex min-h-11 py-1 w-full min-w-0 items-center overflow-hidden px-3 text-left text-[13px] outline-none hover:bg-foreground/[.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-default disabled:hover:bg-transparent"
         >
           <span
             className={
@@ -73,7 +73,7 @@ export function StudentGridCell({
           align="start"
           sideOffset={-1}
           collisionPadding={12}
-          className="z-50 max-h-[var(--radix-popover-content-available-height)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto rounded-xl border bg-white p-4 shadow-xl outline-none"
+          className="z-50 max-h-[var(--radix-popover-content-available-height)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto rounded-xl border bg-card p-4 shadow-xl outline-none"
           aria-label={`Modifica ${label}`}
           onCloseAutoFocus={(event) => event.preventDefault()}
           onEscapeKeyDown={() => trigger.current?.focus()}

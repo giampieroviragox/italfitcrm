@@ -8,8 +8,8 @@ import { FormError } from "@/modules/crm/ui";
 export function LoginForm({ enabled }: { enabled: boolean }) {
   const [state, action, pending] = useActionState(signIn, { error: "" });
   return (
-    <form action={action} className="mt-8 space-y-5">
-      <div className="space-y-2">
+    <form action={action} className="mt-8 space-y-4">
+      <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -19,9 +19,10 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
           required
           disabled={!enabled || pending}
           placeholder="nome@esempio.it"
+          className="h-11 rounded-xl"
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
@@ -30,10 +31,16 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
           autoComplete="current-password"
           required
           disabled={!enabled || pending}
+          className="h-11 rounded-xl"
         />
       </div>
       <FormError message={state.error} />
-      <Button type="submit" disabled={!enabled || pending} className="w-full">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={!enabled || pending}
+        className="mt-2 w-full"
+      >
         {pending ? "Accesso in corso…" : "Accedi"}
       </Button>
     </form>

@@ -20,7 +20,12 @@ export function ActionMenu({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label={label}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground"
+          aria-label={label}
+        >
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenu.Trigger>
@@ -28,7 +33,7 @@ export function ActionMenu({
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
-          className="z-[80] min-w-48 rounded-xl border bg-white p-1.5 text-sm shadow-lg"
+          className="z-[80] min-w-48 rounded-xl border bg-card p-1 text-sm shadow-[0_4px_24px_rgba(0,0,0,0.08)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           {items.map((item, index) => (
             <DropdownMenu.Item
@@ -36,7 +41,7 @@ export function ActionMenu({
               asChild={!!item.href}
               disabled={item.disabled}
               onSelect={item.onSelect}
-              className={`flex cursor-pointer items-center rounded-lg px-3 py-2 outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40 ${item.destructive ? "text-red-700" : ""}`}
+              className={`flex h-9 cursor-pointer items-center rounded-lg px-2.5 outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40 ${item.destructive ? "text-red-700 dark:text-red-400" : ""}`}
             >
               {item.href ? (
                 <Link href={item.href}>{item.label}</Link>

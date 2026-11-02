@@ -1,6 +1,6 @@
 import { PasswordForm } from "@/modules/auth/password-form";
 import { readInvite } from "@/modules/auth/invite-context";
-import { Brand } from "@/components/brand";
+import { AuthLayout } from "@/components/layout/auth-layout";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -25,15 +25,12 @@ export default async function InvitePage({
   if (params.access) {
     if (!invite) redirect("/login?link=scaduto");
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
-        <Brand />
-        <h1 className="mt-9 text-2xl font-medium">Imposta la password</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Il tuo account è già pronto. Scegli una password di almeno 8 caratteri
-          e confermala per accedere a Team Italfit.
-        </p>
+      <AuthLayout
+        title="Imposta la password"
+        description="Il tuo account è pronto. Scegli una password di almeno 8 caratteri per accedere."
+      >
         <PasswordForm ready email={invite.email} invite={params.access} />
-      </main>
+      </AuthLayout>
     );
   }
   if (
@@ -43,22 +40,17 @@ export default async function InvitePage({
   )
     redirect("/login?link=scaduto");
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
-      <Brand />
-      <h1 className="mt-9 text-2xl font-medium">
-        Il tuo accesso a Team Italfit
-      </h1>
-      <p className="mt-4 text-sm leading-6 text-muted-foreground">
-        Conferma per continuare e scegliere la tua password. Il link è personale
-        e utilizzabile una sola volta.
-      </p>
-      <form method="POST" action="/auth/confirm" className="mt-7">
+    <AuthLayout
+      title="Il tuo accesso a Team Italfit"
+      description="Conferma per continuare e scegliere la tua password. Il link è personale e utilizzabile una sola volta."
+    >
+      <form method="POST" action="/auth/confirm" className="mt-8">
         <input type="hidden" name="token_hash" value={params.token_hash} />
         <input type="hidden" name="type" value={params.type} />
-        <Button type="submit" className="w-full">
+        <Button type="submit" size="lg" className="w-full">
           Continua e imposta la password
         </Button>
       </form>
-    </main>
+    </AuthLayout>
   );
 }

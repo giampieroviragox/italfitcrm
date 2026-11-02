@@ -3,11 +3,12 @@ import { StudentHome, type StudentView } from "./student-home";
 import { SelectControl } from "@/components/ui/select-control";
 import Link from "next/link";
 import { useState } from "react";
-import { Brand } from "@/components/brand";
+import { ArrowLeft, Eye } from "lucide-react";
+import { StudentShell, studentNavItems } from "./student-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { useCrm, useHydrated } from "./store";
-import { Field, control, FormError, LocalNotice } from "./ui";
+import { FormError, LocalNotice } from "./ui";
 import { todayRome } from "./fitness-logic";
 import { StudentPlan } from "./student-plan";
 import { updateCrm } from "./store";
@@ -37,157 +38,166 @@ export function StudentPreview({
     (a) => a.studentId === student?.id && a.month === month,
   );
   const data = student ? studentProjection(state, student.id) : null;
+  const titles = {
+    home: student ? `Ciao, ${student.firstName}` : "Anteprima studente",
+    piano: "Il mio piano",
+    prenotazioni: "Prenotazioni",
+  };
   return (
-    <div className="min-h-dvh bg-[#f8f9f6]">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-3 sm:px-8 sm:py-4">
-        <Brand />
-        <Button asChild variant="outline">
-          <Link href="/admin">Torna all’admin</Link>
-        </Button>
-      </header>
-      <main className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-8 sm:py-9">
-        <PageHeading
-          title="Anteprima studente"
-          description="Seleziona uno studente. Le modifiche vengono salvate sul workspace."
-        />
-        <LocalNotice />
-        {!hydrated ? (
-          <p role="status">Caricamento…</p>
-        ) : !student ? (
-          <p className="text-sm text-muted-foreground">
-            Aggiungi uno studente dal CRM per aprire l’anteprima.
-          </p>
-        ) : (
-          <>
-            <div className="mb-6 grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
-              <Field label="Studente">
-                <SelectControl
-                  className={control}
-                  value={student.id}
-                  disabled={Boolean(pending)}
-                  onChange={(e) => {
-                    setSelected(e.target.value);
-                    setError("");
-                    setMessage("");
-                  }}
-                >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.firstName} {s.lastName}
-                    </option>
-                  ))}
-                </SelectControl>
-              </Field>
-              {view === "piano" && services?.plans && (
-                <Field label="Mese del piano">
+    <StudentShell
+      view={view}
+      items={
+        services
+          ? studentNavItems(services, Boolean(data?.lessons.length))
+          : [{ view: "home", label: "Home" }]
+      }
+      query={student ? `?studente=${encodeURIComponent(student.id)}` : ""}
+      actions={
+        <>
+          {hydrated && student && (
+            <div className="w-36 sm:w-48">
+              <SelectControl
+                aria-label="Studente in anteprima"
+                className="h-8 rounded-[10px] text-[13px]"
+                value={student.id}
+                disabled={Boolean(pending)}
+                onChange={(e) => {
+                  setSelected(e.target.value);
+                  setError("");
+                  setMessage("");
+                  window.history.replaceState(
+                    null,
+                    "",
+                    `?studente=${encodeURIComponent(e.target.value)}`,
+                  );
+                }}
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName}
+                  </option>
+                ))}
+              </SelectControl>
+            </div>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin">
+              <ArrowLeft className="size-3.5" />
+              <span className="hidden sm:inline">Admin</span>
+            </Link>
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-6 inline-flex items-center gap-2 rounded-full bg-foreground/[.045] px-3 py-1 text-xs text-muted-foreground">
+        <Eye className="size-3.5" />
+        Anteprima: le modifiche vengono salvate sul workspace
+      </p>
+      <LocalNotice />
+      {!hydrated ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Caricamento…
+        </p>
+      ) : !student ? (
+        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Aggiungi uno studente dal CRM per aprire l’anteprima.
+        </p>
+      ) : (
+        <>
+          <PageHeading
+            title={titles[view]}
+            action={
+              view === "piano" && services?.plans ? (
+                <div className="w-full sm:w-72">
                   <PlanMonthSelect
                     value={month}
                     months={(state.assignments ?? [])
-                      .filter(
-                        (assignment) => assignment.studentId === student.id,
-                      )
-                      .map((assignment) => assignment.month)}
+                      .filter((a) => a.studentId === student.id)
+                      .map((a) => a.month)}
                     onChange={setMonth}
-                  />
-                </Field>
-              )}
-            </div>
-            {view !== "home" && (
-              <Link
-                href={`/area-studente?studente=${encodeURIComponent(student.id)}`}
-                className="mb-6 inline-block text-sm text-muted-foreground hover:underline"
-              >
-                ← La mia home
-              </Link>
-            )}
-            {view === "home" && services && (
-              <>
-                <h2 className="mb-5 text-2xl font-semibold">
-                  Ciao, {student.firstName}
-                </h2>
-                <StudentHome
-                  services={services}
-                  hasPlan={Boolean(assignment)}
-                  hasBookings={Boolean(data?.lessons.length)}
-                  studentId={student.id}
-                />
-              </>
-            )}
-            {message && (
-              <p
-                role="status"
-                className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"
-              >
-                {message}
-              </p>
-            )}
-            <FormError message={error} />
-            {view === "prenotazioni" &&
-              data &&
-              (services?.lessons || data.lessons.length > 0) && (
-                <div className="mb-10">
-                  <StudentCalendar
-                    data={data}
-                    pending={pending}
-                    error={error}
-                    onChange={async (lessonId, cancelled) => {
-                      if (pending) return false;
-                      setPending(lessonId);
-                      setError("");
-                      try {
-                        await updateCrm((current) =>
-                          prepareStudentBooking(
-                            current,
-                            student.id,
-                            lessonId,
-                            cancelled,
-                          ),
-                        );
-                        setMessage(
-                          cancelled
-                            ? "Prenotazione annullata."
-                            : "Prenotazione confermata.",
-                        );
-                        return true;
-                      } catch (e) {
-                        setError((e as Error).message);
-                        return false;
-                      } finally {
-                        setPending(null);
-                      }
-                    }}
+                    aria-label="Mese del piano"
                   />
                 </div>
-              )}
-            {view === "piano" && services?.plans && (
-              <>
-                <h2 className="mb-4 text-lg font-medium">Il tuo piano</h2>
-                {assignment ? (
-                  <StudentPlan
-                    key={student.id + assignment.id + assignment.createdAt}
-                    assignment={assignment}
-                    entries={data?.workoutEntries}
-                    coach={data?.coach}
-                  />
-                ) : (
-                  <p className="rounded-xl border p-6 text-sm text-muted-foreground">
-                    Nessun piano assegnato per questo mese.
-                  </p>
-                )}
-              </>
+              ) : undefined
+            }
+          />
+          {view === "home" && services && (
+            <StudentHome
+              services={services}
+              hasPlan={Boolean(assignment)}
+              hasBookings={Boolean(data?.lessons.length)}
+              studentId={student.id}
+            />
+          )}
+          {message && (
+            <p
+              role="status"
+              className="mb-5 rounded-[10px] bg-emerald-500/10 px-3 py-2.5 text-[13px] text-emerald-900 dark:text-emerald-300"
+            >
+              {message}
+            </p>
+          )}
+          <FormError message={error} />
+          {view === "prenotazioni" &&
+            data &&
+            (services?.lessons || data.lessons.length > 0) && (
+              <StudentCalendar
+                data={data}
+                pending={pending}
+                error={error}
+                onChange={async (lessonId, cancelled) => {
+                  if (pending) return false;
+                  setPending(lessonId);
+                  setError("");
+                  try {
+                    await updateCrm((current) =>
+                      prepareStudentBooking(
+                        current,
+                        student.id,
+                        lessonId,
+                        cancelled,
+                      ),
+                    );
+                    setMessage(
+                      cancelled
+                        ? "Prenotazione annullata."
+                        : "Prenotazione confermata.",
+                    );
+                    return true;
+                  } catch (e) {
+                    setError((e as Error).message);
+                    return false;
+                  } finally {
+                    setPending(null);
+                  }
+                }}
+              />
             )}
-            {view !== "home" &&
-              ((view === "piano" && !services?.plans) ||
-                (view === "prenotazioni" &&
-                  !services?.lessons &&
-                  !data?.lessons.length)) && (
-                <p className="rounded-xl border p-6 text-sm text-muted-foreground">
-                  Nessun servizio abilitato per questo tier.
-                </p>
-              )}
-          </>
-        )}
-      </main>
-    </div>
+          {view === "piano" &&
+            services?.plans &&
+            (assignment ? (
+              <StudentPlan
+                key={student.id + assignment.id + assignment.createdAt}
+                assignment={assignment}
+                entries={data?.workoutEntries}
+                coach={data?.coach}
+              />
+            ) : (
+              <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Nessun piano assegnato per questo mese.
+              </p>
+            ))}
+          {view !== "home" &&
+            ((view === "piano" && !services?.plans) ||
+              (view === "prenotazioni" &&
+                !services?.lessons &&
+                !data?.lessons.length)) && (
+              <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Nessun servizio abilitato per questo tier.
+              </p>
+            )}
+        </>
+      )}
+    </StudentShell>
   );
 }

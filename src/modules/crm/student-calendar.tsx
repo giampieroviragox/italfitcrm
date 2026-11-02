@@ -94,54 +94,29 @@ export function StudentCalendar({
   };
   return (
     <section aria-label="Calendario studente" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">
-            Il tuo calendario
-          </h2>
-          <p className="mt-1 max-w-xl text-[13px] leading-5 text-muted-foreground">
-            {data.services.lessons
-              ? "Scegli il giorno e prenota il tuo prossimo allenamento."
-              : "Consulta e gestisci le prenotazioni già confermate."}
-          </p>
-        </div>
-        {refresh && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={Boolean(pending) || refreshing}
-            onClick={refresh}
-          >
-            <RefreshCw
-              className={`size-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            <span>{refreshing ? "Aggiornamento…" : "Aggiorna"}</span>
-          </Button>
-        )}
-      </div>
       {nextLesson && (
         <button
           type="button"
           onClick={() => setSelectedId(nextLesson.id)}
           className={styles.nextLesson}
         >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-foreground/[.045]">
+            <Check className="size-4" />
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11px] text-[#617569]">
-              Il prossimo allenamento
+            <span className="block text-[13px] text-muted-foreground">
+              Prossima lezione prenotata
             </span>
-            <span className="mt-0.5 block text-sm font-medium">
-              {nextLesson.title}
-            </span>
-            <span className="mt-0.5 block text-xs leading-5">
+            <span className="block truncate text-sm font-medium">
+              {nextLesson.title} ·{" "}
               {dateLabel(romeLocal(nextLesson.startsAt).slice(0, 10), {
-                weekday: "long",
+                weekday: "short",
                 day: "numeric",
-                month: "long",
+                month: "short",
               })}{" "}
               · {timeLabel(nextLesson.startsAt)}
             </span>
           </span>
-          <Check className="size-5 shrink-0" />
         </button>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -168,12 +143,26 @@ export function StudentCalendar({
             </span>
           </Button>
         </div>
-        {data.services.monthlyBookingLimit !== null && (
-          <p className="text-xs text-muted-foreground">
-            Il tuo percorso: fino a {data.services.monthlyBookingLimit} lezioni
-            al mese
-          </p>
-        )}
+        <div className="flex items-center gap-3">
+          {data.services.monthlyBookingLimit !== null && (
+            <p className="text-xs text-muted-foreground">
+              Fino a {data.services.monthlyBookingLimit} lezioni al mese
+            </p>
+          )}
+          {refresh && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              aria-label={refreshing ? "Aggiornamento…" : "Aggiorna orari"}
+              title="Aggiorna orari"
+              disabled={Boolean(pending) || refreshing}
+              onClick={refresh}
+            >
+              <RefreshCw className={refreshing ? "animate-spin" : ""} />
+            </Button>
+          )}
+        </div>
       </div>
       <div className={styles.surface}>
         <div className={styles.toolbar}>
@@ -209,7 +198,7 @@ export function StudentCalendar({
                   {dateLabel(day, { day: "numeric" })}
                 </span>
                 <span
-                  className={`size-1 rounded-full ${count ? "bg-[#44765c]" : "bg-transparent"}`}
+                  className={`size-1 rounded-full ${count ? "bg-foreground" : "bg-transparent"}`}
                   aria-label={`${count} lezioni`}
                 />
               </button>
@@ -227,7 +216,7 @@ export function StudentCalendar({
                 className={styles.studentColumn}
                 data-hidden={day !== activeDay}
               >
-                <h3 className="mb-3 text-xs font-medium capitalize text-[#67736a] md:sr-only">
+                <h3 className="mb-3 text-xs font-medium capitalize text-muted-foreground md:sr-only">
                   {dateLabel(day, {
                     weekday: "long",
                     day: "numeric",
@@ -297,13 +286,13 @@ export function StudentCalendar({
         >
           <SheetContent
             side="center"
-            className="w-[calc(100%-32px)] max-w-md gap-0 overflow-hidden rounded-xl p-0"
+            className="w-[calc(100%-32px)] max-w-md gap-0 overflow-hidden rounded-2xl p-0"
           >
-            <SheetHeader className="gap-2 border-b px-6 pt-6 pb-5">
-              <p className="text-[11px] font-medium text-[#426a4e]">
+            <SheetHeader className="gap-1 border-b px-6 pt-6 pb-5">
+              <p className="text-xs font-medium text-muted-foreground">
                 {status(selected)}
               </p>
-              <SheetTitle className="pr-6 text-lg leading-6">
+              <SheetTitle className="pr-6 text-lg leading-6 font-medium">
                 {selected.title}
               </SheetTitle>
               <SheetDescription className="capitalize">
@@ -331,7 +320,7 @@ export function StudentCalendar({
                   },
                 ].map((item) => (
                   <div key={item.label} className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <item.icon className="size-3.5" />
                       {item.label}
                     </p>
@@ -342,7 +331,7 @@ export function StudentCalendar({
                 ))}
               </div>
               {!selected.enrolled && selected.restriction && (
-                <p className="rounded-lg bg-muted p-3 text-xs leading-5">
+                <p className="rounded-[10px] bg-muted px-3 py-2.5 text-[13px] leading-5">
                   {selected.restriction}
                 </p>
               )}
@@ -366,9 +355,6 @@ export function StudentCalendar({
                           ? "Non disponibile per il percorso"
                           : "Conferma prenotazione"}
               </Button>
-              <p className="text-center text-[11px] leading-5 text-muted-foreground">
-                La prenotazione è confermata solo dopo il salvataggio.
-              </p>
             </div>
           </SheetContent>
         </Sheet>

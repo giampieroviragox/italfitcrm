@@ -126,9 +126,9 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   return (
     <section
       aria-label="Elenco studenti"
-      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-white"
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b p-3">
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
         <div className="relative min-w-48 flex-1">
           <Search
             className="absolute top-3 left-3 size-4 text-muted-foreground"
@@ -137,7 +137,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           <Input
             aria-label="Cerca studenti"
             placeholder="Cerca studenti…"
-            className="pl-9"
+            className="pl-9 rounded-xl"
             value={query}
             onChange={(e) => {
               const value = e.target.value;
@@ -175,15 +175,15 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           >
             <Popover.Trigger asChild>
               <Button
-                variant={active ? "secondary" : "ghost"}
-                size="sm"
+                variant={active ? "secondary" : "outline"}
+                className="h-10 rounded-xl px-3.5"
                 disabled={saving}
                 ref={(element) => {
                   panelTriggers.current[kind] = element;
                 }}
               >
-                <Icon className="size-3.5" />
-                {label}
+                <Icon className="size-4" />
+                <span className="hidden sm:inline">{label}</span>
               </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -200,7 +200,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                       ? "Filtra studenti"
                       : "Raggruppa studenti"
                 }
-                className="z-50 max-h-[min(650px,var(--radix-popover-content-available-height))] w-[440px] max-w-[calc(100vw-24px)] space-y-4 overflow-y-auto rounded-xl border bg-white p-4 shadow-xl outline-none"
+                className="z-50 max-h-[min(650px,var(--radix-popover-content-available-height))] w-[440px] max-w-[calc(100vw-24px)] space-y-4 overflow-y-auto rounded-xl border bg-card p-4 shadow-xl outline-none"
               >
                 <h2 className="text-sm font-semibold">
                   {kind === "columns"
@@ -331,7 +331,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                   </Field>
                 )}
                 <FormError message={error} />
-                <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-white pt-3">
+                <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3">
                   {kind === "filters" && (
                     <Button
                       variant="ghost"
@@ -389,84 +389,86 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
         ))}
       </div>
       <FormError message={error} />
-      <StudentDataGrid
-        students={shown}
-        groups={groups}
-        tiers={state.tiers}
-        properties={properties}
-        config={config}
-        saving={saving}
-        offset={(currentPage - 1) * config.pageSize}
-        activeCell={interaction?.kind === "cell" ? interaction : null}
-        onCellChange={(studentId, column, open) =>
-          setInteraction((current) =>
-            open
-              ? { kind: "cell", studentId, column }
-              : current?.kind === "cell" &&
-                  current.studentId === studentId &&
-                  current.column === column
-                ? null
-                : current,
-          )
-        }
-        onConfig={setConfig}
-        onOpenStudent={(id) => setInteraction({ kind: "student", id })}
-        onAddField={() => setInteraction({ kind: "property" })}
-        onEditField={(property) =>
-          setInteraction({ kind: "property", property })
-        }
-        onFilter={(property) => {
-          setDraft({
-            ...structuredClone(config),
-            filters: [
-              ...config.filters,
-              {
-                id: crypto.randomUUID(),
-                propertyId: property.id,
-                operator: operatorsFor(property)[0]!.value,
-                value: "",
-                values: [],
-              },
-            ],
-          });
-          setInteraction({ kind: "filters" });
-        }}
-        onAdd={
-          onAdd
-            ? () => {
-                setInteraction(null);
-                onAdd();
-              }
-            : undefined
-        }
-      />
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
-        <p role="status" className="text-xs text-muted-foreground">
-          {filtered.length} {filtered.length === 1 ? "studente" : "studenti"}
-        </p>
-        {pages > 1 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {currentPage} / {pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setPage(currentPage - 1)}
-            >
-              Precedente
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === pages}
-              onClick={() => setPage(currentPage + 1)}
-            >
-              Successiva
-            </Button>
-          </div>
-        )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background">
+        <StudentDataGrid
+          students={shown}
+          groups={groups}
+          tiers={state.tiers}
+          properties={properties}
+          config={config}
+          saving={saving}
+          offset={(currentPage - 1) * config.pageSize}
+          activeCell={interaction?.kind === "cell" ? interaction : null}
+          onCellChange={(studentId, column, open) =>
+            setInteraction((current) =>
+              open
+                ? { kind: "cell", studentId, column }
+                : current?.kind === "cell" &&
+                    current.studentId === studentId &&
+                    current.column === column
+                  ? null
+                  : current,
+            )
+          }
+          onConfig={setConfig}
+          onOpenStudent={(id) => setInteraction({ kind: "student", id })}
+          onAddField={() => setInteraction({ kind: "property" })}
+          onEditField={(property) =>
+            setInteraction({ kind: "property", property })
+          }
+          onFilter={(property) => {
+            setDraft({
+              ...structuredClone(config),
+              filters: [
+                ...config.filters,
+                {
+                  id: crypto.randomUUID(),
+                  propertyId: property.id,
+                  operator: operatorsFor(property)[0]!.value,
+                  value: "",
+                  values: [],
+                },
+              ],
+            });
+            setInteraction({ kind: "filters" });
+          }}
+          onAdd={
+            onAdd
+              ? () => {
+                  setInteraction(null);
+                  onAdd();
+                }
+              : undefined
+          }
+        />
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-2.5">
+          <p role="status" className="text-[13px] text-muted-foreground">
+            {filtered.length} {filtered.length === 1 ? "studente" : "studenti"}
+          </p>
+          {pages > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {currentPage} / {pages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setPage(currentPage - 1)}
+              >
+                Precedente
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === pages}
+                onClick={() => setPage(currentPage + 1)}
+              >
+                Successiva
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
       {interaction?.kind === "property" && (
         <PropertyEditor

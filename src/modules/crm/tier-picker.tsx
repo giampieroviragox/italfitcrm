@@ -26,7 +26,7 @@ export function TierPicker({
           .map((t) => (
             <label
               key={t.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white p-3"
+              className="flex cursor-pointer items-center gap-3 rounded-lg border bg-background p-3"
             >
               <CheckboxControl
                 checked={value.includes(t.id)}

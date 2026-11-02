@@ -3,7 +3,8 @@ import { propertyKey } from "./property-key";
 import { useState } from "react";
 import { ConfirmDialog } from "./confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { PageHeading } from "@/components/page-heading";
+import { Plus } from "lucide-react";
+import { SettingsRow, SettingsSection } from "./users-manager";
 import { useCrm, updateCrm } from "./store";
 import {
   choiceTypes,
@@ -253,60 +254,58 @@ export function PropertyManager() {
   };
   return (
     <>
-      <PageHeading
-        eyebrow="Impostazioni"
+      <LocalNotice />
+      <FormError message={error} />
+      <SettingsSection
         title="Proprietà"
         description="I campi presenti nelle schede di tutti gli studenti."
         action={
-          <Button onClick={() => setEditing("new")}>Crea proprietà</Button>
+          <Button size="sm" onClick={() => setEditing("new")}>
+            <Plus className="size-3.5" />
+            Crea
+          </Button>
         }
-      />
-      <LocalNotice />
-      <FormError message={error} />
-      <div className="space-y-3">
+      >
         {state.properties
           .filter((p) => !p.deleted)
           .map((p) => (
-            <article
-              className="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-5"
+            <SettingsRow
               key={p.id}
+              title={
+                <span className={p.archived ? "text-muted-foreground" : ""}>
+                  {p.name}
+                </span>
+              }
+              description={`${propertyTypes[p.type]}${p.required ? " · Obbligatoria" : ""}${p.archived ? " · Archiviata" : ""}`}
             >
-              <div className="min-w-[180px] flex-1 break-words">
-                <h2 className="text-sm font-semibold">{p.name}</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {propertyTypes[p.type]}
-                  {p.archived ? " · Archiviata" : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
+              {!p.archived && (
                 <Button
                   variant="outline"
-                  disabled={p.archived}
+                  size="sm"
                   onClick={() => setEditing(p)}
                 >
                   Modifica
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    p.archived ? toggleArchive(p) : setPendingArchive(p)
-                  }
-                >
-                  {p.archived ? "Ripristina" : "Archivia"}
-                </Button>
-              </div>
-            </article>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() =>
+                  p.archived ? toggleArchive(p) : setPendingArchive(p)
+                }
+              >
+                {p.archived ? "Ripristina" : "Archivia"}
+              </Button>
+            </SettingsRow>
           ))}
         {!state.properties.some((p) => !p.deleted) && (
-          <div className="rounded-xl border border-dashed bg-white px-6 py-16 text-center">
-            <h2 className="text-lg font-semibold">Nessuna proprietà</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Crea una proprietà per aggiungere un campo a tutte le schede
-              studente.
-            </p>
-          </div>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Crea una proprietà per aggiungere un campo a tutte le schede
+            studente.
+          </p>
         )}
-      </div>
+      </SettingsSection>
       <ConfirmDialog
         error={error}
         open={!!pendingArchive}

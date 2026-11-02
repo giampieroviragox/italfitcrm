@@ -1,19 +1,28 @@
 import { cn } from "@/lib/utils";
 import type { CrmTier } from "@/modules/crm/model";
 
-const colors: Record<string, string> = {
-  online: "bg-violet-50 text-violet-800",
-  studio: "bg-sky-50 text-sky-800",
+const dots: Record<string, string> = {
+  online: "bg-violet-500",
+  studio: "bg-sky-500",
 };
 
 export function TierBadge({ tier }: { tier?: Pick<CrmTier, "id" | "name"> }) {
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center rounded px-2 py-1 text-[11px] font-medium",
-        colors[tier?.id ?? ""] ?? "bg-muted text-muted-foreground",
+        "inline-flex h-6 max-w-full items-center gap-1.5 rounded-full bg-foreground/[.045] px-2.5 text-xs font-medium",
+        tier ? "text-foreground" : "text-muted-foreground",
       )}
     >
+      {tier && (
+        <span
+          aria-hidden
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            dots[tier.id] ?? "bg-neutral-400",
+          )}
+        />
+      )}
       <span className="truncate">{tier?.name ?? "Nessun tier"}</span>
     </span>
   );

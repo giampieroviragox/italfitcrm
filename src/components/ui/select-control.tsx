@@ -115,7 +115,7 @@ export function SelectControl({
           aria-required={required}
           aria-invalid={invalid || aria["aria-invalid"]}
           className={cn(
-            "flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-white px-3 text-left text-sm outline-none transition-colors hover:bg-muted/30 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-foreground/10 disabled:cursor-not-allowed disabled:bg-muted/40 disabled:opacity-50 aria-invalid:border-destructive [&>span:first-child]:truncate",
+            "flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-[10px] border border-input bg-background px-3 text-left text-sm outline-none transition-colors hover:border-(--border-hover) focus-visible:border-(--border-focus) focus-visible:ring-[3px] focus-visible:ring-foreground/5 disabled:cursor-not-allowed disabled:bg-muted/40 disabled:opacity-50 aria-invalid:border-destructive [&>span:first-child]:truncate",
             className,
             "flex items-center justify-between",
           )}
@@ -134,9 +134,9 @@ export function SelectControl({
             position="popper"
             sideOffset={6}
             collisionPadding={12}
-            className="z-[65] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border bg-white text-foreground shadow-[0_8px_30px_#00000014] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className="z-[65] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border bg-card text-foreground shadow-[0_8px_30px_#00000014] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           >
-            <Select.ScrollUpButton className="flex h-7 items-center justify-center bg-white">
+            <Select.ScrollUpButton className="flex h-7 items-center justify-center bg-background">
               <ChevronUp className="size-4" />
             </Select.ScrollUpButton>
             <Select.Viewport className="p-1.5">
@@ -156,7 +156,7 @@ export function SelectControl({
                 </Select.Item>
               ))}
             </Select.Viewport>
-            <Select.ScrollDownButton className="flex h-7 items-center justify-center bg-white">
+            <Select.ScrollDownButton className="flex h-7 items-center justify-center bg-background">
               <ChevronDown className="size-4" />
             </Select.ScrollDownButton>
           </Select.Content>

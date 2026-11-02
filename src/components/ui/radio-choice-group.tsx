@@ -36,7 +36,7 @@ export function RadioChoiceGroup({
         >
           <RadioGroup.Item
             value={option}
-            className="flex size-[18px] shrink-0 items-center justify-center rounded-full border border-foreground/25 bg-white outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2 data-[state=checked]:border-primary"
+            className="flex size-[18px] shrink-0 items-center justify-center rounded-full border border-foreground/25 bg-background outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2 data-[state=checked]:border-primary"
           >
             <RadioGroup.Indicator className="size-2 rounded-full bg-primary" />
           </RadioGroup.Item>
