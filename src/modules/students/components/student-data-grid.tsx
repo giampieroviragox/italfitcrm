@@ -8,6 +8,7 @@ import {
   ChevronDown,
   GripVertical,
   Plus,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { studentAccessLabel } from "@/modules/crm/student-access";
@@ -645,12 +646,24 @@ export function StudentDataGrid({
           {!students.length && (
             <tbody>
               <tr>
-                <td
-                  colSpan={columns.length + 2}
-                  className="border-b px-5 py-10 text-center text-muted-foreground"
-                >
-                  Nessuno studente in questa vista. Aggiungi una scheda o
-                  modifica i filtri.
+                <td colSpan={columns.length + 2} className="px-5 py-16">
+                  <div className="sticky left-5 mx-auto flex max-w-sm flex-col items-center text-center">
+                    <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-foreground/[.045]">
+                      <Users className="size-5" strokeWidth={1.75} />
+                    </span>
+                    <p className="text-base font-medium text-foreground">
+                      Nessuno studente
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Aggiungi la prima scheda o modifica ricerca e filtri.
+                    </p>
+                    {onAdd && !config.archived && (
+                      <Button className="mt-5" onClick={onAdd}>
+                        <Plus className="size-4" />
+                        Aggiungi studente
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -778,7 +791,7 @@ export function StudentDataGrid({
               ))}
             </tbody>
           ))}
-          {onAdd && !config.archived && (
+          {onAdd && !config.archived && students.length > 0 && (
             <tbody>
               <tr>
                 <td className="border-b px-3 text-center text-muted-foreground">

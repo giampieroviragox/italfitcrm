@@ -7,7 +7,9 @@ import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
 import { RemoteContext, activeRemoteStore } from "./remote-store";
 import { supabaseConfigured } from "@/lib/supabase/config";
-const KEY = "italfit.crm.v1";
+// v1 saves still hold the old fictional students: they are discarded on load.
+const KEY = "italfit.crm.v2";
+const LEGACY_KEYS = ["italfit.crm.v1"];
 const EVENT = "italfit-crm-change";
 export const initialState: CrmState = {
   version: 1,
@@ -30,6 +32,7 @@ let cached: CrmState = initialState;
 let issue = "";
 function snapshot(): CrmState {
   try {
+    LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
     const raw = localStorage.getItem(KEY);
     if (raw !== cachedRaw || issue) {
       const parsed: unknown = raw ? JSON.parse(raw) : initialState;
