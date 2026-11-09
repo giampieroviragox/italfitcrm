@@ -2,7 +2,9 @@
 
 Obiettivo: l’admin lavora ai piani nella chat di claude.ai con il proprio abbonamento e li salva nel CRM come **bozza**, senza chiave API Anthropic e senza accesso al codice. La pubblicazione allo studente resta un’azione manuale nel CRM.
 
-Stato (9 novembre 2026): fasi 1 e 2 completate, collegamento reale da claude.ai ancora da provare dopo il deploy.
+Stato (9 novembre 2026): fasi 1–3 completate. Il connettore è collegato da claude.ai in produzione e legge i dati reali.
+
+Fase 3: `salva_bozza_piano` crea una nuova bozza o sostituisce il contenuto di una bozza esistente; i piani pubblicati o archiviati non si modificano. Gli ID di sessioni ed esercizi sono facoltativi e generati dal server. Il salvataggio passa da `validateStaffUpdate` e `crm_write` con controllo di revisione (un nuovo tentativo in caso di conflitto) e restituisce il link alla bozza, costruito sull’host della richiesta. Pubblicazione e assegnazione restano nel CRM. `cerca_studenti` restituisce anche `totale` e `completo`. Verificato in locale con una bozza tecnica poi eliminata: creazione, aggiornamento, rifiuto su piano pubblicato, input fuori limite e date incoerenti. Nota: `crm_write` aggiorna i piani ma non li cancella; i record tecnici si rimuovono da `crm_plans` con la chiave server.
 
 Fase 2: OAuth server attivo su Supabase con registrazione dinamica; Site URL `https://italfitcrm.vercel.app`, Authorization Path predefinito `/oauth/consent`, che reindirizza alla pagina `/oauth/consenso`. La pagina richiede il login (con ritorno automatico al consenso), accetta solo owner/admin attivi e consente l’approvazione solo per i callback di Claude (in sviluppo anche loopback). Flusso verificato in locale con un client tecnico poi eliminato: registrazione, consenso, token con `client_id`, chiamata a `/api/mcp`, revoca con 401 immediato.
 

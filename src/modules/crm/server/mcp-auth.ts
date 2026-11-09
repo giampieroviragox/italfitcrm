@@ -9,6 +9,7 @@ import type { Access } from "./auth";
 export interface McpPrincipal {
   userId: string;
   role: "owner" | "admin";
+  access: Access;
 }
 
 export function supabaseIssuer() {
@@ -62,7 +63,11 @@ export async function verifyMcpToken(
     (access.role !== "owner" && access.role !== "admin")
   )
     return undefined;
-  const principal: McpPrincipal = { userId: claims.sub, role: access.role };
+  const principal: McpPrincipal = {
+    userId: claims.sub,
+    role: access.role,
+    access,
+  };
   return {
     token: bearer,
     clientId: clientId ?? "session",

@@ -83,8 +83,9 @@ export default async function OAuthConsentPage({
       {allowed ? (
         <ul className="mt-6 space-y-2 rounded-xl bg-muted px-4 py-3.5 text-[13px] leading-5 text-muted-foreground">
           <li>Potrà cercare gli studenti e leggere i loro piani.</li>
+          <li>Potrà salvare nuovi piani come bozze da controllare.</li>
           <li>Non vedrà contatti, note interne o proprietà CRM.</li>
-          <li>Non potrà pubblicare piani agli studenti.</li>
+          <li>Non potrà pubblicare o assegnare piani agli studenti.</li>
           <li>
             Ritorno a <span className="text-foreground">{host}</span>
           </li>
