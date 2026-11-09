@@ -3,6 +3,7 @@ import { z } from "zod";
 import { appUrl } from "@/lib/supabase/config";
 import {
   applyDraftPlan,
+  applyPlanEdits,
   mcpPlanFormat,
   mcpPlanTemplate,
   mcpPlanTemplates,
@@ -10,6 +11,7 @@ import {
   mcpStudents,
 } from "@/modules/crm/mcp-plans";
 import { mcpPrincipal, verifyMcpToken } from "@/modules/crm/server/mcp-auth";
+import type { CrmState } from "@/modules/crm/model";
 import { HttpError } from "@/modules/crm/server/errors";
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { validateStaffUpdate } from "@/modules/crm/server/validation";
@@ -61,24 +63,22 @@ const programSchema = z.object({
   paceZones: z.array(z.object({ name: text(80), pace: text(80) })).max(12),
 });
 
-async function saveDraft(
+// Read, change and write the CRM; one retry if it changed in between.
+async function commitChange<T extends { state: CrmState }>(
   authInfo: Parameters<typeof mcpPrincipal>[0],
-  input: Parameters<typeof applyDraftPlan>[1],
-) {
+  change: (state: CrmState) => T,
+): Promise<T> {
   const { userId, access } = mcpPrincipal(authInfo);
-  // One retry if the CRM changed between read and write.
   for (let attempt = 0; ; attempt++) {
     const current = await readCrm(userId);
-    const { state, plan, created } = applyDraftPlan(current.state, input, () =>
-      crypto.randomUUID(),
-    );
+    const result = change(current.state);
     try {
       await writeCrm(
         userId,
         current.revision,
-        validateStaffUpdate(current.state, state, access),
+        validateStaffUpdate(current.state, result.state, access),
       );
-      return { plan, created };
+      return result;
     } catch (error) {
       if (error instanceof HttpError && error.status === 409 && attempt < 1)
         continue;
@@ -86,6 +86,101 @@ async function saveDraft(
     }
   }
 }
+
+const failure = (error: unknown) => ({
+  ...json({
+    salvato: false,
+    motivo:
+      error instanceof Error ? error.message : "Salvataggio non riuscito.",
+  }),
+  isError: true,
+});
+
+const planLink = (request: Request | undefined, id: string) =>
+  `${request ? getPublicOrigin(request) : appUrl().replace(/\/$/, "")}/admin/piani/${encodeURIComponent(id)}`;
+
+const id = text(100).min(1);
+const after = (label: string) =>
+  id
+    .nullable()
+    .optional()
+    .describe(
+      `Inserisci dopo questo ${label} (ID). null = in testa; omesso = in fondo.`,
+    );
+const sessionFields = z.object({
+  name: text(200).min(1).optional(),
+  week: z.number().int().min(1).max(52).nullable().optional(),
+  day: text(40).nullable().optional(),
+  kind: z.enum(["strength", "run"]).nullable().optional(),
+  preparation: text(4000).nullable().optional(),
+  cooldown: text(4000).nullable().optional(),
+  guidance: text(4000).nullable().optional(),
+});
+const exerciseFields = z.object({
+  name: text(200).min(1).optional(),
+  sets: z.number().int().min(1).max(20).optional(),
+  reps: text(200).optional(),
+  restSeconds: z.number().int().min(0).max(900).optional(),
+  notes: text(2000).optional(),
+  videoUrl: z
+    .url({ protocol: /^https?$/ })
+    .max(500)
+    .nullable()
+    .optional(),
+});
+const newExercise = exerciseSchema.omit({ id: true });
+const editSchema = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("piano"),
+    title: text(200).min(1).optional(),
+    description: text(4000).optional(),
+    program: programSchema.nullable().optional(),
+  }),
+  z.object({
+    tipo: z.literal("modifica_sessione"),
+    sessioneId: id,
+    campi: sessionFields.describe("Solo i campi da cambiare; null li svuota."),
+  }),
+  z.object({
+    tipo: z.literal("aggiungi_sessione"),
+    sessione: sessionSchema.omit({ id: true }).extend({
+      exercises: z.array(newExercise).max(30),
+    }),
+    dopoSessioneId: after("sessione"),
+  }),
+  z.object({ tipo: z.literal("rimuovi_sessione"), sessioneId: id }),
+  z.object({
+    tipo: z.literal("sposta_sessione"),
+    sessioneId: id,
+    dopoSessioneId: id.nullable().describe("null = in testa."),
+  }),
+  z.object({
+    tipo: z.literal("modifica_esercizio"),
+    sessioneId: id,
+    esercizioId: id,
+    campi: exerciseFields.describe("Solo i campi da cambiare."),
+  }),
+  z.object({
+    tipo: z.literal("aggiungi_esercizio"),
+    sessioneId: id,
+    esercizio: newExercise,
+    dopoEsercizioId: after("esercizio"),
+  }),
+  z.object({
+    tipo: z.literal("rimuovi_esercizio"),
+    sessioneId: id,
+    esercizioId: id,
+  }),
+  z.object({
+    tipo: z.literal("sposta_esercizio"),
+    sessioneId: id,
+    esercizioId: id,
+    versoSessioneId: id
+      .optional()
+      .describe("Sessione di destinazione, se diversa."),
+    dopoEsercizioId: id.nullable().describe("null = in testa."),
+  }),
+]);
 
 const handler = createMcpHandler(
   (server) => {
@@ -185,7 +280,10 @@ const handler = createMcpHandler(
       },
       async (input, ctx) => {
         try {
-          const { plan, created } = await saveDraft(ctx.http?.authInfo, input);
+          const { plan, created } = await commitChange(
+            ctx.http?.authInfo,
+            (state) => applyDraftPlan(state, input, () => crypto.randomUUID()),
+          );
           return json({
             salvato: true,
             nuovaBozza: created,
@@ -196,21 +294,51 @@ const handler = createMcpHandler(
               (total, session) => total + session.exercises.length,
               0,
             ),
-            link: `${ctx.http?.req ? getPublicOrigin(ctx.http.req) : appUrl().replace(/\/$/, "")}/admin/piani/${encodeURIComponent(plan.id)}`,
+            link: planLink(ctx.http?.req, plan.id),
             prossimiPassi:
               "L’admin apre il link, controlla la bozza, la pubblica e la assegna allo studente per il mese scelto.",
           });
         } catch (error) {
-          return {
-            ...json({
-              salvato: false,
-              motivo:
-                error instanceof Error
-                  ? error.message
-                  : "Salvataggio non riuscito.",
-            }),
-            isError: true,
-          };
+          return failure(error);
+        }
+      },
+    );
+    server.registerTool(
+      "modifica_bozza_piano",
+      {
+        title: "Modifica una bozza di piano",
+        description:
+          "Applica modifiche mirate a una BOZZA esistente senza riscriverla tutta: dati del piano, aggiunta, modifica, rimozione o spostamento di sessioni ed esercizi. Leggi prima la bozza con leggi_modello_piano per ottenere gli ID. Le operazioni si applicano in ordine e tutte insieme: se una fallisce non viene salvato nulla. Solo le bozze sono modificabili; non pubblica e non assegna.",
+        inputSchema: z.object({
+          modelloId: id.describe("ID della bozza."),
+          operazioni: z.array(editSchema).min(1).max(100),
+        }),
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
+      },
+      async ({ modelloId, operazioni }, ctx) => {
+        try {
+          const { plan, changes } = await commitChange(
+            ctx.http?.authInfo,
+            (state) =>
+              applyPlanEdits(state, modelloId, operazioni, () =>
+                crypto.randomUUID(),
+              ),
+          );
+          return json({
+            salvato: true,
+            modelloId: plan.id,
+            titolo: plan.title,
+            modifiche: changes,
+            sessioni: plan.sessions.length,
+            link: planLink(ctx.http?.req, plan.id),
+          });
+        } catch (error) {
+          return failure(error);
         }
       },
     );
@@ -230,9 +358,9 @@ const handler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: "team-italfit-crm", version: "0.2.0" },
+    serverInfo: { name: "team-italfit-crm", version: "0.3.0" },
     instructions:
-      "Strumenti del CRM Team Italfit per consultare studenti e piani di allenamento e salvare nuovi piani come bozze. Rispondi in italiano. Gli ID vanno ricavati dagli strumenti, mai inventati. Prima di salvare consulta formato_piano e conferma con l’admin il contenuto del piano.",
+      "Strumenti del CRM Team Italfit per consultare studenti e piani di allenamento, salvare nuovi piani come bozze e modificare le bozze esistenti. Per piccole modifiche usa modifica_bozza_piano invece di riscrivere il piano. Rispondi in italiano. Gli ID vanno ricavati dagli strumenti, mai inventati. Prima di salvare consulta formato_piano e conferma con l’admin il contenuto del piano.",
   },
 );
 

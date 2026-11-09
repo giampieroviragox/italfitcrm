@@ -2,7 +2,9 @@
 
 Obiettivo: l’admin lavora ai piani nella chat di claude.ai con il proprio abbonamento e li salva nel CRM come **bozza**, senza chiave API Anthropic e senza accesso al codice. La pubblicazione allo studente resta un’azione manuale nel CRM.
 
-Stato (9 novembre 2026): fasi 1–3 completate. Il connettore è collegato da claude.ai in produzione e legge i dati reali.
+Stato (9 novembre 2026): fasi 1–3 completate, più le modifiche mirate. Il connettore è collegato da claude.ai in produzione. Dopo ogni cambio dell’elenco o degli schemi degli strumenti serve ⋯ → “Aggiorna elenco strumenti” nel connettore su claude.ai.
+
+Modifiche mirate: `modifica_bozza_piano` applica in ordine e in modo atomico fino a 100 operazioni su una bozza (`piano`, `modifica_sessione`, `aggiungi_sessione`, `rimuovi_sessione`, `sposta_sessione`, `modifica_esercizio`, `aggiungi_esercizio`, `rimuovi_esercizio`, `sposta_esercizio`); posizioni con “dopo ID” (null = in testa), campi facoltativi svuotabili con null, errori con il numero dell’operazione. Solo bozze.
 
 Fase 3: `salva_bozza_piano` crea una nuova bozza o sostituisce il contenuto di una bozza esistente; i piani pubblicati o archiviati non si modificano. Gli ID di sessioni ed esercizi sono facoltativi e generati dal server. Il salvataggio passa da `validateStaffUpdate` e `crm_write` con controllo di revisione (un nuovo tentativo in caso di conflitto) e restituisce il link alla bozza, costruito sull’host della richiesta. Pubblicazione e assegnazione restano nel CRM. `cerca_studenti` restituisce anche `totale` e `completo`. Verificato in locale con una bozza tecnica poi eliminata: creazione, aggiornamento, rifiuto su piano pubblicato, input fuori limite e date incoerenti. Nota: `crm_write` aggiorna i piani ma non li cancella; i record tecnici si rimuovono da `crm_plans` con la chiave server.
 

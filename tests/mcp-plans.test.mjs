@@ -3,6 +3,7 @@ import { assertFitnessTransition } from "../src/modules/crm/fitness-logic.ts";
 import assert from "node:assert/strict";
 import {
   applyDraftPlan,
+  applyPlanEdits,
   mcpPlanTemplate,
   mcpPlanTemplates,
   mcpStudentPlan,
@@ -230,5 +231,139 @@ test("applyDraftPlan replaces only drafts", () => {
         ids(),
       ),
     /duplicata/,
+  );
+});
+
+function draftState() {
+  const { state: next, plan } = applyDraftPlan(state, draftInput, ids());
+  return { next, plan };
+}
+
+test("applyPlanEdits changes, adds, moves and removes items in order", () => {
+  const { next, plan } = draftState();
+  const [forza, corsa] = plan.sessions;
+  const [squat, affondi] = forza.exercises;
+  const newIds = (() => {
+    let n = 0;
+    return () => `new-${++n}`;
+  })();
+  const result = applyPlanEdits(
+    next,
+    plan.id,
+    [
+      { tipo: "piano", title: " Hyrox v2 " },
+      {
+        tipo: "modifica_esercizio",
+        sessioneId: forza.id,
+        esercizioId: squat.id,
+        campi: { sets: 5, reps: "5 @ 80%" },
+      },
+      {
+        tipo: "modifica_sessione",
+        sessioneId: forza.id,
+        campi: { day: "Martedì", week: null },
+      },
+      {
+        tipo: "aggiungi_esercizio",
+        sessioneId: forza.id,
+        esercizio: { name: "Plank", sets: 3, reps: "45 s", restSeconds: 30 },
+        dopoEsercizioId: null,
+      },
+      {
+        tipo: "sposta_esercizio",
+        sessioneId: forza.id,
+        esercizioId: affondi.id,
+        versoSessioneId: corsa.id,
+        dopoEsercizioId: null,
+      },
+      {
+        tipo: "aggiungi_sessione",
+        sessione: {
+          name: "Mobilità",
+          exercises: [
+            { name: "Stretch", sets: 1, reps: "10 min", restSeconds: 0 },
+          ],
+        },
+        dopoSessioneId: null,
+      },
+      { tipo: "sposta_sessione", sessioneId: corsa.id, dopoSessioneId: null },
+    ],
+    newIds,
+  );
+  const edited = result.plan;
+  assert.equal(edited.title, "Hyrox v2");
+  assert.equal(edited.status, "draft");
+  assert.deepEqual(
+    edited.sessions.map((s) => s.name),
+    ["Corsa Z2", "Mobilità", "Forza A"],
+  );
+  const forzaAfter = edited.sessions.find((s) => s.id === forza.id);
+  assert.equal(forzaAfter.day, "Martedì");
+  assert.equal("week" in forzaAfter, false);
+  assert.deepEqual(
+    forzaAfter.exercises.map((e) => [e.name, e.sets, e.reps]),
+    [
+      ["Plank", 3, "45 s"],
+      ["Squat", 5, "5 @ 80%"],
+    ],
+  );
+  assert.deepEqual(
+    edited.sessions[0].exercises.map((e) => e.name),
+    ["Affondi", "Corsa"],
+  );
+  assert.equal(result.changes.length, 7);
+  assert.doesNotThrow(() =>
+    assertFitnessTransition(
+      { ...next, assignments: [] },
+      { ...result.state, assignments: [] },
+    ),
+  );
+  assert.equal(
+    next.plans.find((p) => p.id === plan.id).title,
+    "Hyrox dicembre",
+    "input state untouched",
+  );
+});
+
+test("applyPlanEdits refuses published plans and reports the failing step", () => {
+  const { next, plan } = draftState();
+  assert.throws(
+    () =>
+      applyPlanEdits(
+        next,
+        plan.id,
+        [
+          { tipo: "piano", title: "Ok" },
+          { tipo: "rimuovi_sessione", sessioneId: "manca" },
+        ],
+        ids(),
+      ),
+    /Operazione 2 \(rimuovi_sessione\): Sessione manca non trovata/,
+  );
+  assert.throws(
+    () =>
+      applyPlanEdits(
+        next,
+        plan.id,
+        [
+          {
+            tipo: "modifica_esercizio",
+            sessioneId: plan.sessions[0].id,
+            esercizioId: plan.sessions[0].exercises[0].id,
+            campi: { name: null },
+          },
+        ],
+        ids(),
+      ),
+    /obbligatorio/,
+  );
+  const published = {
+    ...state,
+    plans: [{ ...state.plans[0], status: "published" }],
+  };
+  assert.throws(
+    () =>
+      applyPlanEdits(published, "p1", [{ tipo: "piano", title: "X" }], ids()),
+    /solo le bozze/,
   );
 });
