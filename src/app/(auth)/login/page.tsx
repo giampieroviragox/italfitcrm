@@ -5,18 +5,21 @@ import { AuthLayout } from "@/components/layout/auth-layout";
 import { LoginForm } from "@/modules/auth/login-form";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { requireAccess } from "@/modules/crm/server/auth";
+import { safeLoginNext } from "@/modules/auth/oauth-consent";
 export const metadata: Metadata = { title: "Accedi" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ link?: string }>;
+  searchParams: Promise<{ link?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  const next = safeLoginNext(params.next);
   let destination: string | null = null;
   if (supabaseConfigured) {
     try {
       const { access } = await requireAccess();
-      destination = access.role === "student" ? "/area-studente" : "/admin";
+      destination =
+        access.role === "student" ? "/area-studente" : (next ?? "/admin");
     } catch {
       /* An unauthenticated user needs the form. */
     }
@@ -57,7 +60,7 @@ export default async function LoginPage({
           password per accedere.
         </p>
       )}
-      <LoginForm enabled={supabaseConfigured} />
+      <LoginForm enabled={supabaseConfigured} next={next} />
     </AuthLayout>
   );
 }

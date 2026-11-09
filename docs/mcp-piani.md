@@ -2,7 +2,11 @@
 
 Obiettivo: l’admin lavora ai piani nella chat di claude.ai con il proprio abbonamento e li salva nel CRM come **bozza**, senza chiave API Anthropic e senza accesso al codice. La pubblicazione allo studente resta un’azione manuale nel CRM.
 
-Stato (9 novembre 2026): fase 1 completata. `/api/mcp` espone in sola lettura `cerca_studenti`, `leggi_piano_studente`, `elenca_modelli_piano`, `leggi_modello_piano` e `formato_piano`; `/.well-known/oauth-protected-resource` indica Supabase come server di autorizzazione. In produzione sono accettati solo token OAuth (claim `client_id`) di owner/admin attivi; in sviluppo anche i token di sessione, per provare l’endpoint prima di attivare l’OAuth server.
+Stato (9 novembre 2026): fasi 1 e 2 completate, collegamento reale da claude.ai ancora da provare dopo il deploy.
+
+Fase 2: OAuth server attivo su Supabase con registrazione dinamica; Site URL `https://italfitcrm.vercel.app`, Authorization Path predefinito `/oauth/consent`, che reindirizza alla pagina `/oauth/consenso`. La pagina richiede il login (con ritorno automatico al consenso), accetta solo owner/admin attivi e consente l’approvazione solo per i callback di Claude (in sviluppo anche loopback). Flusso verificato in locale con un client tecnico poi eliminato: registrazione, consenso, token con `client_id`, chiamata a `/api/mcp`, revoca con 401 immediato.
+
+Fase 1: `/api/mcp` espone in sola lettura `cerca_studenti`, `leggi_piano_studente`, `elenca_modelli_piano`, `leggi_modello_piano` e `formato_piano`; `/.well-known/oauth-protected-resource` indica Supabase come server di autorizzazione. In produzione sono accettati solo token OAuth (claim `client_id`) di owner/admin attivi; in sviluppo anche i token di sessione, per provare l’endpoint prima di attivare l’OAuth server.
 
 ## Verifiche
 
@@ -13,7 +17,7 @@ Stato (9 novembre 2026): fase 1 completata. `/api/mcp` espone in sola lettura `c
 | Registrazione client                       | Claude supporta Dynamic Client Registration (RFC 7591); in alternativa client ID/secret in “Impostazioni avanzate”.                                                |
 | Server OAuth 2.1 Supabase                  | In beta, incluso in tutti i piani, nessun costo aggiuntivo (gli utenti contano come MAU). Authorization code + PKCE e refresh token; nessuno scope personalizzato. |
 | Chiavi di firma del progetto               | Già asimmetriche (ES256, JWKS pubblico): i token si verificano lato server senza segreti condivisi.                                                                |
-| Server OAuth sul progetto TEAM ITALFIT CRM | **Disattivato** (`feature_disabled`): va attivato dalla dashboard.                                                                                                 |
+| Server OAuth sul progetto TEAM ITALFIT CRM | Attivato il 9 novembre 2026 con registrazione dinamica.                                                                                                            |
 
 Il token emesso da Supabase per Claude è un normale JWT utente (`sub` = utente, `role: authenticated`, `aud: authenticated`) con in più il claim `client_id`. Gli scope non limitano i permessi: li limitiamo noi nei tool e nel database.
 
@@ -34,7 +38,7 @@ Componenti da aggiungere:
 1. **`/api/mcp`**: server MCP con trasporto Streamable HTTP (`mcp-handler` + `@modelcontextprotocol/sdk`), stateless, compatibile con Vercel.
 2. **`/.well-known/oauth-protected-resource`**: metadati RFC 9728 che indicano a Claude il server di autorizzazione Supabase.
 3. **`/oauth/consenso`**: pagina di consenso. Richiede il login, accetta soltanto owner/admin attivi e soltanto i redirect di Claude; mostra “Claude potrà leggere gli studenti e creare bozze di piani” e chiama `approveAuthorization` / `denyAuthorization`.
-4. **Gestione accessi** in Impostazioni: elenco delle app autorizzate (`getUserGrants`) e revoca (`revokeGrant`).
+4. **Gestione accessi** in Impostazioni: elenco delle app autorizzate (`listGrants`) e revoca (`revokeGrant`).
 5. **Variante token di `requireAccess`**: stessa logica di oggi ma partendo dal bearer token invece dei cookie.
 
 ## Strumenti esposti a Claude
@@ -59,7 +63,7 @@ Ogni scrittura passa da `validateStaffUpdate` e `crm_write` con controllo di rev
 
 1. Authentication → OAuth Server → abilitare “OAuth 2.1 server”.
 2. Abilitare “Allow Dynamic OAuth Apps”.
-3. Authorization Path: `/oauth/consenso`.
+3. Authorization Path: va bene il predefinito `/oauth/consent` (reindirizza a `/oauth/consenso`).
 4. Controllare che il Site URL sia il dominio pubblico del CRM: l’URL di consenso è Site URL + Authorization Path.
 
 ## Rischi e punti aperti

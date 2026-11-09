@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/modules/crm/ui";
-export function LoginForm({ enabled }: { enabled: boolean }) {
+export function LoginForm({
+  enabled,
+  next,
+}: {
+  enabled: boolean;
+  next?: string | null;
+}) {
   const [state, action, pending] = useActionState(signIn, { error: "" });
   return (
     <form action={action} className="mt-8 space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
         <Input

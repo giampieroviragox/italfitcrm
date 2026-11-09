@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { createSessionClient } from "@/lib/supabase/server";
 import { requireAccess } from "@/modules/crm/server/auth";
+import { safeLoginNext } from "./oauth-consent";
 export async function signIn(_previous: { error: string }, form: FormData) {
   const email = String(form.get("email") ?? "").trim(),
     password = String(form.get("password") ?? "");
@@ -15,7 +16,10 @@ export async function signIn(_previous: { error: string }, form: FormData) {
   let destination = "/admin";
   try {
     const { access } = await requireAccess();
-    destination = access.role === "student" ? "/area-studente" : "/admin";
+    destination =
+      access.role === "student"
+        ? "/area-studente"
+        : (safeLoginNext(form.get("next")) ?? "/admin");
   } catch {
     await client.auth.signOut();
     return {

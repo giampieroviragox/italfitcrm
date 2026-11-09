@@ -36,5 +36,6 @@ export const config = {
     "/login",
     "/auth/:path*",
     "/imposta-password",
+    "/oauth/:path*",
   ],
 };
