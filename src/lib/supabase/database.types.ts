@@ -355,6 +355,16 @@ export type Database = {
         Returns: Json;
       };
       crm_read: { Args: { p_actor: string }; Returns: Json };
+      crm_remove: {
+        Args: {
+          p_actor: string;
+          p_expected: number;
+          p_state: Json;
+          p_assignments: string[];
+          p_plans: string[];
+        };
+        Returns: Json;
+      };
       crm_write: {
         Args: { p_actor: string; p_expected: number; p_state: Json };
         Returns: Json;

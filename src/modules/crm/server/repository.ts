@@ -54,3 +54,49 @@ export async function writeCrm(
     );
   return data;
 }
+
+/** Writes the state and deletes the listed records in one transaction. */
+export async function removeCrm(
+  actor: string,
+  revision: number,
+  state: CrmState,
+  removed: { assignments: string[]; plans: string[] },
+): Promise<CrmEnvelope> {
+  const { data, error } = await createAdminClient()
+    .rpc("crm_remove", {
+      p_actor: actor,
+      p_expected: revision,
+      p_state: state as unknown as Json,
+      p_assignments: removed.assignments,
+      p_plans: removed.plans,
+    })
+    .retry(false);
+  if (error) {
+    if (["40001", "PT409"].includes(error.code))
+      throw new HttpError(
+        409,
+        "Il CRM è stato aggiornato da un altro utente. Ricarica e riprova.",
+      );
+    if (error.code === "23503")
+      throw new HttpError(
+        409,
+        "Il piano è assegnato: rimuovi prima le assegnazioni oppure archivialo.",
+      );
+    if (error.code === "PGRST202")
+      throw new HttpError(
+        503,
+        "La rimozione non è ancora attiva sul database. Applica la migrazione record_removal.",
+      );
+    console.error("CRM removal failed", {
+      code: error.code,
+      message: error.message,
+    });
+    throw new HttpError(503, "Il database non ha rimosso il record. Riprova.");
+  }
+  if (!isCrmEnvelope(data))
+    throw new HttpError(
+      503,
+      "Risposta database non valida. Ricarica prima di riprovare.",
+    );
+  return data;
+}

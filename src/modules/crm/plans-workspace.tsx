@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Dumbbell, ArrowUpRight, Search } from "lucide-react";
+import { Plus, Dumbbell, ArrowUpRight, Search, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { PageTabs } from "@/components/ui/page-tabs";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { ActionMenu } from "@/components/ui/action-menu";
-import { useCrm, updateCrm, useHydrated } from "./store";
+import { useCrm, updateCrm, useHydrated, removeCrmRecord } from "./store";
 import { PlanEditor, AssignmentEditor } from "./plan-editor";
 import { LocalNotice, FormError, control } from "./ui";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -262,12 +263,18 @@ export function PlansWorkspace() {
 }
 export function PlanDetail({ id }: { id: string }) {
   const state = useCrm(),
-    hydrated = useHydrated();
+    hydrated = useHydrated(),
+    router = useRouter();
   const [editing, setEditing] = useState(false),
     [assign, setAssign] = useState(false),
     [archive, setArchive] = useState(false),
+    [removing, setRemoving] = useState<PlanAssignment | null>(null),
+    [deleting, setDeleting] = useState(false),
+    [deleted, setDeleted] = useState(false),
     [error, setError] = useState("");
   const plan = state.plans?.find((p) => p.id === id);
+  const assigned = (state.assignments ?? []).some((a) => a.planId === id);
+  if (deleted) return <p role="status">Piano eliminato.</p>;
   if (!hydrated) return <p role="status">Caricamento piano…</p>;
   if (!plan)
     return (
@@ -313,6 +320,14 @@ export function PlanDetail({ id }: { id: string }) {
                       : "Archivia piano",
                   onSelect: () => setArchive(true),
                 },
+                ...(assigned
+                  ? []
+                  : [
+                      {
+                        label: "Elimina piano",
+                        onSelect: () => setDeleting(true),
+                      },
+                    ]),
               ]}
             />
           </>
@@ -333,18 +348,30 @@ export function PlanDetail({ id }: { id: string }) {
               .map((a) => {
                 const s = state.students.find((s) => s.id === a.studentId);
                 return (
-                  <Link
-                    key={a.id}
-                    href={`/admin/studenti/${encodeURIComponent(a.studentId)}`}
-                    className="flex min-h-10 items-center justify-between gap-3 rounded-[10px] px-2 py-2 text-sm transition-colors hover:bg-foreground/[.03]"
-                  >
-                    <span className="truncate">
-                      {s?.firstName} {s?.lastName}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground first-letter:uppercase">
-                      {formatMonth(a.month)}
-                    </span>
-                  </Link>
+                  <div key={a.id} className="flex items-center gap-1">
+                    <Link
+                      href={`/admin/studenti/${encodeURIComponent(a.studentId)}`}
+                      className="flex min-h-10 min-w-0 flex-1 items-center justify-between gap-3 rounded-[10px] px-2 py-2 text-sm transition-colors hover:bg-foreground/[.03]"
+                    >
+                      <span className="truncate">
+                        {s?.firstName} {s?.lastName}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground first-letter:uppercase">
+                        {formatMonth(a.month)}
+                      </span>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Rimuovi l’assegnazione di ${s?.firstName ?? ""} ${s?.lastName ?? ""} per ${formatMonth(a.month)}`}
+                      onClick={() => {
+                        setError("");
+                        setRemoving(a);
+                      }}
+                    >
+                      <X />
+                    </Button>
+                  </div>
                 );
               })}
           </div>
@@ -355,6 +382,28 @@ export function PlanDetail({ id }: { id: string }) {
           )}
         </section>
       </div>
+      <RemoveAssignmentDialog
+        assignment={removing}
+        close={() => setRemoving(null)}
+      />
+      <ConfirmDialog
+        error={error}
+        open={deleting}
+        title="Eliminare il piano?"
+        description="Il piano non è assegnato a nessuno studente e verrà eliminato definitivamente. L’operazione non si può annullare."
+        confirmLabel="Elimina"
+        onCancel={() => setDeleting(false)}
+        onConfirm={async () => {
+          try {
+            await removeCrmRecord({ planId: id });
+            setDeleting(false);
+            setDeleted(true);
+            router.push("/admin/piani");
+          } catch (e) {
+            setError((e as Error).message);
+          }
+        }}
+      />
       {editing && <PlanEditor plan={plan} close={() => setEditing(false)} />}
       {assign && (
         <AssignmentEditor planId={id} close={() => setAssign(false)} />
@@ -392,7 +441,52 @@ export function PlanDetail({ id }: { id: string }) {
     </>
   );
 }
-export function AssignedPlan({ assignment }: { assignment: PlanAssignment }) {
+/** Confirms and removes an assignment: the student no longer sees it. */
+export function RemoveAssignmentDialog({
+  assignment,
+  close,
+}: {
+  assignment: PlanAssignment | null;
+  close: () => void;
+}) {
+  const state = useCrm();
+  const [error, setError] = useState("");
+  const student = state.students.find((s) => s.id === assignment?.studentId);
+  return (
+    <ConfirmDialog
+      error={error}
+      open={assignment !== null}
+      title="Rimuovere l’assegnazione?"
+      description={
+        assignment
+          ? `${student?.firstName ?? "Lo studente"} ${student?.lastName ?? ""} non vedrà più “${assignment.snapshot.title}” di ${formatMonth(assignment.month)}. Anche i completamenti e le note di questo piano verranno eliminati. L’operazione resta nella cronologia dello studente e non si può annullare.`
+          : ""
+      }
+      confirmLabel="Rimuovi"
+      onCancel={() => {
+        setError("");
+        close();
+      }}
+      onConfirm={async () => {
+        if (!assignment) return;
+        try {
+          await removeCrmRecord({ assignmentId: assignment.id });
+          setError("");
+          close();
+        } catch (e) {
+          setError((e as Error).message);
+        }
+      }}
+    />
+  );
+}
+export function AssignedPlan({
+  assignment,
+  onRemove,
+}: {
+  assignment: PlanAssignment;
+  onRemove?: () => void;
+}) {
   return (
     <section className="rounded-xl border p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -402,10 +496,19 @@ export function AssignedPlan({ assignment }: { assignment: PlanAssignment }) {
             {formatMonth(assignment.month)}
           </p>
         </div>
-        <span className="rounded-full bg-foreground/[.045] px-2.5 py-0.5 text-xs">
-          {assignment.snapshot.sessions.length}{" "}
-          {assignment.snapshot.sessions.length === 1 ? "sessione" : "sessioni"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-foreground/[.045] px-2.5 py-0.5 text-xs">
+            {assignment.snapshot.sessions.length}{" "}
+            {assignment.snapshot.sessions.length === 1
+              ? "sessione"
+              : "sessioni"}
+          </span>
+          {onRemove && (
+            <Button variant="outline" size="sm" onClick={onRemove}>
+              Rimuovi
+            </Button>
+          )}
+        </div>
       </div>
       <WorkoutContent plan={assignment.snapshot} />
     </section>

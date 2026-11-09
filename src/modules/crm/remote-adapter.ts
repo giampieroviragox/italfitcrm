@@ -2,6 +2,7 @@ import type { CrmState } from "./model.ts";
 import { isCrmEnvelope, type CrmEnvelope } from "./envelope.ts";
 import { assertCrmTransition } from "./logic.ts";
 import { mutationState } from "./mutation.ts";
+import type { RemovalTarget } from "./removal.ts";
 import { requestJson, RequestError } from "../../lib/request-json.ts";
 
 export interface Viewer {
@@ -22,6 +23,7 @@ export interface RemoteStore {
   update: (fn: (state: CrmState) => CrmState) => Promise<void>;
   refresh: () => Promise<void>;
   comment: (studentId: string, text: string) => Promise<void>;
+  remove: (target: RemovalTarget) => Promise<void>;
   pending: () => boolean;
   error: () => string;
   status: () => SyncStatus;
@@ -170,6 +172,7 @@ export function createRemoteStore(
       }),
     comment: (studentId, text) =>
       write(() => send("/api/commenti", { studentId, text })),
+    remove: (target) => write(() => send("/api/crm/rimozioni", target)),
   };
   return remote;
 }

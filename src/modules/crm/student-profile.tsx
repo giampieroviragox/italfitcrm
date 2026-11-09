@@ -16,7 +16,8 @@ import { LocalNotice, FormError, Field, control } from "./ui";
 import { useNavigationRequest } from "./use-unsaved-changes";
 import { StudentEditor } from "./student-editor";
 import { AssignmentEditor } from "./plan-editor";
-import { AssignedPlan } from "./plans-workspace";
+import { AssignedPlan, RemoveAssignmentDialog } from "./plans-workspace";
+import type { PlanAssignment } from "./fitness-model";
 import { lessonDate } from "./lessons-workspace";
 import { StudentAccessControl } from "./student-access-control";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
@@ -43,6 +44,8 @@ export function StudentProfile({
   const [commentPending, setCommentPending] = useState(false);
   const [commentResult, setCommentResult] = useState("");
   const [assigning, setAssigning] = useState(false);
+  const [removingAssignment, setRemovingAssignment] =
+    useState<PlanAssignment | null>(null);
   const [tab, setTab] = useState("properties"),
     [note, setNote] = useState(""),
     [error, setError] = useState("");
@@ -234,8 +237,16 @@ export function StudentProfile({
                   .filter((a) => a.studentId === id)
                   .sort((a, b) => b.month.localeCompare(a.month))
                   .map((a) => (
-                    <AssignedPlan key={a.id} assignment={a} />
+                    <AssignedPlan
+                      key={a.id}
+                      assignment={a}
+                      onRemove={() => setRemovingAssignment(a)}
+                    />
                   ))}
+                <RemoveAssignmentDialog
+                  assignment={removingAssignment}
+                  close={() => setRemovingAssignment(null)}
+                />
                 {!state.assignments?.some((a) => a.studentId === id) && (
                   <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                     Nessun piano assegnato.

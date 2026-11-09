@@ -6,6 +6,7 @@ export function validateStaffUpdate(
   current: CrmState,
   proposed: CrmState,
   access: Access,
+  removed: { assignments?: string[]; plans?: string[] } = {},
 ): CrmState {
   for (const key of [
     "students",
@@ -19,7 +20,16 @@ export function validateStaffUpdate(
   ] as const) {
     const before = current[key] ?? [],
       after = proposed[key] ?? [];
-    if (before.some((x) => !after.some((y) => y.id === x.id)))
+    if (
+      before.some(
+        (x) =>
+          !after.some((y) => y.id === x.id) &&
+          !(
+            (key === "assignments" && removed.assignments?.includes(x.id)) ||
+            (key === "plans" && removed.plans?.includes(x.id))
+          ),
+      )
+    )
       throw new HttpError(
         400,
         "Archivia i record per conservarne i collegamenti.",
@@ -97,7 +107,10 @@ export function validateStaffUpdate(
       return {
         ...s,
         access: old?.access ?? null,
-        workoutEntries: old?.workoutEntries ?? [],
+        // Logs of a removed assignment go with it.
+        workoutEntries: (old?.workoutEntries ?? []).filter(
+          (entry) => !removed.assignments?.includes(entry.assignmentId),
+        ),
         notes: s.notes ?? old?.notes ?? [],
         revision: old?.revision ?? 0,
         history: old?.history ?? [],

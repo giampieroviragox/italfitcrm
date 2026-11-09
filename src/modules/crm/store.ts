@@ -5,6 +5,7 @@ import type { CrmState } from "./model";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
+import { removalState, type RemovalTarget } from "./removal";
 import { RemoteContext, activeRemoteStore } from "./remote-store";
 import { supabaseConfigured } from "@/lib/supabase/config";
 // v1 saves still hold the old fictional students: they are discarded on load.
@@ -119,6 +120,16 @@ export async function updateCrm(update: (state: CrmState) => CrmState) {
   cachedRaw = JSON.stringify(next);
   cached = next;
   window.dispatchEvent(new Event(EVENT));
+}
+
+/** Removes an assignment or a never-assigned plan (server-side transaction). */
+export async function removeCrmRecord(target: RemovalTarget) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.remove(target);
+  }
+  return updateCrm((s) => removalState(s, target).state);
 }
 
 export async function addStudentComment(studentId: string, text: string) {
