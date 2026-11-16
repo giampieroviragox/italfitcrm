@@ -129,6 +129,7 @@ export function Editor({
   children,
   dirty: explicitDirty,
   centered = false,
+  wide = false,
   inline = false,
 }: {
   title: string;
@@ -137,6 +138,7 @@ export function Editor({
   children: ReactNode;
   dirty?: boolean;
   centered?: boolean;
+  wide?: boolean;
   inline?: boolean;
 }) {
   const saving = useSaving();
@@ -234,7 +236,7 @@ export function Editor({
             }}
           >
             <SheetContent
-              side={centered ? "center" : "right"}
+              side={centered || wide ? "center" : "right"}
               onOpenAutoFocus={() => {
                 previousFocus.current =
                   document.activeElement instanceof HTMLElement
@@ -247,7 +249,11 @@ export function Editor({
                   previousFocus.current.focus();
                 }
               }}
-              className="crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[520px]"
+              className={
+                wide
+                  ? "crm-editor max-sm:inset-0! max-sm:h-dvh! max-sm:max-h-dvh! max-sm:w-full! max-sm:translate-none! max-sm:rounded-none! w-full gap-0 overflow-hidden p-0 data-[side=center]:sm:max-w-[1120px] data-[side=center]:sm:h-[min(840px,calc(100dvh-48px))]"
+                  : "crm-editor w-full gap-0 overflow-hidden p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[520px]"
+              }
             >
               <SheetHeader className="shrink-0 gap-1 border-b px-5 py-5 sm:px-6">
                 <SheetTitle className="pr-10 text-lg leading-6 font-medium tracking-[-0.01em]">

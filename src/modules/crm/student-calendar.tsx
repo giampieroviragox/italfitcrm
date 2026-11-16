@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
-import styles from "./calendar-styles";
+import { useRef, useState } from "react";
 import {
+  CalendarDays,
   Check,
+  ChevronRight,
   Clock3,
   MapPin,
   RefreshCw,
@@ -31,6 +32,16 @@ const dateLabel = (day: string, options: Intl.DateTimeFormatOptions) =>
     ...options,
   }).format(new Date(day + "T12:00:00Z"));
 const timeLabel = (iso: string) => romeLocal(iso).slice(11);
+const endTimeLabel = (lesson: StudentLesson) =>
+  timeLabel(
+    new Date(
+      Date.parse(lesson.startsAt) + lesson.durationMinutes * 60_000,
+    ).toISOString(),
+  );
+const lessonTimeLabel = (lesson: StudentLesson) =>
+  lesson.availability
+    ? `${timeLabel(lesson.startsAt)}–${endTimeLabel(lesson)}`
+    : timeLabel(lesson.startsAt);
 export function StudentCalendar({
   data,
   pending = null,
@@ -47,6 +58,9 @@ export function StudentCalendar({
   onChange: (lessonId: string, cancelled: boolean) => Promise<boolean>;
 }) {
   const now = useClock();
+  const today = todayRome();
+  const calendar = useRef<HTMLDivElement>(null);
+  const lessonTrigger = useRef<HTMLButtonElement>(null);
   const upcoming = data.lessons
     .filter((lesson) => Date.parse(lesson.startsAt) > now)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
@@ -68,7 +82,10 @@ export function StudentCalendar({
     ? selectedDay
     : (days.find((day) =>
         filtered.some((lesson) => romeLocal(lesson.startsAt).startsWith(day)),
-      ) ?? days[0]);
+      ) ?? week);
+  const dayLessons = filtered.filter((lesson) =>
+    romeLocal(lesson.startsAt).startsWith(activeDay),
+  );
   const mine = upcoming.filter(
     (lesson) => lesson.enrolled && !lesson.cancelled,
   );
@@ -85,7 +102,9 @@ export function StudentCalendar({
         ? "Prenotata"
         : lesson.occupied >= lesson.capacity
           ? "Completa"
-          : `${lesson.capacity - lesson.occupied} ${lesson.capacity - lesson.occupied === 1 ? "posto libero" : "posti liberi"}`;
+          : lesson.restriction
+            ? "Non prenotabile"
+            : `${lesson.capacity - lesson.occupied} ${lesson.capacity - lesson.occupied === 1 ? "posto libero" : "posti liberi"}`;
   const act = async (cancelled: boolean) => {
     if (selected && (await onChange(selected.id, cancelled))) {
       setCancelling(false);
@@ -93,40 +112,60 @@ export function StudentCalendar({
     }
   };
   return (
-    <section aria-label="Calendario studente" className="space-y-4">
+    <section
+      aria-label="Calendario studente"
+      className="space-y-4 sm:space-y-5"
+    >
       {nextLesson && (
         <button
           type="button"
-          onClick={() => setSelectedId(nextLesson.id)}
-          className={styles.nextLesson}
+          onClick={(event) => {
+            lessonTrigger.current = event.currentTarget;
+            setSelectedId(nextLesson.id);
+          }}
+          className="group flex w-full items-center gap-3 rounded-3xl border bg-card p-4 text-left transition-colors hover:border-primary/60 sm:gap-4 sm:p-5"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-foreground/[.045]">
-            <Check className="size-4" />
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-[var(--workspace-accent)]">
+            <Check className="size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[13px] text-muted-foreground">
+            <span className="block text-xs text-muted-foreground">
               Prossima lezione prenotata
             </span>
-            <span className="block truncate text-sm font-medium">
-              {nextLesson.title} ·{" "}
+            <span className="block text-lg font-semibold tracking-tight">
+              {nextLesson.title}
+            </span>
+            <span className="block text-sm text-muted-foreground">
               {dateLabel(romeLocal(nextLesson.startsAt).slice(0, 10), {
                 weekday: "short",
                 day: "numeric",
                 month: "short",
-              })}{" "}
-              · {timeLabel(nextLesson.startsAt)}
+              })}
+              {" · "}
+              {lessonTimeLabel(nextLesson)}
             </span>
           </span>
+          <ChevronRight
+            className="size-5 shrink-0 text-[var(--workspace-accent)] transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </button>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className={styles.filters} aria-label="Filtra calendario">
+        <div
+          role="group"
+          aria-label="Filtra calendario"
+          className="inline-flex max-w-full gap-1 rounded-full border bg-card p-1"
+        >
           <Button
             size="sm"
             variant="ghost"
             aria-pressed={!onlyMine}
-            className={styles.filter}
-            onClick={() => setOnlyMine(false)}
+            className="min-h-10 rounded-full px-3 aria-pressed:bg-muted aria-pressed:text-foreground"
+            onClick={() => {
+              setOnlyMine(false);
+              setSelectedDay("");
+            }}
           >
             Tutti gli orari
           </Button>
@@ -134,8 +173,11 @@ export function StudentCalendar({
             size="sm"
             variant="ghost"
             aria-pressed={onlyMine}
-            className={styles.filter}
-            onClick={() => setOnlyMine(true)}
+            className="min-h-10 rounded-full px-3 aria-pressed:bg-muted aria-pressed:text-foreground"
+            onClick={() => {
+              setOnlyMine(true);
+              setSelectedDay("");
+            }}
           >
             <span className="sm:hidden">Le mie · {mine.length}</span>
             <span className="hidden sm:inline">
@@ -143,35 +185,38 @@ export function StudentCalendar({
             </span>
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+        {refresh && (
+          <Button
+            variant="outline"
+            size="icon-lg"
+            className="rounded-full text-muted-foreground"
+            aria-label={refreshing ? "Aggiornamento…" : "Aggiorna orari"}
+            title="Aggiorna orari"
+            disabled={Boolean(pending) || refreshing}
+            onClick={refresh}
+          >
+            <RefreshCw className={refreshing ? "animate-spin" : ""} />
+          </Button>
+        )}
+      </div>
+      <div
+        ref={calendar}
+        tabIndex={-1}
+        className="rounded-3xl border bg-card p-3 sm:p-6"
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
+          <WeekNavigation week={week} onChange={setWeek} />
           {data.services.monthlyBookingLimit !== null && (
-            <p className="text-xs text-muted-foreground">
+            <p className="px-1 text-xs text-muted-foreground">
               Fino a {data.services.monthlyBookingLimit} lezioni al mese
             </p>
           )}
-          {refresh && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground"
-              aria-label={refreshing ? "Aggiornamento…" : "Aggiorna orari"}
-              title="Aggiorna orari"
-              disabled={Boolean(pending) || refreshing}
-              onClick={refresh}
-            >
-              <RefreshCw className={refreshing ? "animate-spin" : ""} />
-            </Button>
-          )}
         </div>
-      </div>
-      <div className={styles.surface}>
-        <div className={styles.toolbar}>
-          <WeekNavigation week={week} onChange={setWeek} />
-          <span className="text-[11px] text-muted-foreground">
-            Orari di Roma
-          </span>
-        </div>
-        <div className={styles.studentHeader}>
+        <div
+          role="group"
+          aria-label="Giorni della settimana"
+          className="grid grid-cols-7 gap-1 sm:gap-2"
+        >
           {days.map((day) => {
             const count = filtered.filter((lesson) =>
               romeLocal(lesson.startsAt).startsWith(day),
@@ -180,103 +225,101 @@ export function StudentCalendar({
               <button
                 key={day}
                 type="button"
-                aria-label={dateLabel(day, {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
+                aria-label={`${dateLabel(day, { weekday: "long", day: "numeric", month: "long" })}, ${count} ${count === 1 ? "lezione" : "lezioni"}`}
+                aria-current={day === today ? "date" : undefined}
                 aria-pressed={day === activeDay}
                 onClick={() => setSelectedDay(day)}
-                className={`${styles.day} ${styles.studentDay}`}
+                className="group flex min-h-[70px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border bg-background py-2 transition-colors hover:bg-muted aria-[current=date]:border-primary/60 aria-pressed:border-[var(--border-hover)] aria-pressed:bg-muted aria-pressed:text-foreground sm:min-h-[82px] sm:rounded-2xl"
               >
-                <span className="capitalize text-muted-foreground">
+                <span className="text-xs capitalize text-muted-foreground group-aria-pressed:text-foreground">
                   {dateLabel(day, { weekday: "short" })}
                 </span>
-                <span
-                  className={`${styles.dayNumber} ${day === todayRome() ? styles.today : ""}`}
-                >
+                <span className="text-lg leading-tight font-bold tabular-nums sm:text-xl">
                   {dateLabel(day, { day: "numeric" })}
                 </span>
                 <span
-                  className={`size-1 rounded-full ${count ? "bg-foreground" : "bg-transparent"}`}
-                  aria-label={`${count} lezioni`}
+                  className={
+                    count ? "size-1 rounded-full bg-primary" : "size-1"
+                  }
+                  aria-hidden
                 />
               </button>
             );
           })}
         </div>
-        <div className={styles.studentColumns}>
-          {days.map((day) => {
-            const lessons = filtered.filter((lesson) =>
-              romeLocal(lesson.startsAt).startsWith(day),
-            );
-            return (
-              <div
-                key={day}
-                className={styles.studentColumn}
-                data-hidden={day !== activeDay}
-              >
-                <h3 className="mb-3 text-xs font-medium capitalize text-muted-foreground md:sr-only">
-                  {dateLabel(day, {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}
-                </h3>
-                {lessons.map((lesson) => (
-                  <button
-                    type="button"
-                    key={lesson.id}
-                    onClick={() => setSelectedId(lesson.id)}
-                    aria-label={`${lesson.title}, ${timeLabel(lesson.startsAt)}, ${status(lesson)}`}
-                    className={styles.studentSlot}
-                    data-enrolled={lesson.enrolled && !lesson.cancelled}
-                    data-cancelled={lesson.cancelled}
-                  >
-                    <span className={styles.slotTime}>
-                      {timeLabel(lesson.startsAt)}
-                      <span className={styles.slotDuration}>
-                        {lesson.durationMinutes} min
-                      </span>
-                    </span>
-                    <span className="block min-w-0 flex-1">
-                      <span className={styles.slotTitle}>{lesson.title}</span>
-                      <span className={styles.slotCoach}>{lesson.coach}</span>
-                      <span className={styles.slotStatus}>
-                        {status(lesson)}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-                {!lessons.length && (
-                  <div className={styles.emptyDay}>
-                    <span
-                      className="hidden md:inline"
-                      aria-label={
-                        onlyMine ? "Nessuna prenotazione" : "Nessuna lezione"
-                      }
-                    >
-                      —
-                    </span>
-                    <p className="md:hidden">
-                      {onlyMine
-                        ? "Nessuna prenotazione per questo giorno."
-                        : "Nessuna lezione per questo giorno."}
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
-      {!filtered.length && (
-        <p className="text-sm leading-6 text-muted-foreground">
-          {onlyMine
-            ? "Non hai ancora prenotazioni. Scegli una lezione dal calendario."
-            : "Il team pubblicherà qui i prossimi orari disponibili."}
-        </p>
-      )}
+      <div
+        key={activeDay}
+        className="space-y-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+          <h2 className="text-xl font-bold tracking-tight first-letter:uppercase sm:text-2xl">
+            {dateLabel(activeDay, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </h2>
+          <span className="text-xs text-muted-foreground">Orari di Roma</span>
+        </div>
+        {dayLessons.length ? (
+          <ul className="space-y-2">
+            {dayLessons.map((lesson) => (
+              <li key={lesson.id}>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    lessonTrigger.current = event.currentTarget;
+                    setSelectedId(lesson.id);
+                  }}
+                  aria-label={`${lesson.title}, ${lessonTimeLabel(lesson)}, ${status(lesson)}`}
+                  className="group grid w-full grid-cols-[3.4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl border bg-card p-3 text-left transition-colors hover:border-primary/55 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto_auto] sm:gap-x-5 sm:px-5 sm:py-4"
+                >
+                  <span className="row-span-2 self-start border-r pr-1 sm:row-span-1 sm:self-center sm:pr-3">
+                    <span className="block text-base font-bold tracking-tight tabular-nums sm:text-xl">
+                      {timeLabel(lesson.startsAt)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {lesson.availability
+                        ? `– ${endTimeLabel(lesson)}`
+                        : `${lesson.durationMinutes} min`}
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-base leading-tight font-semibold break-words">
+                      {lesson.title}
+                    </span>
+                    <span className="mt-1 block text-xs break-words text-muted-foreground">
+                      {[lesson.coach, lesson.location]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                  <span
+                    data-available={
+                      !blocked(lesson) || (lesson.enrolled && !lesson.cancelled)
+                    }
+                    className="col-start-2 w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground data-[available=true]:text-foreground sm:col-start-auto"
+                  >
+                    {status(lesson)}
+                  </span>
+                  <ChevronRight
+                    className="col-start-3 row-start-1 row-span-2 size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 sm:col-start-auto sm:row-span-1"
+                    aria-hidden
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex items-center gap-3 rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
+            <CalendarDays className="size-5 shrink-0" aria-hidden />
+            {onlyMine
+              ? "Nessuna prenotazione per questo giorno."
+              : "Nessuna lezione per questo giorno."}
+          </div>
+        )}
+      </div>
       {selected && (
         <Sheet
           open
@@ -286,13 +329,20 @@ export function StudentCalendar({
         >
           <SheetContent
             side="center"
-            className="w-[calc(100%-32px)] max-w-md gap-0 overflow-hidden rounded-2xl p-0"
+            className="student-area dark gap-0 overflow-y-auto rounded-3xl p-0 data-[side=center]:max-w-md"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              (lessonTrigger.current?.isConnected
+                ? lessonTrigger.current
+                : calendar.current
+              )?.focus();
+            }}
           >
             <SheetHeader className="gap-1 border-b px-6 pt-6 pb-5">
               <p className="text-xs font-medium text-muted-foreground">
                 {status(selected)}
               </p>
-              <SheetTitle className="pr-6 text-lg leading-6 font-medium">
+              <SheetTitle className="pr-6 text-xl leading-6 font-semibold tracking-tight">
                 {selected.title}
               </SheetTitle>
               <SheetDescription className="capitalize">
@@ -309,7 +359,7 @@ export function StudentCalendar({
                   {
                     icon: Clock3,
                     label: "Orario",
-                    value: `${timeLabel(selected.startsAt)} · ${selected.durationMinutes} min`,
+                    value: `${lessonTimeLabel(selected)} · ${selected.durationMinutes} min`,
                   },
                   { icon: UserRound, label: "Coach", value: selected.coach },
                   { icon: MapPin, label: "Dove", value: selected.location },
@@ -337,7 +387,8 @@ export function StudentCalendar({
               )}
               <FormError message={error} />
               <Button
-                className="min-h-11 w-full"
+                variant={selected.enrolled ? "outline" : "default"}
+                className="min-h-11 w-full rounded-full"
                 disabled={Boolean(pending) || refreshing || blocked(selected)}
                 onClick={() =>
                   selected.enrolled ? setCancelling(true) : void act(false)
@@ -360,6 +411,7 @@ export function StudentCalendar({
         </Sheet>
       )}
       <ConfirmDialog
+        className="student-area dark"
         open={cancelling}
         title="Annullare la prenotazione?"
         description="Il tuo posto sarà di nuovo disponibile. Potrai prenotare ancora se resteranno posti liberi."

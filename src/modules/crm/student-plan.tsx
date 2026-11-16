@@ -15,12 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  pageTabActive,
-  pageTabIdle,
-  pageTabItem,
-  pageTabList,
-} from "@/components/ui/page-tabs";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -63,11 +57,11 @@ function RestTimer({ seconds }: { seconds: number }) {
     return () => window.clearInterval(interval);
   }, [deadline]);
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-4">
+    <div className="flex items-center justify-between gap-4 rounded-xl border bg-background p-4">
       <div>
         <p className="text-xs text-muted-foreground">Recupero</p>
         <p
-          className="mt-1 text-2xl font-medium tabular-nums"
+          className="mt-1 text-2xl font-semibold text-[var(--workspace-accent)] tabular-nums"
           role="timer"
           aria-label="Tempo di recupero"
         >
@@ -95,8 +89,8 @@ function RestTimer({ seconds }: { seconds: number }) {
 function SessionCopy({ title, text }: { title: string; text?: string }) {
   if (!text) return null;
   return (
-    <details className="group rounded-xl border bg-background px-4 py-3.5" open>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium">
+    <details className="group rounded-2xl border bg-card px-4 py-3.5" open>
+      <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary">
         {title}
         <ChevronRight className="size-4 text-muted-foreground transition-transform group-open:rotate-90" />
       </summary>
@@ -147,7 +141,7 @@ function WorkoutGuide({
       }}
     >
       <SheetContent
-        className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-xl"
+        className="student-area dark gap-0 bg-background data-[side=right]:w-full data-[side=right]:sm:max-w-xl"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           returnFocus();
@@ -162,10 +156,12 @@ function WorkoutGuide({
         }}
       >
         <SheetHeader className="border-b p-4 pr-14 sm:p-6 sm:pr-16">
-          <SheetTitle>{session.name}</SheetTitle>
+          <SheetTitle className="text-xl font-semibold tracking-tight">
+            {session.name}
+          </SheetTitle>
           <SheetDescription>
             {done
-              ? "Un passo in più verso il tuo obiettivo."
+              ? "Riepilogo della sessione"
               : `Passaggio ${index + 1} di ${session.exercises.length}`}
           </SheetDescription>
         </SheetHeader>
@@ -182,9 +178,9 @@ function WorkoutGuide({
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:p-6">
           {!done && exercise ? (
             <>
-              <div className="mb-6 h-1 overflow-hidden rounded-full bg-foreground/[.06]">
+              <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-foreground transition-all"
+                  className="h-full rounded-full bg-primary transition-[width]"
                   style={{
                     width: `${(index / session.exercises.length) * 100}%`,
                   }}
@@ -198,8 +194,8 @@ function WorkoutGuide({
                   />
                 </div>
               )}
-              <div className="rounded-2xl border p-5 sm:p-6">
-                <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-foreground/[.045]">
+              <div className="rounded-3xl border bg-card p-5 sm:p-6">
+                <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-[var(--workspace-accent)]">
                   <MovementIcon
                     run={session.kind === "run"}
                     className="size-6"
@@ -210,10 +206,10 @@ function WorkoutGuide({
                     ? "Lavoro di corsa"
                     : `Esercizio ${index + 1}`}
                 </p>
-                <h3 className="mt-1 text-2xl font-medium tracking-[-0.02em]">
+                <h3 className="mt-1 text-2xl font-bold tracking-tight">
                   {exercise.name}
                 </h3>
-                <p className="mt-3 text-lg font-medium tabular-nums">
+                <p className="mt-3 text-2xl font-semibold text-[var(--workspace-accent)] tabular-nums">
                   {exercise.sets > 1 ? `${exercise.sets} × ` : ""}
                   {exercise.reps}
                 </p>
@@ -243,7 +239,7 @@ function WorkoutGuide({
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1"
+                  className="flex-1 rounded-full"
                   onClick={() => {
                     if (index + 1 === session.exercises.length) setDone(true);
                     else setIndex((i) => i + 1);
@@ -258,12 +254,10 @@ function WorkoutGuide({
             </>
           ) : (
             <>
-              <div className="mb-5 flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+              <div className="mb-5 flex size-12 items-center justify-center rounded-full bg-muted text-[var(--workspace-accent)]">
                 <Check className="size-6" />
               </div>
-              <h3 className="text-2xl font-medium tracking-[-0.02em]">
-                Ben fatto
-              </h3>
+              <h3 className="text-2xl font-bold tracking-tight">Ben fatto</h3>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Prenditi il tempo per defaticare e annotare come è andata. Poi
                 salva la sessione.
@@ -283,7 +277,7 @@ function WorkoutGuide({
                   className={`${control} text-base sm:text-sm`}
                   rows={6}
                   maxLength={5000}
-                  placeholder="Come ti sei sentita?"
+                  placeholder="Come è andata?"
                   value={notes}
                   disabled={pending}
                   onChange={(e) => setNotes(e.target.value)}
@@ -294,7 +288,7 @@ function WorkoutGuide({
               </div>
               <Button
                 size="lg"
-                className="mt-3 w-full"
+                className="mt-3 w-full rounded-full"
                 disabled={pending}
                 onClick={async () => {
                   if (submitting.current) return;
@@ -356,19 +350,28 @@ export function StudentPlan({
   const weeks = Array.from(new Set(plan.sessions.map((s) => s.week ?? 1))).sort(
     (a, b) => a - b,
   );
-  const [selectedWeek, setWeek] = useState(weeks[0] ?? 1),
-    [selectedId, setSelected] = useState(""),
-    [guide, setGuide] = useState(false);
-  const sessions = plan.sessions.filter((s) => (s.week ?? 1) === selectedWeek);
-  const session = sessions.find((s) => s.id === selectedId) ?? sessions[0];
   const ownEntries = entries.filter(
     (e) =>
       e.assignmentId === assignment.id &&
       e.assignmentCreatedAt === assignment.createdAt,
   );
-  const completed = plan.sessions.filter((s) =>
-    ownEntries.some((e) => e.sessionId === s.id && e.completed),
-  ).length;
+  const completedIds = new Set(
+    ownEntries.filter((e) => e.completed).map((e) => e.sessionId),
+  );
+  const completed = plan.sessions.filter((s) => completedIds.has(s.id)).length;
+  const nextWeek = weeks.find((week) =>
+    plan.sessions.some(
+      (s) => (s.week ?? 1) === week && !completedIds.has(s.id),
+    ),
+  );
+  const next = plan.sessions.find(
+    (s) => (s.week ?? 1) === nextWeek && !completedIds.has(s.id),
+  );
+  const [selectedWeek, setWeek] = useState(nextWeek ?? weeks[0] ?? 1),
+    [selectedId, setSelected] = useState(next?.id ?? ""),
+    [guide, setGuide] = useState(false);
+  const sessions = plan.sessions.filter((s) => (s.week ?? 1) === selectedWeek);
+  const session = sessions.find((s) => s.id === selectedId) ?? sessions[0];
   const entry = ownEntries.find((e) => e.sessionId === session?.id);
   const percent = plan.sessions.length
     ? Math.round((completed / plan.sessions.length) * 100)
@@ -379,44 +382,40 @@ export function StudentPlan({
       day: "numeric",
       month: "short",
     }).format(new Date(date + "T12:00:00Z"));
+
   return (
-    <section aria-label="Il tuo piano" className="min-w-0 space-y-6 pb-6">
-      <div className="rounded-2xl border p-5 sm:p-6">
-        <p className="text-[13px] text-muted-foreground first-letter:uppercase">
-          {formatMonth(assignment.month)}
-          {plan.program &&
-            ` · ${period(plan.program.startsOn)} – ${period(plan.program.endsOn)}`}
-        </p>
-        <h2 className="mt-1 text-2xl leading-8 font-medium tracking-[-0.02em] sm:text-[28px] sm:leading-9">
-          {plan.title}
-        </h2>
-        {plan.program?.goal && (
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {plan.program.goal}
+    <section
+      aria-label="Il tuo piano"
+      className="min-w-0 space-y-6 sm:space-y-8"
+    >
+      <div className="grid gap-4 overflow-hidden rounded-3xl border bg-card px-5 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(13rem,26%)] sm:items-end sm:gap-10 sm:p-8 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-500">
+        <div>
+          <p className="mb-2 text-sm font-medium text-muted-foreground first-letter:uppercase">
+            {plan.program
+              ? `${period(plan.program.startsOn)} – ${period(plan.program.endsOn)}`
+              : formatMonth(assignment.month)}
           </p>
-        )}
-        <div className="mt-4 flex flex-wrap gap-1.5 text-xs font-medium">
-          <span className="rounded-full bg-foreground/[.045] px-2.5 py-1">
-            {weeks.length > 1
-              ? `${weeks.length} settimane`
-              : `${sessions.length} sessioni`}
-          </span>
-          {weeks.length > 1 && (
-            <span className="rounded-full bg-foreground/[.045] px-2.5 py-1">
-              {sessions.length} allenamenti / settimana
-            </span>
+          <h2 className="text-pretty text-[1.75rem] leading-[1.1] font-bold tracking-[-0.045em] break-words sm:text-[2.65rem]">
+            {plan.title}
+          </h2>
+          {plan.program?.goal && (
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {plan.program.goal}
+            </p>
           )}
         </div>
         {onSave && (
-          <div className="mt-5 border-t pt-4">
-            <div className="mb-2 flex items-center justify-between text-[13px] text-muted-foreground">
-              <span>
-                {completed} di {plan.sessions.length} allenamenti completati
+          <div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span className="text-xs text-muted-foreground">
+                {completed} di {plan.sessions.length} completati
               </span>
-              <span className="tabular-nums">{percent}%</span>
+              <span className="text-[1.65rem] leading-none font-bold tracking-tight tabular-nums sm:text-4xl">
+                {percent}%
+              </span>
             </div>
             <div
-              className="h-1.5 overflow-hidden rounded-full bg-foreground/[.06]"
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15"
               role="progressbar"
               aria-label="Avanzamento del programma"
               aria-valuenow={percent}
@@ -424,181 +423,188 @@ export function StudentPlan({
               aria-valuemax={100}
             >
               <div
-                className="h-full rounded-full bg-foreground transition-all"
+                className="h-full rounded-full bg-primary transition-[width] duration-300"
                 style={{ width: `${percent}%` }}
               />
             </div>
           </div>
         )}
       </div>
-      {plan.description && <CoachNote text={plan.description} coach={coach} />}
-      {weeks.length > 1 && (
-        <div className={pageTabList} aria-label="Settimane del programma">
-          {weeks.map((week) => (
-            <button
-              key={week}
-              type="button"
-              aria-pressed={selectedWeek === week}
-              aria-label={`Settimana ${week}`}
-              className={cn(
-                pageTabItem,
-                selectedWeek === week ? pageTabActive : pageTabIdle,
-              )}
-              onClick={() => {
-                setWeek(week);
-                setSelected("");
-              }}
-            >
-              <span className="sm:hidden">Sett.</span>
-              <span className="hidden sm:inline">Settimana</span> {week}
-            </button>
-          ))}
-        </div>
-      )}
-      {session && (
-        <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
-          <div className="min-w-0">
-            <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-              Allenamenti
-            </h3>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-col lg:gap-1">
-              {sessions.map((s, i) => {
-                const selected = s.id === session.id,
-                  finished = ownEntries.some(
-                    (e) => e.sessionId === s.id && e.completed,
-                  );
-                return (
+      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,29%)] lg:gap-8">
+        <div className="min-w-0 space-y-4">
+          <div>
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
+              <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
+                Allenamenti
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {sessions.length}{" "}
+                {sessions.length === 1 ? "sessione" : "sessioni"}
+              </span>
+            </div>
+            {weeks.length > 1 && (
+              <div
+                role="group"
+                aria-label="Settimane del programma"
+                className="student-session-picker flex gap-2 overflow-x-auto p-1"
+              >
+                {weeks.map((week) => (
                   <button
-                    key={s.id}
+                    key={week}
                     type="button"
-                    aria-pressed={selected}
-                    className={cn(
-                      "flex min-w-0 items-center gap-3 rounded-xl border p-3 text-left transition-colors lg:rounded-[10px] lg:border-transparent lg:px-2 lg:py-2",
-                      selected
-                        ? "border-input bg-foreground/[.045] lg:border-transparent"
-                        : "hover:bg-foreground/[.03]",
-                    )}
-                    onClick={() => setSelected(s.id)}
+                    aria-pressed={selectedWeek === week}
+                    className="min-h-11 shrink-0 rounded-full border border-input px-4 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted aria-pressed:border-[var(--border-hover)] aria-pressed:bg-muted aria-pressed:text-foreground"
+                    onClick={() => {
+                      setWeek(week);
+                      setSelected("");
+                    }}
                   >
-                    <span
-                      className={cn(
-                        "flex size-9 shrink-0 items-center justify-center rounded-lg",
-                        finished
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : selected
-                            ? "bg-background"
-                            : "bg-foreground/[.045]",
-                      )}
-                    >
-                      {finished ? (
-                        <Check className="size-4" />
-                      ) : (
-                        <MovementIcon run={s.kind === "run"} />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {s.day || `Sessione ${i + 1}`}
-                      </span>
-                      <span className="block text-sm leading-5 font-medium">
-                        {s.name}
-                      </span>
-                    </span>
+                    Settimana {week}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            )}
+            <div
+              role="group"
+              aria-label="Sessioni della settimana"
+              className="student-session-picker mt-2 flex gap-2 overflow-x-auto p-1"
+            >
+              {sessions.map((s, index) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={s.id === session?.id}
+                  onClick={() => setSelected(s.id)}
+                  className="flex min-h-[60px] w-[calc((100%-1rem)/3)] min-w-25 max-w-48 shrink-0 items-center gap-2 rounded-2xl border bg-card px-2 py-2 sm:gap-2.5 sm:px-3 text-left transition-colors hover:border-input aria-pressed:border-[var(--border-hover)] aria-pressed:bg-muted"
+                >
+                  <span
+                    className={cn(
+                      "grid size-6 shrink-0 place-items-center rounded-full sm:size-8",
+                      s.id === session?.id
+                        ? "bg-background text-[var(--workspace-accent)]"
+                        : "bg-muted text-[var(--workspace-accent)]",
+                    )}
+                  >
+                    {completedIds.has(s.id) ? (
+                      <Check className="size-4" aria-label="Completato" />
+                    ) : (
+                      <MovementIcon run={s.kind === "run"} />
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs leading-4 text-muted-foreground">
+                      {s.day || `Sessione ${index + 1}`}
+                    </span>
+                    <span className="block text-sm leading-4 font-semibold break-words">
+                      {s.name}
+                    </span>
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
-          <div className="min-w-0 space-y-4">
-            <div>
-              <p className="text-[13px] text-muted-foreground">
-                {session.day || "Allenamento"}
-                {weeks.length > 1 ? ` · Settimana ${selectedWeek}` : ""}
-              </p>
-              <h3 className="text-xl leading-7 font-medium tracking-[-0.02em]">
-                {session.name}
-              </h3>
-              <p className="text-[13px] text-muted-foreground">
-                {session.exercises.length}{" "}
-                {session.kind === "run" ? "blocchi di lavoro" : "esercizi"}
-                {entry?.completed ? " · Completato" : ""}
-              </p>
-            </div>
-            {session.guidance && (
-              <p className="rounded-xl bg-muted px-4 py-3 text-sm leading-6">
-                {session.guidance}
-              </p>
-            )}
-            <SessionCopy title="Riscaldamento" text={session.preparation} />
-            <div className="overflow-hidden rounded-xl border">
-              <div className="border-b px-4 py-3 text-sm font-medium">
-                Il lavoro di oggi
-              </div>
-              <ol className="divide-y">
-                {session.exercises.map((ex, i) => (
-                  <li key={ex.id} className="px-4 py-4">
-                    <div className="flex gap-3">
-                      <span className="pt-0.5 text-xs tabular-nums text-muted-foreground">
-                        {String(i + 1).padStart(2, "0")}
+          {session && (
+            <article
+              key={session.id}
+              className="min-w-0 overflow-hidden rounded-3xl border bg-card motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
+            >
+              <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b p-4 sm:p-6">
+                <div className="min-w-0 flex-1 basis-48">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {session.kind === "run" ? "Corsa" : "Allenamento"}
+                    {session.day && ` · ${session.day}`}
+                    {entry?.completed && (
+                      <span className="text-[var(--workspace-accent)]">
+                        {" "}
+                        · Completato
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium">{ex.name}</h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <p className="text-base font-medium tabular-nums">
-                            {ex.sets > 1 ? `${ex.sets} × ` : ""}
-                            {ex.reps}
+                    )}
+                  </p>
+                  <h3 className="text-pretty text-2xl leading-tight font-bold tracking-[-0.04em] break-words sm:text-[1.8rem]">
+                    {session.name}
+                  </h3>
+                </div>
+                {onSave && session.exercises.length > 0 && (
+                  <Button
+                    size="lg"
+                    className="w-full justify-start rounded-full font-semibold sm:w-auto"
+                    ref={startButton}
+                    onClick={() => setGuide(true)}
+                  >
+                    {entry?.completed ? <RotateCcw /> : <Play />}
+                    {entry?.completed
+                      ? "Ripeti allenamento"
+                      : "Inizia allenamento"}
+                    <ArrowRight className="ml-auto size-4 sm:ml-2" />
+                  </Button>
+                )}
+              </header>
+              <div className="space-y-4 p-4 sm:p-6">
+                <SessionCopy
+                  title="Indicazioni del coach"
+                  text={session.guidance}
+                />
+                <SessionCopy title="Riscaldamento" text={session.preparation} />
+                <div>
+                  <h4 className="mb-2 text-base font-semibold">
+                    {session.kind === "run" ? "Blocchi di corsa" : "Esercizi"}
+                  </h4>
+                  <ol className="divide-y overflow-hidden rounded-2xl border bg-background">
+                    {session.exercises.map((exercise, index) => (
+                      <li
+                        key={exercise.id}
+                        className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 p-3.5 sm:px-4 sm:py-4"
+                      >
+                        <span
+                          aria-hidden
+                          className="mt-0.5 grid size-7 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground tabular-nums"
+                        >
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <h5 className="text-[15px] leading-snug font-semibold break-words">
+                            {exercise.name}
+                          </h5>
+                          <p className="mt-0.5 text-sm font-semibold break-words text-foreground tabular-nums">
+                            {exercise.sets > 1 ? `${exercise.sets} × ` : ""}
+                            {exercise.reps}
                           </p>
-                          {ex.restSeconds > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Timer className="size-3" />
-                              Recupero {secondsLabel(ex.restSeconds)}
+                          {exercise.notes && (
+                            <p className="mt-1 whitespace-pre-line text-sm leading-relaxed break-words text-muted-foreground">
+                              {exercise.notes}
+                            </p>
+                          )}
+                          {exercise.restSeconds > 0 && (
+                            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border bg-card px-2 py-0.5 text-xs text-muted-foreground">
+                              <Timer className="size-3" aria-hidden />
+                              Recupero {secondsLabel(exercise.restSeconds)}
                             </span>
                           )}
                         </div>
-                        {ex.notes && (
-                          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-                            {ex.notes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <RecoveryNote title="Defaticamento" text={session.cooldown} />
-            {entry?.notes && (
-              <div className="rounded-xl border px-4 py-3.5">
-                <h4 className="text-sm font-medium">Le tue note</h4>
-                <p className="mt-1 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-                  {entry.notes}
-                </p>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <RecoveryNote title="Defaticamento" text={session.cooldown} />
+                {entry?.notes && (
+                  <SessionCopy title="Le tue note" text={entry.notes} />
+                )}
               </div>
-            )}
-            {onSave && (
-              <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 -mx-1 bg-background/90 px-1 pt-3 pb-3 backdrop-blur sm:bottom-0 sm:pb-[max(.75rem,env(safe-area-inset-bottom))]">
-                <Button
-                  size="lg"
-                  className="w-full"
-                  ref={startButton}
-                  onClick={() => setGuide(true)}
-                >
-                  {entry?.completed ? (
-                    <RotateCcw className="size-4" />
-                  ) : (
-                    <Play className="size-4" />
-                  )}
-                  {entry?.completed
-                    ? "Ripeti allenamento"
-                    : "Inizia allenamento"}
-                  <ArrowRight className="ml-auto size-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+            </article>
+          )}
         </div>
-      )}
-      {plan.program && <ProgramReference program={plan.program} />}
+        {(plan.description || plan.program) && (
+          <aside
+            className="min-w-0 space-y-4"
+            aria-label="Informazioni sul programma"
+          >
+            {plan.description && (
+              <CoachNote text={plan.description} coach={coach} />
+            )}
+            {plan.program && <ProgramReference program={plan.program} />}
+          </aside>
+        )}
+      </div>
       {guide && session && onSave && (
         <WorkoutGuide
           key={session.id}

@@ -1,4 +1,5 @@
 "use client";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
@@ -12,8 +13,16 @@ export function StudentsWorkspace() {
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeading
         title="Studenti"
+        description="Anagrafiche, tier e accesso alla piattaforma."
         action={
-          <Button onClick={() => setAdding(true)}>Aggiungi studente</Button>
+          <Button
+            size="lg"
+            className="rounded-full"
+            onClick={() => setAdding(true)}
+          >
+            <Plus />
+            Aggiungi studente
+          </Button>
         }
       />
       <LocalNotice />

@@ -1,259 +1,311 @@
 "use client";
 import Link from "next/link";
-import { UserPlus, Dumbbell, CalendarDays } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  ChevronRight,
+  ClipboardList,
+  Dumbbell,
+  MapPin,
+  UserPlus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { studentAccess } from "./tier-access";
 import { useCrm, useViewer } from "./store";
 import { validPropertyValue } from "./model";
-import { todayRome } from "./fitness-logic";
-import { lessonDate } from "./lessons-workspace";
+import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
 import { formatMonth } from "@/lib/format";
+
+const fullDate = new Intl.DateTimeFormat("it-IT", {
+  dateStyle: "full",
+  timeZone: "Europe/Rome",
+});
+const shortDate = new Intl.DateTimeFormat("it-IT", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  timeZone: "Europe/Rome",
+});
+const activityDate = new Intl.DateTimeFormat("it-IT", {
+  day: "numeric",
+  month: "short",
+  timeZone: "Europe/Rome",
+});
+const rowClass =
+  "flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-offset-[-3px] sm:px-5";
+
 export default function OverviewPage() {
-  const state = useCrm(),
-    viewer = useViewer();
+  const state = useCrm();
+  const viewer = useViewer();
+  const now = new Date();
+  const today = todayRome();
+  const month = today.slice(0, 7);
   const students = state.students.filter((s) => !s.archived);
   const required = state.properties.filter((p) => !p.archived && p.required);
   const incomplete = students.filter((s) =>
     required.some((p) => !validPropertyValue(p, s.properties[p.id])),
   );
-  const active = students.filter(studentAccessEnabled);
-  const month = todayRome().slice(0, 7);
+  const assigned = new Set(
+    state.assignments?.filter((a) => a.month === month).map((a) => a.studentId),
+  );
   const unassigned = students.filter(
-    (s) =>
-      studentAccess(state, s).plans &&
-      !state.assignments?.some(
-        (a) => a.studentId === s.id && a.month === month,
-      ),
+    (s) => studentAccess(state, s).plans && !assigned.has(s.id),
   );
   const lessons = (state.lessons ?? [])
-    .filter((l) => !l.cancelled && l.startsAt > new Date().toISOString())
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-    .slice(0, 4);
-  const recent = [...students]
-    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))
+    .filter(
+      (lesson) =>
+        !lesson.cancelled && Date.parse(lesson.startsAt) > now.getTime(),
+    )
+    .toSorted((a, b) => a.startsAt.localeCompare(b.startsAt))
     .slice(0, 5);
-  const events = state.students
+  const recent = students
+    .toSorted((a, b) => b.joinedAt.localeCompare(a.joinedAt))
+    .slice(0, 5);
+  const events = students
     .flatMap((s) => (s.history ?? []).map((h) => ({ ...h, student: s })))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5);
-  const owner = state.admins.find((a) =>
-    viewer ? a.id === viewer.recordId : a.role === "owner",
-  );
-  const firstName = owner?.name.split(/\s+/)[0];
+  const firstName = state.admins
+    .find((a) => (viewer ? a.id === viewer.recordId : a.role === "owner"))
+    ?.name.trim()
+    .split(/\s+/)[0];
+
   return (
     <>
       <PageHeading
         title={firstName ? `Ciao, ${firstName}` : "Home"}
         description={
-          <span className="first-letter:uppercase">
-            {new Intl.DateTimeFormat("it-IT", {
-              dateStyle: "full",
-              timeZone: "Europe/Rome",
-            }).format(new Date())}
-          </span>
+          <span className="first-letter:uppercase">{fullDate.format(now)}</span>
+        }
+        action={
+          <Button asChild size="lg" className="rounded-full">
+            <Link href="/admin/studenti/nuovo">
+              <UserPlus /> Aggiungi studente
+            </Link>
+          </Button>
         }
       />
       <LocalNotice />
-      <section
-        aria-label="Azioni rapide"
-        className="mb-8 grid gap-2 sm:grid-cols-3"
-      >
-        {[
-          {
-            href: "/admin/studenti/nuovo",
-            icon: UserPlus,
-            title: "Aggiungi studente",
-            text: "Anagrafica, tier e proprietà",
-          },
-          {
-            href: "/admin/piani",
-            icon: Dumbbell,
-            title: "Prepara un piano",
-            text: "Sessioni e assegnazioni mensili",
-          },
-          {
-            href: "/admin/lezioni",
-            icon: CalendarDays,
-            title: "Organizza le lezioni",
-            text: "Calendario e iscrizioni",
-          },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} className={tile}>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
-              <item.icon className="size-4" strokeWidth={1.75} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-medium">{item.title}</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {item.text}
-              </span>
-            </span>
-          </Link>
-        ))}
-      </section>
-      <section
-        aria-label="Riepilogo"
-        className="mb-10 grid grid-cols-2 overflow-hidden rounded-xl border lg:grid-cols-4"
-      >
-        {[
-          {
-            label: "Studenti",
-            value: students.length,
-            href: "/admin/studenti",
-          },
-          {
-            label: "Con accesso",
-            value: active.length,
-            href: "/admin/studenti",
-          },
-          {
-            label: "Schede da completare",
-            value: incomplete.length,
-            href: "/admin/studenti",
-          },
-          {
-            label: `Senza piano · ${formatMonth(month).split(" ")[0]}`,
-            value: unassigned.length,
-            href: "/admin/piani",
-          },
-        ].map((item, i) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className={`px-5 py-4 transition-colors hover:bg-foreground/[.02] ${i % 2 ? "border-l" : ""} ${i > 1 ? "border-t lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}
+      <div className="grid items-start gap-4 lg:gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-4 lg:gap-5">
+          <section
+            className="min-w-0 overflow-hidden rounded-2xl border bg-card"
+            aria-labelledby="agenda-heading"
           >
-            <p className="text-[13px] text-muted-foreground first-letter:uppercase">
-              {item.label}
-            </p>
-            <p className="mt-1 text-2xl font-medium tracking-[-0.02em] tabular-nums">
-              {item.value}
-            </p>
-          </Link>
-        ))}
-      </section>
-      <div className="grid items-start gap-x-12 gap-y-10 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
-        <div className="min-w-0 space-y-10">
-          <section>
-            <SectionHeader
+            <PanelHeading
+              id="agenda-heading"
+              title="In agenda"
+              href="/admin/lezioni"
+              link="Calendario"
+              icon={<CalendarDays className="size-4" />}
+            />
+            {lessons.length ? (
+              <ul className="divide-y">
+                {lessons.map((lesson, index) => {
+                  const time = romeLocal(lesson.startsAt);
+                  const occupied =
+                    state.bookings?.filter(
+                      (b) => b.lessonId === lesson.id && !b.cancelled,
+                    ).length ?? 0;
+                  return (
+                    <li key={lesson.id}>
+                      <Link
+                        href={`/admin/lezioni/${encodeURIComponent(lesson.id)}`}
+                        className={`${rowClass} min-h-18 ${index === 0 ? "bg-subtle hover:bg-muted" : ""}`}
+                      >
+                        <time
+                          dateTime={lesson.startsAt}
+                          className="w-[3.65rem] shrink-0 border-r pr-2 tabular-nums sm:w-[5rem]"
+                        >
+                          <span className="block text-lg leading-tight font-semibold tracking-tight">
+                            {time.slice(11)}
+                          </span>
+                          <span className="block text-xs text-muted-foreground">
+                            {time.startsWith(today)
+                              ? "Oggi"
+                              : shortDate.format(new Date(lesson.startsAt))}
+                          </span>
+                        </time>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold">
+                            {lesson.title}
+                          </span>
+                          <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                            {lesson.location && (
+                              <MapPin className="size-3 shrink-0" aria-hidden />
+                            )}
+                            <span className="truncate">
+                              {[lesson.location, lesson.coach]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          </span>
+                        </span>
+                        <span className="shrink-0 rounded-full border bg-card px-2 py-1 text-xs whitespace-nowrap tabular-nums">
+                          {occupied}/{lesson.capacity}
+                          <span className="sr-only sm:not-sr-only">
+                            {" iscritti"}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          className="hidden size-4 shrink-0 text-muted-foreground sm:block"
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="px-5 py-8 text-sm text-muted-foreground">
+                Nessuna lezione in programma.
+              </p>
+            )}
+          </section>
+
+          <section
+            className="min-w-0 overflow-hidden rounded-2xl border bg-card"
+            aria-labelledby="recent-heading"
+          >
+            <PanelHeading
+              id="recent-heading"
               title="Studenti recenti"
               href="/admin/studenti"
-              link="Vedi tutti"
+              link="Tutti gli studenti"
             />
-            <div className="-mx-2">
-              {recent.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/admin/studenti/${encodeURIComponent(s.id)}`}
-                  className={row}
-                >
-                  <StudentIdentity student={s} />
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {studentAccessLabel(s)}
-                  </span>
-                </Link>
-              ))}
+            <div className="flex flex-wrap gap-x-5 gap-y-1 border-b bg-subtle px-4 py-2.5 text-xs text-muted-foreground sm:px-5">
+              <span>
+                <strong className="font-semibold text-foreground">
+                  {students.length}
+                </strong>{" "}
+                in elenco
+              </span>
+              <span>
+                <strong className="font-semibold text-foreground">
+                  {students.filter(studentAccessEnabled).length}
+                </strong>{" "}
+                con accesso abilitato
+              </span>
             </div>
-            {!recent.length && <Empty>Nessuno studente presente.</Empty>}
-          </section>
-          <section>
-            <SectionHeader title="Attività recenti" />
-            <div className="-mx-2">
-              {events.map((e) => (
-                <Link
-                  key={e.id}
-                  href={`/admin/studenti/${encodeURIComponent(e.student.id)}`}
-                  className={row}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm">{e.text}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {e.student.firstName} {e.student.lastName}
-                    </span>
-                  </span>
-                  <time
-                    className="shrink-0 text-xs text-muted-foreground tabular-nums"
-                    dateTime={e.createdAt}
-                  >
-                    {new Intl.DateTimeFormat("it-IT", {
-                      day: "numeric",
-                      month: "short",
-                      timeZone: "Europe/Rome",
-                    }).format(new Date(e.createdAt))}
-                  </time>
-                </Link>
-              ))}
-            </div>
-            {!events.length && (
-              <Empty>Le modifiche alle schede compariranno qui.</Empty>
+            {recent.length ? (
+              <ul className="divide-y">
+                {recent.map((student) => (
+                  <li key={student.id}>
+                    <Link
+                      href={`/admin/studenti/${encodeURIComponent(student.id)}`}
+                      className={`${rowClass} justify-between`}
+                    >
+                      <StudentIdentity student={student} />
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {studentAccessLabel(student)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                Nessuno studente in elenco.
+              </p>
             )}
           </section>
         </div>
-        <div className="min-w-0 space-y-10">
-          <section>
-            <SectionHeader
-              title="Prossime lezioni"
-              href="/admin/lezioni"
-              link="Calendario"
+        <div className="grid min-w-0 gap-4 lg:gap-5">
+          <section
+            className="min-w-0 overflow-hidden rounded-2xl border bg-card"
+            aria-labelledby="followup-heading"
+          >
+            <PanelHeading
+              id="followup-heading"
+              title="Da seguire"
+              icon={<ClipboardList className="size-4" />}
             />
-            <div className="-mx-2">
-              {lessons.map((l) => (
-                <Link
-                  key={l.id}
-                  href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
-                  className={row}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {l.title}
+            <ul className="divide-y">
+              {[
+                {
+                  title: "Schede da completare",
+                  items: incomplete,
+                  hint: incomplete.length
+                    ? "Proprietà obbligatorie mancanti"
+                    : "Tutte le schede sono complete",
+                  icon: ClipboardList,
+                  href: "/admin/studenti",
+                },
+                {
+                  title: "Studenti senza piano",
+                  items: unassigned,
+                  hint: formatMonth(month),
+                  icon: Dumbbell,
+                  href: "/admin/piani",
+                },
+              ].map(({ title, items, hint, icon: Icon, href }) => (
+                <li key={title}>
+                  <Link className={rowClass} href={href}>
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+                      <Icon className="size-4" aria-hidden />
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {lessonDate(l.startsAt)} · {l.coach}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">
+                        {title}
+                      </span>
+                      <span className="block text-xs text-muted-foreground first-letter:uppercase">
+                        {hint}
+                      </span>
                     </span>
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {state.bookings?.filter(
-                      (b) => b.lessonId === l.id && !b.cancelled,
-                    ).length ?? 0}
-                    /{l.capacity}
-                  </span>
-                </Link>
+                    <span
+                      className={`text-lg font-semibold tabular-nums ${items.length ? "text-[var(--workspace-accent)]" : "text-muted-foreground"}`}
+                    >
+                      {items.length}
+                    </span>
+                    <ChevronRight
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
+                  </Link>
+                </li>
               ))}
-            </div>
-            {!lessons.length && (
-              <Empty>
-                Nessuna lezione in programma.{" "}
-                <Link
-                  href="/admin/lezioni"
-                  className="text-foreground underline underline-offset-4"
-                >
-                  Programma una lezione
-                </Link>
-              </Empty>
-            )}
+            </ul>
           </section>
-          <section>
-            <SectionHeader title="Da completare" />
-            <div className="-mx-2">
-              {incomplete.slice(0, 5).map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/admin/studenti/${encodeURIComponent(s.id)}`}
-                  className={row}
-                >
-                  <span className="truncate text-sm">
-                    {s.firstName} {s.lastName}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    Proprietà mancanti
-                  </span>
-                </Link>
-              ))}
-            </div>
-            {!incomplete.length && (
-              <Empty>Tutte le schede sono complete.</Empty>
+
+          <section
+            className="min-w-0 overflow-hidden rounded-2xl border bg-card"
+            aria-labelledby="activity-heading"
+          >
+            <PanelHeading id="activity-heading" title="Attività recenti" />
+            {events.length ? (
+              <ul className="divide-y">
+                {events.map((event) => (
+                  <li key={`${event.student.id}:${event.id}`}>
+                    <Link
+                      href={`/admin/studenti/${encodeURIComponent(event.student.id)}`}
+                      className={`${rowClass} justify-between`}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">
+                          {event.text}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {event.student.firstName} {event.student.lastName}
+                        </span>
+                      </span>
+                      <time
+                        dateTime={event.createdAt}
+                        className="shrink-0 text-xs text-muted-foreground"
+                      >
+                        {activityDate.format(new Date(event.createdAt))}
+                      </time>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                Le modifiche alle schede compariranno qui.
+              </p>
             )}
           </section>
         </div>
@@ -261,37 +313,41 @@ export default function OverviewPage() {
     </>
   );
 }
-const tile =
-  "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors hover:bg-foreground/[.02]";
-const row =
-  "flex min-h-12 items-center justify-between gap-4 rounded-[10px] px-2 py-2 transition-colors hover:bg-foreground/[.03]";
-function SectionHeader({
+function PanelHeading({
+  id,
   title,
+  icon,
   href,
   link,
 }: {
+  id: string;
   title: string;
+  icon?: React.ReactNode;
   href?: string;
   link?: string;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between gap-3">
-      <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+    <div className="flex min-h-14 flex-wrap items-center justify-between gap-x-3 border-b px-4 py-3 sm:px-5">
+      <h2
+        id={id}
+        className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+      >
+        {icon && (
+          <span className="text-muted-foreground" aria-hidden>
+            {icon}
+          </span>
+        )}
+        {title}
+      </h2>
       {href && (
         <Link
           href={href}
-          className="text-[13px] font-medium text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           {link}
+          <ArrowUpRight className="size-3.5" aria-hidden />
         </Link>
       )}
     </div>
-  );
-}
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-      {children}
-    </p>
   );
 }

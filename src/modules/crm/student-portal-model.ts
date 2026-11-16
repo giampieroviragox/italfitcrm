@@ -4,7 +4,11 @@ import {
   type StudentCoach,
 } from "./student-coach.ts";
 import { isWorkoutEntries } from "./workout-entry-schema.ts";
-import { availabilityLessons } from "./availability-lessons.ts";
+import {
+  availabilityIsPublished,
+  availabilityLessons,
+  withAvailabilityCapacity,
+} from "./availability-lessons.ts";
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
 import type { CrmState, TierAccess } from "./model.ts";
 import { isFitnessData } from "./fitness-logic.ts";
@@ -71,7 +75,9 @@ export function studentProjection(
   const projectedState = {
     ...state,
     lessons: [
-      ...(state.lessons ?? []),
+      ...(state.lessons ?? []).map((lesson) =>
+        withAvailabilityCapacity(state, lesson),
+      ),
       ...(services.lessons ? availabilityLessons(state) : []),
     ],
   };
@@ -80,9 +86,7 @@ export function studentProjection(
   );
   return {
     services,
-    ...(assignedStudentCoach(state, student)
-      ? { coach: assignedStudentCoach(state, student) }
-      : {}),
+    coach: assignedStudentCoach(state, student),
     workoutEntries: services.plans ? (student.workoutEntries ?? []) : [],
     student: {
       id: student.id,
@@ -96,7 +100,9 @@ export function studentProjection(
     lessons: (projectedState.lessons ?? [])
       .filter(
         (l) =>
-          (services.lessons && !l.cancelled) ||
+          (services.lessons &&
+            !l.cancelled &&
+            availabilityIsPublished(state, l)) ||
           own.some((b) => b.lessonId === l.id),
       )
       .map((l) => ({

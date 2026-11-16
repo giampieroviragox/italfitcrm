@@ -4,7 +4,6 @@ import { StudentHome, type StudentView } from "./student-home";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Check, KeyRound, LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { PageHeading } from "@/components/page-heading";
 import { getInitials } from "@/lib/format";
 import { StudentShell, studentNavItems } from "./student-shell";
 import { requestJson, RequestError } from "@/lib/request-json";
@@ -131,39 +130,43 @@ export function StudentPortal({
   return (
     <StudentShell
       view={view}
-      items={studentNavItems(data.services, data.lessons.length > 0)}
+      items={studentNavItems(
+        data.services,
+        data.lessons.some((lesson) => lesson.enrolled),
+      )}
       actions={<StudentAccountMenu student={data.student} />}
     >
-      <PageHeading
-        title={titles[view]}
-        description={
-          view === "home" ? (
-            <span className="first-letter:uppercase">
+      <header className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          {view === "home" && (
+            <p className="mb-1.5 text-sm text-muted-foreground first-letter:uppercase">
               {new Intl.DateTimeFormat("it-IT", {
                 dateStyle: "full",
                 timeZone: "Europe/Rome",
               }).format(new Date())}
-            </span>
-          ) : undefined
-        }
-        action={
-          view === "piano" && data.services.plans ? (
-            <div className="w-full sm:w-72">
-              <PlanMonthSelect
-                value={month}
-                months={data.assignments.map((a) => a.month)}
-                onChange={setMonth}
-                aria-label="Mese del piano"
-              />
-            </div>
-          ) : undefined
-        }
-      />
+            </p>
+          )}
+          <h1 className="text-[1.875rem] leading-tight font-bold tracking-[-0.055em] sm:text-[2.75rem]">
+            {titles[view]}
+          </h1>
+        </div>
+        {view === "piano" && data.services.plans && (
+          <div className="w-40 max-w-full sm:w-56">
+            <PlanMonthSelect
+              value={month}
+              months={data.assignments.map((a) => a.month)}
+              onChange={setMonth}
+              aria-label="Mese del piano"
+              student
+            />
+          </div>
+        )}
+      </header>
       {view === "home" && (
         <StudentHome
           services={data.services}
-          hasPlan={Boolean(assignment)}
-          hasBookings={data.lessons.length > 0}
+          planTitle={assignment?.snapshot.title}
+          hasBookings={data.lessons.some((lesson) => lesson.enrolled)}
         />
       )}
       {message && (
@@ -233,7 +236,7 @@ function StudentAccountMenu({
         <button
           type="button"
           aria-label="Menu account"
-          className="flex size-8 items-center justify-center rounded-full bg-foreground text-[11px] font-medium text-background outline-none hover:opacity-85 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:ring-offset-2"
+          className="flex size-11 items-center justify-center rounded-full border border-input bg-card text-xs font-bold text-[var(--workspace-accent)] transition-colors hover:bg-muted"
         >
           {getInitials(student.firstName, student.lastName)}
         </button>
@@ -242,7 +245,7 @@ function StudentAccountMenu({
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-50 w-60 rounded-xl border bg-card p-1 text-sm shadow-[0_4px_24px_rgba(0,0,0,0.08)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="student-area dark z-50 w-60 rounded-xl border bg-card p-1 text-sm shadow-[0_4px_24px_rgba(0,0,0,0.08)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           <div className="m-1 mb-1.5 rounded-[10px] border px-3 py-2.5">
             <p className="truncate font-medium">

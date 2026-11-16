@@ -1,4 +1,11 @@
 import { normalize, type CrmState, type CrmStudent } from "./model.ts";
+export const defaultCoachName = "Giorgio Galbiati";
+
+export function coachName(value: string) {
+  const name = value.trim();
+  return !name || normalize(name) === "giorgio" ? defaultCoachName : name;
+}
+
 export interface StudentCoach {
   name: string;
   avatarUrl?: string;
@@ -24,11 +31,10 @@ export function isStudentCoach(value: unknown): value is StudentCoach {
 export function assignedStudentCoach(
   state: CrmState,
   student: CrmStudent,
-): StudentCoach | undefined {
-  const name = student.coach.trim();
-  if (!name) return undefined;
+): StudentCoach {
+  const name = coachName(student.coach);
   const matches = state.admins.filter(
-    (a) => normalize(a.name) === normalize(name),
+    (a) => normalize(coachName(a.name)) === normalize(name),
   );
   const avatarUrl = matches.length === 1 ? matches[0]?.avatarUrl : undefined;
   return { name, ...(validCoachImage(avatarUrl) ? { avatarUrl } : {}) };

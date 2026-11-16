@@ -1,3 +1,4 @@
+import { coachName } from "./student-coach.ts";
 import { studentAccessLabel } from "./student-access.ts";
 import { studentTierLabel } from "./student-tiers.ts";
 import type { Student } from "../../types/domain.ts";
@@ -59,7 +60,7 @@ export function studentsCsv(
           case "joinedAt":
             return s.joinedAt;
           case "coach":
-            return s.coach;
+            return coachName(s.coach);
           default:
             return "";
         }

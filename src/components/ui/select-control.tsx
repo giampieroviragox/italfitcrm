@@ -58,6 +58,7 @@ type Props = AriaAttributes & {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  contentClassName?: string;
   title?: string;
   autoFocus?: boolean;
 };
@@ -71,6 +72,7 @@ export function SelectControl({
   required,
   disabled,
   className,
+  contentClassName,
   title,
   autoFocus,
   ...aria
@@ -134,7 +136,10 @@ export function SelectControl({
             position="popper"
             sideOffset={6}
             collisionPadding={12}
-            className="z-[65] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border bg-card text-foreground shadow-[0_8px_30px_#00000014] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className={cn(
+              "z-[65] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border bg-card text-foreground shadow-[0_8px_30px_#00000014] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+              contentClassName,
+            )}
           >
             <Select.ScrollUpButton className="flex h-7 items-center justify-center bg-background">
               <ChevronUp className="size-4" />

@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createAvailability } from "../src/modules/crm/availability.ts";
-import { availabilityLessons } from "../src/modules/crm/availability-lessons.ts";
+import {
+  availabilityLessonId,
+  availabilityLessons,
+} from "../src/modules/crm/availability-lessons.ts";
 import { prepareStudentBooking } from "../src/modules/crm/student-booking.ts";
 import { studentProjection } from "../src/modules/crm/student-portal-model.ts";
 import { prepareTransition } from "../src/modules/crm/transition.ts";
@@ -45,39 +48,47 @@ const state = () => ({
   properties: [],
 });
 
-test("students see precisely the four published half-hour slots and no admin contacts", () => {
+test("gli studenti vedono una fascia intera con capienza quattro e nessun contatto privato", () => {
   const data = studentProjection(state(), "a");
-  assert.equal(data.lessons.length, 4);
-  assert.deepEqual(
-    data.lessons.map((lesson) => lesson.durationMinutes),
-    [30, 30, 30, 30],
-  );
+  assert.equal(data.lessons.length, 1);
+  assert.equal(data.lessons[0].durationMinutes, 120);
+  assert.equal(data.lessons[0].capacity, 4);
   assert.equal(data.lessons[0].startsAt, start);
-  assert.equal(data.lessons[3].startsAt, "2090-11-06T07:30:00.000Z");
   assert.equal(JSON.stringify(data).includes("owner@example.com"), false);
   assert.equal(JSON.stringify(data).includes("b@example.com"), false);
   const hidden = state();
   hidden.tiers[0].entitlements.lessons = false;
   assert.equal(studentProjection(hidden, "a").lessons.length, 0);
 });
-test("booking materializes the published slot, rejects a second student, and cancellation reopens it", () => {
-  const initial = state(),
-    id = availabilityLessons(initial)[0].id;
-  const booked = prepareStudentBooking(initial, "a", id, false);
-  assert.equal(booked.lessons.length, 1);
-  assert.equal(booked.bookings.length, 1);
-  assert.equal(
-    studentProjection(booked, "a").lessons.find((l) => l.id === id).enrolled,
-    true,
+
+test("otto persone prenotano lo stesso orario, la nona resta fuori e un annullamento libera un posto", () => {
+  const initial = state();
+  initial.admins[0].availability = [
+    createAvailability(start, "2090-11-06T07:00:00.000Z", 8),
+  ];
+  initial.students = Array.from({ length: 9 }, (_, i) =>
+    student(String(i + 1)),
   );
+  const [lesson] = availabilityLessons(initial);
+  assert.equal(lesson.durationMinutes, 60);
+  const booked = initial.students
+    .slice(0, 8)
+    .reduce(
+      (current, s) => prepareStudentBooking(current, s.id, lesson.id, false),
+      initial,
+    );
+  assert.equal(booked.lessons.length, 1);
+  assert.equal(booked.bookings.length, 8);
+  assert.equal(studentProjection(booked, "2").lessons[0].occupied, 8);
+  assert.equal(studentProjection(booked, "2").lessons[0].enrolled, true);
   assert.throws(
-    () => prepareStudentBooking(booked, "b", id, false),
+    () => prepareStudentBooking(booked, "9", lesson.id, false),
     /capienza/,
   );
-  const cancelled = prepareStudentBooking(booked, "a", id, true);
-  const rebooked = prepareStudentBooking(cancelled, "b", id, false);
-  assert.equal(rebooked.lessons.length, 1);
-  assert.equal(rebooked.bookings.filter((b) => !b.cancelled).length, 1);
+  const cancelled = prepareStudentBooking(booked, "1", lesson.id, true);
+  const rebooked = prepareStudentBooking(cancelled, "9", lesson.id, false);
+  assert.equal(rebooked.bookings.filter((b) => !b.cancelled).length, 8);
+  assert.equal(rebooked.lessons[0].startsAt, start);
 });
 test("stale or forged slots are rejected, while a withdrawn slot preserves an existing booking and allows cancellation", () => {
   const initial = state(),
@@ -108,21 +119,21 @@ test("stale or forged slots are rejected, while a withdrawn slot preserves an ex
       availability: [createAvailability(start, end, 2)],
     })),
   });
-  const replacement = availabilityLessons(rescheduled)[0];
-  assert.equal(replacement.durationMinutes, 60);
+  assert.equal(availabilityLessons(rescheduled).length, 0);
+  assert.equal(studentProjection(rescheduled, "b").lessons[0].capacity, 2);
   assert.equal(
-    prepareStudentBooking(
-      rescheduled,
-      "b",
-      replacement.id,
-      false,
-    ).bookings.filter((b) => !b.cancelled).length,
+    prepareStudentBooking(rescheduled, "b", id, false).bookings.filter(
+      (b) => !b.cancelled,
+    ).length,
     1,
   );
 });
 test("monthly limits, archived students and room conflicts also apply to availability slots", () => {
   const initial = state();
   initial.tiers[0].entitlements.monthlyBookingLimit = 1;
+  initial.admins[0].availability.push(
+    createAvailability(end, "2090-11-06T09:00:00.000Z", 2),
+  );
   const [first, second] = availabilityLessons(initial);
   const booked = prepareStudentBooking(initial, "a", first.id, false);
   assert.throws(
@@ -148,5 +159,68 @@ test("monthly limits, archived students and room conflicts also apply to availab
       cancelled: false,
     },
   ];
-  assert.equal(availabilityLessons(conflict).length, 2);
+  assert.equal(availabilityLessons(conflict).length, 0);
+});
+
+test("una prenotazione precedente mantiene il suo orario e il suo ID", () => {
+  const initial = state();
+  const id = availabilityLessonId("owner", start, 30);
+  initial.lessons = [
+    {
+      id,
+      title: "Allenamento in sede",
+      startsAt: start,
+      durationMinutes: 30,
+      capacity: 1,
+      coach: "TEST Coach",
+      location: "Sala principale",
+      cancelled: false,
+      availability: { adminId: "owner" },
+    },
+  ];
+  initial.bookings = [
+    {
+      id: "vecchia-prenotazione",
+      lessonId: id,
+      studentId: "a",
+      createdAt: "2026-11-01T10:00:00.000Z",
+      cancelled: false,
+    },
+  ];
+  assert.equal(studentProjection(initial, "a").lessons[0].durationMinutes, 30);
+  assert.equal(studentProjection(initial, "b").lessons.length, 0);
+  assert.throws(
+    () => prepareStudentBooking(initial, "b", id, false),
+    /fascia|capienza/,
+  );
+  const cancelled = prepareStudentBooking(initial, "a", id, true);
+  assert.equal(cancelled.bookings[0].id, "vecchia-prenotazione");
+  const [group] = availabilityLessons(cancelled);
+  assert.equal(group.durationMinutes, 120);
+  assert.equal(group.capacity, 4);
+  assert.notEqual(group.id, id);
+});
+
+test("modificare solo la capienza mantiene le prenotazioni e non può escludere iscritti", () => {
+  const initial = state();
+  const id = availabilityLessons(initial)[0].id;
+  // An existing appointment may still store the old capacity of one.
+  const a = prepareStudentBooking(initial, "a", id, false);
+  a.lessons[0].capacity = 1;
+  assert.equal(studentProjection(a, "b").lessons[0].capacity, 4);
+  const booked = prepareStudentBooking(a, "b", id, false);
+  assert.equal(booked.lessons[0].capacity, 4);
+  const update = (capacity) =>
+    prepareTransition(booked, {
+      ...booked,
+      admins: booked.admins.map((admin) => ({
+        ...admin,
+        availability: [createAvailability(start, end, capacity)],
+      })),
+    });
+  assert.throws(() => update(1), /capienza/);
+  const updated = update(8);
+  assert.equal(updated.lessons[0].id, id);
+  assert.equal(updated.lessons[0].capacity, 8);
+  assert.deepEqual(updated.bookings, booked.bookings);
 });

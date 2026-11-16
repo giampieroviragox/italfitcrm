@@ -111,7 +111,11 @@ export function PlansWorkspace() {
         title="Piani e percorsi"
         description="Prepara i piani di allenamento e assegnali mese per mese."
         action={
-          <Button onClick={() => setEditing("new")}>
+          <Button
+            size="lg"
+            className="rounded-full"
+            onClick={() => setEditing("new")}
+          >
             <Plus className="size-4" />
             Nuovo piano
           </Button>
@@ -119,10 +123,10 @@ export function PlansWorkspace() {
       />
       <LocalNotice />
       {all.length > 0 && (
-        <>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-2 sm:px-3">
           <PageTabs
             label="Stato dei piani"
-            className="mb-4"
+            className="border-0 pt-0 pb-0 [&_[role=tab]]:h-10 [&_[role=tab]]:after:hidden"
             value={status}
             onChange={setStatus}
             tabs={[
@@ -144,7 +148,7 @@ export function PlansWorkspace() {
               },
             ]}
           />
-          <div className="relative mb-4">
+          <div className="relative min-w-40 flex-1 sm:max-w-64">
             <Search
               className="absolute top-3 left-3 size-4 text-muted-foreground"
               aria-hidden
@@ -157,11 +161,11 @@ export function PlansWorkspace() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-        </>
+        </div>
       )}
       {!plans.length ? (
-        <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-12 text-center">
-          <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-foreground/[.045]">
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-3xl border bg-card px-6 py-12 text-center">
+          <span className="mb-4 grid size-12 place-items-center rounded-full bg-muted text-[var(--workspace-accent)]">
             <Dumbbell className="size-5" strokeWidth={1.75} />
           </span>
           <h2 className="text-base font-medium">
@@ -188,25 +192,28 @@ export function PlansWorkspace() {
           </Button>
         </div>
       ) : (
-        <>
-          <p className="mb-1 text-[13px] text-muted-foreground">
-            {plans.length} {plans.length === 1 ? "piano" : "piani"}
-          </p>
-          <ul className="-mx-2">
+        <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="flex items-center justify-between border-b bg-subtle px-4 py-2.5">
+            <h2 className="text-sm font-semibold">Libreria piani</h2>
+            <span aria-live="polite" className="text-xs text-muted-foreground">
+              {plans.length} {plans.length === 1 ? "piano" : "piani"}
+            </span>
+          </div>
+          <ul className="divide-y">
             {plans.map((p) => {
               const assigned =
                 state.assignments?.filter((a) => a.planId === p.id).length ?? 0;
               return (
                 <li
                   key={p.id}
-                  className="group relative flex items-center gap-3 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-foreground/[.03]"
+                  className="group relative flex min-h-16 items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted sm:px-4"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[var(--workspace-accent)]">
                     <Dumbbell className="size-4" strokeWidth={1.75} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <Link
-                      className="block truncate text-sm font-medium after:absolute after:inset-0"
+                      className="block truncate text-sm font-semibold after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:outline-offset-[-3px] focus-visible:after:outline-primary"
                       href={`/admin/piani/${encodeURIComponent(p.id)}`}
                     >
                       {p.title}
@@ -223,7 +230,15 @@ export function PlansWorkspace() {
                   <span className="hidden w-24 shrink-0 sm:block">
                     <StatusChip status={p.status} />
                   </span>
-                  <span className="relative flex shrink-0 items-center gap-1">
+                  <span className="relative flex shrink-0 items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden lg:inline-flex"
+                      onClick={() => setEditing(p)}
+                    >
+                      Modifica
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -247,7 +262,7 @@ export function PlansWorkspace() {
               );
             })}
           </ul>
-        </>
+        </div>
       )}
       {editing && (
         <PlanEditor

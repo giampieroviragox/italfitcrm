@@ -2,12 +2,6 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  pageTabActive,
-  pageTabIdle,
-  pageTabItem,
-  pageTabList,
-} from "@/components/ui/page-tabs";
 import { cn } from "@/lib/utils";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { validPropertyValue } from "./model";
@@ -84,11 +78,11 @@ export function StudentProfile({
     <>
       <LocalNotice />
       <div
-        className={`mb-6 flex flex-wrap items-center justify-between gap-4 ${embedded ? "pr-10" : ""}`}
+        className={`mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-card ${embedded ? "p-4" : "p-5 sm:p-6"}`}
       >
         <StudentIdentity student={student} large />
         <div className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+          <span className="flex items-center gap-1.5 rounded-full border bg-subtle px-2.5 py-1 text-xs text-muted-foreground">
             <span
               aria-hidden
               className={`size-1.5 rounded-full ${studentAccessEnabled(student) ? "bg-emerald-500/100" : "bg-neutral-300"}`}
@@ -134,7 +128,7 @@ export function StudentProfile({
                 });
               }
             }}
-            className={pageTabList}
+            className="flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-card p-1 [scrollbar-width:none]"
           >
             {[
               { id: "properties", label: "Proprietà" },
@@ -163,8 +157,10 @@ export function StudentProfile({
                 aria-selected={tab === t.id}
                 aria-controls={`panel-${t.id}`}
                 className={cn(
-                  pageTabItem,
-                  tab === t.id ? pageTabActive : pageTabIdle,
+                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-offset-[-2px]",
+                  tab === t.id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-subtle hover:text-foreground",
                 )}
                 onClick={() => request(() => setTab(t.id))}
               >

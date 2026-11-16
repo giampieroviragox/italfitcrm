@@ -11,8 +11,9 @@ import { Clock3, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorCancel, Field, FormError, control } from "./ui";
 import {
-  availabilitySlotCount,
-  slotDurationMinutes,
+  availabilityCapacity,
+  availabilityDurationMinutes,
+  maxAvailabilityCapacity,
   type AvailabilitySlot,
 } from "./availability";
 
@@ -34,13 +35,10 @@ export function AvailabilityEditor({
     start: selection.start,
     end: selection.end,
     count: String(
-      selection.existing
-        ? availabilitySlotCount(selection.existing)
-        : defaultCount(selection.date, selection.start, selection.end),
+      selection.existing ? availabilityCapacity(selection.existing) : 1,
     ),
   };
   const [values, setValues] = useState(defaults);
-  const [manualCount, setManualCount] = useState(Boolean(selection.existing));
   const [error, setError] = useState("");
   let period: AvailabilitySlot | null = null;
   let validation = "";
@@ -55,10 +53,7 @@ export function AvailabilityEditor({
     validation = (e as Error).message;
   }
   const update = (key: "date" | "start" | "end", value: string) => {
-    const next = { ...values, [key]: value };
-    if (!manualCount)
-      next.count = String(defaultCount(next.date, next.start, next.end));
-    setValues(next);
+    setValues((current) => ({ ...current, [key]: value }));
     setError("");
   };
   const submit = (next: AvailabilitySlot | undefined) => {
@@ -77,7 +72,7 @@ export function AvailabilityEditor({
       title={
         selection.existing ? "Modifica disponibilità" : "Nuova disponibilità"
       }
-      description="Scegli la fascia e quanti slot uguali contiene. Le modifiche restano in bozza fino a Salva calendario."
+      description="Imposta l’orario e quanti studenti possono prenotarsi per l’intera fascia."
       dirty={JSON.stringify(values) !== JSON.stringify(defaults)}
       close={close}
     >
@@ -116,19 +111,18 @@ export function AvailabilityEditor({
           </Field>
         </div>
         <Field
-          label="Numero di slot"
-          hint="Gli slot dividono la fascia in parti uguali."
+          label="Posti disponibili"
+          hint="Tutti gli iscritti hanno lo stesso orario di inizio e fine."
         >
           <input
             className={control}
             type="number"
             min={1}
-            max={1440}
+            max={maxAvailabilityCapacity}
             step={1}
             required
             value={values.count}
             onChange={(e) => {
-              setManualCount(true);
               setValues({ ...values, count: e.target.value });
               setError("");
             }}
@@ -142,12 +136,12 @@ export function AvailabilityEditor({
           <div>
             <p className="text-sm font-medium">
               {period
-                ? `${availabilitySlotCount(period)} slot da ${durationLabel(slotDurationMinutes(period))}`
-                : "Controlla fascia e numero di slot"}
+                ? `${availabilityCapacity(period)} ${availabilityCapacity(period) === 1 ? "posto" : "posti"} nella stessa fascia`
+                : "Controlla orario e numero di posti"}
             </p>
             <p className="mt-1 text-xs leading-5">
               {period
-                ? `${values.start}–${values.end} · ${durationLabel((Date.parse(period.end) - Date.parse(period.start)) / 60000)} complessive · Europe/Rome`
+                ? `${values.start}–${values.end} · ${durationLabel(availabilityDurationMinutes(period))} complessive · Europe/Rome`
                 : validation}
             </p>
           </div>
@@ -173,14 +167,4 @@ export function AvailabilityEditor({
       </form>
     </Editor>
   );
-}
-function defaultCount(date: string, start: string, end: string) {
-  try {
-    const period = periodFromFields(date, start, end, 1);
-    const duration =
-      (Date.parse(period.end) - Date.parse(period.start)) / 60000;
-    return duration % 60 === 0 ? duration / 60 : 1;
-  } catch {
-    return 1;
-  }
 }

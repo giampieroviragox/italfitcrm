@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ export function StudentProfileSheet({
   close: () => void;
 }) {
   const request = useNavigationRequest();
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <Sheet
       open
@@ -28,21 +30,33 @@ export function StudentProfileSheet({
     >
       <SheetContent
         side="right"
-        className="w-full gap-0 p-0 data-[side=right]:w-full data-[side=right]:md:w-1/2 data-[side=right]:md:min-w-[560px] data-[side=right]:sm:max-w-none"
+        className="gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[min(94vw,760px)]"
+        onOpenAutoFocus={() => {
+          opener.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (opener.current?.isConnected) {
+            event.preventDefault();
+            opener.current.focus();
+          }
+        }}
       >
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b px-6 py-5 pr-16">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-subtle px-4 py-4 pr-14 sm:px-6 sm:pr-16">
           <SheetTitle>Scheda studente</SheetTitle>
           <SheetDescription className="sr-only">
             Dati, proprietà, piani, commenti e cronologia dello studente.
           </SheetDescription>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="outline" size="sm">
             <Link href={`/admin/studenti/${encodeURIComponent(id)}`}>
               Apri pagina completa
               <ArrowUpRight className="size-3.5" />
             </Link>
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-background p-4 sm:p-6">
           <StudentProfile id={id} embedded />
         </div>
       </SheetContent>

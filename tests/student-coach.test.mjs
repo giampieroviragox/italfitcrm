@@ -69,10 +69,18 @@ test("la vista studente mostra soltanto nome e foto del coach assegnato", () => 
     "https://example.com/other.jpg",
   );
 });
-test("nessun ritratto viene inventato se coach o corrispondenza sono assenti o ambigui", () => {
+test("Giorgio Galbiati è il predefinito e la foto richiede un profilo univoco", () => {
   const s = state();
   s.students[0].coach = "";
-  assert.equal(assignedStudentCoach(s, s.students[0]), undefined);
+  assert.deepEqual(assignedStudentCoach(s, s.students[0]), {
+    name: "Giorgio Galbiati",
+  });
+  s.students[0].coach = "Giorgio";
+  s.admins[1].name = "Giorgio Galbiati";
+  assert.deepEqual(assignedStudentCoach(s, s.students[0]), {
+    name: "Giorgio Galbiati",
+    avatarUrl: "https://example.com/other.jpg",
+  });
   s.students[0].coach = "Coach esterno";
   assert.deepEqual(assignedStudentCoach(s, s.students[0]), {
     name: "Coach esterno",

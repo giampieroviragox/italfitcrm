@@ -1,7 +1,11 @@
 import {
-  availabilityIsPublished,
+  availabilityLessonId,
+  publishedAvailabilityCapacity,
+  withAvailabilityCapacity,
   availabilityBlocksTime,
 } from "./availability-lessons.ts";
+import { coachName } from "./student-coach.ts";
+import { maxAvailabilityCapacity } from "./availability.ts";
 import { normalize, validDate, type CrmState } from "./model.ts";
 import type { WorkoutPlan, Lesson } from "./fitness-model.ts";
 import { studentAccess, bookingRestriction } from "./tier-access.ts";
@@ -154,7 +158,9 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
         )))
   );
 }
-function validateSessions(plan: Pick<WorkoutPlan, "sessions" | "status">) {
+export function validateSessions(
+  plan: Pick<WorkoutPlan, "sessions" | "status">,
+) {
   if (!sessionsValid(plan.sessions))
     throw new Error("Sessioni non valide: verifica settimane e campi.");
   if (plan.sessions.length > 52)
@@ -204,6 +210,7 @@ function validateSessions(plan: Pick<WorkoutPlan, "sessions" | "status">) {
 export function reconcileFitness(s: CrmState): CrmState {
   return {
     ...s,
+    lessons: s.lessons?.map((lesson) => withAvailabilityCapacity(s, lesson)),
     bookings: (s.bookings ?? []).map((b) =>
       !b.cancelled &&
       s.students.some(
@@ -278,13 +285,13 @@ export function assertFitnessTransition(
       !Number.isFinite(Date.parse(l.startsAt)) ||
       !Number.isInteger(l.durationMinutes) ||
       l.durationMinutes < (l.availability ? 1 : 15) ||
-      l.durationMinutes > (l.availability ? 1440 : 240) ||
+      (!l.availability && l.durationMinutes > 240) ||
       !Number.isInteger(l.capacity) ||
       l.capacity < 1 ||
-      l.capacity > 200
+      l.capacity > (l.availability ? maxAvailabilityCapacity : 200)
     )
       throw new Error(
-        "Compila titolo, coach, sala, durata (15–240 minuti) e posti (1–200).",
+        "Controlla titolo, coach, sala, durata e numero di posti.",
       );
     const old = previous.lessons?.find((x) => x.id === l.id);
     if (
@@ -294,7 +301,7 @@ export function assertFitnessTransition(
         old.durationMinutes !== l.durationMinutes)
     )
       throw new Error(
-        "L’origine dello slot prenotato non può essere modificata.",
+        "L’origine della fascia prenotata non può essere modificata.",
       );
     if (
       l.availability &&
@@ -303,10 +310,17 @@ export function assertFitnessTransition(
         old.durationMinutes !== l.durationMinutes ||
         old.capacity !== l.capacity ||
         (old.cancelled && !l.cancelled)) &&
-      (l.capacity !== 1 || !availabilityIsPublished(next, l))
+      (l.capacity !== publishedAvailabilityCapacity(next, l) ||
+        (!old &&
+          l.id !==
+            availabilityLessonId(
+              l.availability.adminId,
+              l.startsAt,
+              l.durationMinutes,
+            )))
     )
       throw new Error(
-        "Lo slot non corrisponde a una disponibilità pubblicata.",
+        "La fascia non corrisponde a una disponibilità pubblicata.",
       );
 
     if (
@@ -323,7 +337,7 @@ export function assertFitnessTransition(
           x.id !== l.id &&
           availabilityBlocksTime(next, x) &&
           overlaps(x, l) &&
-          (normalize(x.coach) === normalize(l.coach) ||
+          (normalize(coachName(x.coach)) === normalize(coachName(l.coach)) ||
             normalize(x.location) === normalize(l.location)),
       )
     )

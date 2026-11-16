@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { CalendarDays, Dumbbell, Home } from "lucide-react";
 import { Brand } from "@/components/brand";
-import { ThemeToggle } from "@/components/theme-toggle";
+import "./student-area.css";
 import { cn } from "@/lib/utils";
 import type { StudentView } from "./student-home";
 
@@ -31,15 +31,15 @@ export function StudentShell({
 }) {
   const href = (item: StudentNavItem) => paths[item.view];
   return (
-    <div className="min-h-dvh min-w-0 bg-background">
+    <div className="student-area dark min-h-dvh min-w-0 bg-background">
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-8">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5 sm:h-[72px] sm:px-8">
           <Link href={paths.home} aria-label="Team Italfit, Home">
-            <Brand />
+            <Brand className="[&>span:first-child]:ring-white/15" />
           </Link>
           <nav
             aria-label="Area studente"
-            className="hidden flex-1 items-center gap-1 sm:flex"
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-full border bg-card p-1 sm:flex"
           >
             {items.map((item) => (
               <Link
@@ -47,9 +47,9 @@ export function StudentShell({
                 href={href(item)}
                 aria-current={item.view === view ? "page" : undefined}
                 className={cn(
-                  "flex h-8 items-center rounded-[10px] px-3 text-sm font-medium transition-colors",
+                  "flex h-9 items-center rounded-full px-4 text-sm font-semibold transition-colors",
                   item.view === view
-                    ? "bg-foreground/[.045] text-foreground"
+                    ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -57,19 +57,16 @@ export function StudentShell({
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
-            {actions}
-          </div>
+          <div className="ml-auto flex items-center">{actions}</div>
         </div>
       </header>
-      <main className="mx-auto min-w-0 max-w-5xl px-4 pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-12 sm:pb-16">
+      <main className="mx-auto min-w-0 max-w-6xl px-4 pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-9 sm:pb-14">
         {children}
       </main>
       {items.length > 1 && (
         <nav
           aria-label="Area studente"
-          className="fixed inset-x-0 bottom-0 z-20 grid border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-20 grid border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
           style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
         >
           {items.map((item) => {
@@ -80,13 +77,20 @@ export function StudentShell({
                 href={href(item)}
                 aria-current={item.view === view ? "page" : undefined}
                 className={cn(
-                  "flex h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium",
+                  "flex h-[62px] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold",
                   item.view === view
-                    ? "text-foreground"
+                    ? "text-[var(--workspace-accent)]"
                     : "text-muted-foreground",
                 )}
               >
-                <Icon className="size-5" strokeWidth={1.75} />
+                <span
+                  className={cn(
+                    "rounded-full px-4 py-1",
+                    item.view === view && "bg-muted",
+                  )}
+                >
+                  <Icon className="size-[18px]" strokeWidth={1.8} aria-hidden />
+                </span>
                 {item.label}
               </Link>
             );

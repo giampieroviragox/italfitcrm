@@ -1,22 +1,20 @@
 export interface AvailabilitySlot {
   start: string;
   end: string;
-  /** Absent in legacy data, where each slot lasts one hour. */
+  /** Stored as slotCount for compatibility. Each place covers the full period. */
   slotCount?: number;
 }
 const minuteMs = 60000;
-export function availabilitySlotCount(slot: AvailabilitySlot): number {
-  return (
-    slot.slotCount ?? (Date.parse(slot.end) - Date.parse(slot.start)) / 3600000
-  );
+export const maxAvailabilityCapacity = 1440;
+
+export function availabilityCapacity(slot: AvailabilitySlot): number {
+  return slot.slotCount ?? 1;
 }
-export function slotDurationMinutes(slot: AvailabilitySlot): number {
-  return (
-    (Date.parse(slot.end) - Date.parse(slot.start)) /
-    minuteMs /
-    availabilitySlotCount(slot)
-  );
+
+export function availabilityDurationMinutes(slot: AvailabilitySlot): number {
+  return (Date.parse(slot.end) - Date.parse(slot.start)) / minuteMs;
 }
+
 export function isAvailability(value: unknown): value is AvailabilitySlot[] {
   if (!Array.isArray(value) || value.length > 5000) return false;
   let previousEnd = -Infinity;
@@ -36,18 +34,15 @@ export function isAvailability(value: unknown): value is AvailabilitySlot[] {
       from < previousEnd
     )
       return false;
-    if (slotCount === undefined) {
-      if (from % 3600000 !== 0 || to % 3600000 !== 0) return false;
-    } else if (
-      typeof slotCount !== "number" ||
-      !Number.isInteger(slotCount) ||
-      slotCount < 1 ||
-      slotCount > 1440 ||
-      (to - from) % (slotCount * minuteMs) !== 0
+    if (
+      slotCount !== undefined &&
+      (typeof slotCount !== "number" ||
+        !Number.isInteger(slotCount) ||
+        slotCount < 1 ||
+        slotCount > maxAvailabilityCapacity)
     )
       return false;
-    totalSlots +=
-      slotCount === undefined ? (to - from) / 3600000 : Number(slotCount);
+    totalSlots += typeof slotCount === "number" ? slotCount : 1;
     if (totalSlots > 10000) return false;
     previousEnd = to;
   }
@@ -61,7 +56,7 @@ export function createAvailability(
   const slot = { start, end, slotCount };
   if (!isAvailability([slot]))
     throw new Error(
-      "Scegli un intervallo valido e un numero di slot che lo divida in minuti interi.",
+      `Scegli una fascia oraria valida e un numero di posti da 1 a ${maxAvailabilityCapacity}.`,
     );
   return slot;
 }

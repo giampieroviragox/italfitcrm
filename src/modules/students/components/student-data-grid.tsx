@@ -8,10 +8,11 @@ import {
   ChevronDown,
   GripVertical,
   Plus,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { coachName } from "@/modules/crm/student-coach";
 import { studentAccessLabel } from "@/modules/crm/student-access";
+import { StudentIdentity } from "./student-identity";
 import { StudentTierBadges } from "./tier-badge";
 import { StudentGridCell } from "@/modules/crm/student-grid-cell";
 import {
@@ -34,6 +35,13 @@ import {
 } from "@/modules/crm/column-drag";
 import { formatDate } from "@/lib/format";
 
+const defaultWidths: Record<string, number> = {
+  name: 220,
+  email: 228,
+  tier: 150,
+  access: 140,
+  joinedAt: 140,
+};
 const menuItem =
   "flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[13px] outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40";
 export function StudentDataGrid({
@@ -51,7 +59,6 @@ export function StudentDataGrid({
   onAddField,
   onEditField,
   onFilter,
-  onAdd,
 }: {
   students: readonly CrmStudent[];
   tiers: readonly CrmTier[];
@@ -67,7 +74,6 @@ export function StudentDataGrid({
   onAddField: () => void;
   onEditField: (p: CrmProperty) => void;
   onFilter: (p: CrmProperty) => void;
-  onAdd?: () => void;
 }) {
   const [drag, setDrag] = useState<{
     id: string;
@@ -123,7 +129,7 @@ export function StudentDataGrid({
   const widthFor = (id: string) =>
     resizing?.id === id
       ? resizing.width
-      : (config.columnWidths?.[id] ?? (id === "name" ? 260 : 200));
+      : (config.columnWidths?.[id] ?? defaultWidths[id] ?? 180);
   const offsets =
     drag && dropTarget
       ? columnDragOffsets(
@@ -228,11 +234,11 @@ export function StudentDataGrid({
             {columns.map((id) => (
               <col key={id} style={{ width: widthFor(id) }} />
             ))}
-            <col style={{ width: 64 }} />
+            <col style={{ width: 48 }} />
           </colgroup>
           <thead className="sticky top-0 z-20">
             <tr>
-              <th className="sticky left-0 z-30 h-10 w-[44px] border-b bg-background px-3">
+              <th className="sticky left-0 z-30 h-10 w-[44px] border-b bg-subtle px-3">
                 <span className="sr-only">Numero riga</span>
               </th>
               {columns.map((id) => {
@@ -261,7 +267,7 @@ export function StudentDataGrid({
                           : "descending"
                         : "none"
                     }
-                    className={`group/head relative h-10 border-b bg-background text-left font-medium text-muted-foreground transition-[transform,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget?.id === id ? (dropTarget.side === "before" ? "shadow-[inset_3px_0_0_var(--primary)]" : "shadow-[inset_-3px_0_0_var(--primary)]") : ""} ${drag?.id === id ? "opacity-20" : ""}`}
+                    className={`group/head relative h-10 border-b bg-subtle text-left font-semibold text-muted-foreground transition-[transform,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none ${id === "name" ? "z-30 sm:sticky sm:left-[44px]" : ""} ${dropTarget?.id === id ? (dropTarget.side === "before" ? "shadow-[inset_3px_0_0_var(--primary)]" : "shadow-[inset_-3px_0_0_var(--primary)]") : ""} ${drag?.id === id ? "opacity-20" : ""}`}
                   >
                     <div className="flex items-center gap-1 px-2">
                       {id !== "name" && (
@@ -631,7 +637,7 @@ export function StudentDataGrid({
                   </th>
                 );
               })}
-              <th className="border-b bg-background px-2">
+              <th className="border-b bg-subtle px-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -643,31 +649,6 @@ export function StudentDataGrid({
               </th>
             </tr>
           </thead>
-          {!students.length && (
-            <tbody>
-              <tr>
-                <td colSpan={columns.length + 2} className="px-5 py-16">
-                  <div className="sticky left-5 mx-auto flex max-w-sm flex-col items-center text-center">
-                    <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-foreground/[.045]">
-                      <Users className="size-5" strokeWidth={1.75} />
-                    </span>
-                    <p className="text-base font-medium text-foreground">
-                      Nessuno studente
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Aggiungi la prima scheda o modifica ricerca e filtri.
-                    </p>
-                    {onAdd && !config.archived && (
-                      <Button className="mt-5" onClick={onAdd}>
-                        <Plus className="size-4" />
-                        Aggiungi studente
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          )}
           {groups.map((group) => (
             <tbody
               key={group.key}
@@ -690,7 +671,7 @@ export function StudentDataGrid({
                 </tr>
               )}
               {group.students.map((student) => (
-                <tr key={student.id} className="group bg-background">
+                <tr key={student.id} className="group bg-card hover:bg-subtle">
                   <td className="sticky left-0 z-10 border-b bg-inherit px-2 text-center text-[11px] tabular-nums text-muted-foreground">
                     {offset +
                       students.findIndex((s) => s.id === student.id) +
@@ -725,9 +706,7 @@ export function StudentDataGrid({
                         );
                     } else if (id === "name")
                       value = (
-                        <span className="font-medium">
-                          {student.firstName} {student.lastName}
-                        </span>
+                        <StudentIdentity student={student} showEmail={false} />
                       );
                     else if (id === "tier")
                       value = (
@@ -741,8 +720,8 @@ export function StudentDataGrid({
                       );
                     else if (id === "joinedAt")
                       value = formatDate(student.joinedAt);
-                    else
-                      value = student[id as "email" | "phone" | "coach"] || "—";
+                    else if (id === "coach") value = coachName(student.coach);
+                    else value = student[id as "email" | "phone"] || "—";
                     return (
                       <td
                         key={id}
@@ -752,7 +731,7 @@ export function StudentDataGrid({
                           ...columnMotion(id),
                           opacity: drag?.id === id ? 0.2 : undefined,
                         }}
-                        className={`overflow-hidden border-b bg-background transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none group-hover:bg-subtle ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
+                        className={`overflow-hidden border-b bg-card transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none group-hover:bg-subtle ${id === "name" ? "z-10 bg-inherit sm:sticky sm:left-[44px]" : ""}`}
                       >
                         <div className="flex items-center">
                           {id === "name" ? (
@@ -760,7 +739,7 @@ export function StudentDataGrid({
                               type="button"
                               onClick={() => onOpenStudent(student.id)}
                               aria-label={`Apri scheda di ${student.firstName} ${student.lastName}`}
-                              className="h-11 w-full truncate px-3 text-left text-[13px] font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                              className="flex h-13 w-full min-w-0 items-center px-3 text-left text-[13px] font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                             >
                               {value}
                             </button>
@@ -791,23 +770,6 @@ export function StudentDataGrid({
               ))}
             </tbody>
           ))}
-          {onAdd && !config.archived && students.length > 0 && (
-            <tbody>
-              <tr>
-                <td className="border-b px-3 text-center text-muted-foreground">
-                  <Plus className="mx-auto size-3.5" />
-                </td>
-                <td colSpan={columns.length + 1} className="border-b">
-                  <button
-                    className="flex h-10 w-full items-center px-3 text-left text-[13px] text-muted-foreground hover:bg-subtle hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-                    onClick={onAdd}
-                  >
-                    Aggiungi studente
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          )}
         </table>
       </div>
     </div>

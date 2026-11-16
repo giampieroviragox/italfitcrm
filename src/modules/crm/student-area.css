@@ -1,0 +1,4 @@
+.student-session-picker {
+  scrollbar-width: thin;
+  scrollbar-color: var(--input) transparent;
+}

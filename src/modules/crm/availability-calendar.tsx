@@ -8,20 +8,22 @@ import { Button } from "@/components/ui/button";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 import { ConfirmDialog } from "./confirm-dialog";
 import { useCrm, updateCrm, useViewer } from "./store";
+import { withAvailabilityCapacity } from "./availability-lessons";
 import { useClock } from "./use-clock";
-import { addDays, romeLocal, todayRome, weekStart } from "./fitness-logic";
 import {
-  availabilitySlotCount,
+  addDays,
+  romeLocal,
+  romeToIso,
+  todayRome,
+  weekStart,
+} from "./fitness-logic";
+import {
+  availabilityCapacity,
   changeAvailability,
-  slotDurationMinutes,
   type AvailabilitySlot,
 } from "./availability";
 import { AvailabilityEditor } from "./availability-editor";
-import {
-  clockLabel,
-  durationLabel,
-  type AvailabilitySelection,
-} from "./availability-time";
+import { clockLabel, type AvailabilitySelection } from "./availability-time";
 import { AvailabilityGrid } from "./availability-grid";
 import { WeekNavigation } from "./week-navigation";
 import { FormError } from "./ui";
@@ -35,7 +37,8 @@ const slotDescription = (slot: AvailabilitySlot) => {
     day: "numeric",
     month: "short",
   }).format(new Date(slot.start));
-  return `${day}, ${romeLocal(slot.start).slice(11)}–${romeLocal(slot.end).slice(11)}: ${availabilitySlotCount(slot)} slot da ${durationLabel(slotDurationMinutes(slot))}`;
+  const capacity = availabilityCapacity(slot);
+  return `${day}, ${romeLocal(slot.start).slice(11)}–${romeLocal(slot.end).slice(11)}: ${capacity} ${capacity === 1 ? "posto" : "posti"}`;
 };
 export function AvailabilityCalendar() {
   const state = useCrm(),
@@ -50,6 +53,7 @@ export function AvailabilityCalendar() {
   const [discardAction, setDiscardAction] = useState<(() => void) | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
   const [scrollHour, setScrollHour] = useState(7);
+  const [daily, setDaily] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -128,12 +132,16 @@ export function AvailabilityCalendar() {
         romeLocal(slot.end).slice(0, 10) >= day,
     ),
   );
+  const weekStartsAt = Date.parse(romeToIso(`${week}T00:00`));
   const lessons = (state.lessons ?? [])
     .filter(
       (lesson) =>
         (showCancelled || !lesson.cancelled) &&
-        days.includes(romeLocal(lesson.startsAt).slice(0, 10)),
+        romeLocal(lesson.startsAt).slice(0, 10) <= days[6]! &&
+        Date.parse(lesson.startsAt) + lesson.durationMinutes * 60_000 >
+          weekStartsAt,
     )
+    .map((lesson) => withAvailabilityCapacity(state, lesson))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   if (!member)
     return (
@@ -146,10 +154,32 @@ export function AvailabilityCalendar() {
       <section className={styles.surface} aria-label="Le tue disponibilità">
         <div className={styles.toolbar}>
           <WeekNavigation week={week} onChange={changeWeek} />
+          <div
+            className="ml-auto hidden gap-1 rounded-lg border bg-background p-0.5 md:flex"
+            role="group"
+            aria-label="Vista calendario"
+          >
+            <Button
+              size="sm"
+              variant={daily ? "ghost" : "secondary"}
+              aria-pressed={!daily}
+              onClick={() => setDaily(false)}
+            >
+              Settimana
+            </Button>
+            <Button
+              size="sm"
+              variant={daily ? "secondary" : "ghost"}
+              aria-pressed={daily}
+              onClick={() => setDaily(true)}
+            >
+              Giorno
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
-            className="max-sm:w-full"
+            className="min-h-10 rounded-full max-sm:w-full"
             onClick={() =>
               setEditing({
                 date:
@@ -168,13 +198,23 @@ export function AvailabilityCalendar() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-2">
               <span
-                className="h-3 w-1 rounded-sm bg-foreground/80"
+                className="h-3 w-1 rounded-sm bg-[var(--workspace-accent)]"
                 aria-hidden="true"
               />
               Disponibilità
+              <span className="hidden text-muted-foreground lg:inline">
+                · {weekSlots.length}
+              </span>
             </span>
-            <span className="text-muted-foreground">
-              {weekSlots.length} {weekSlots.length === 1 ? "fascia" : "fasce"}
+            <span className="flex items-center gap-2">
+              <span
+                className="h-3 w-1 rounded-sm bg-foreground/75"
+                aria-hidden
+              />
+              Lezioni
+              <span className="hidden text-muted-foreground lg:inline">
+                · {lessons.length}
+              </span>
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
@@ -207,11 +247,13 @@ export function AvailabilityCalendar() {
         </div>
         <AvailabilityGrid
           week={week}
-          slots={slots}
+          slots={weekSlots}
           lessons={lessons}
           bookings={state.bookings ?? []}
           now={now}
           scrollHour={scrollHour}
+          daily={daily}
+          showDay={() => setDaily(true)}
           select={setEditing}
         />
         <div className={styles.footer} data-dirty={dirty}>
@@ -226,7 +268,7 @@ export function AvailabilityCalendar() {
               </>
             ) : notice ? (
               <>
-                <Check className="size-3.5 text-emerald-600" />
+                <Check className="size-3.5 text-[var(--workspace-accent)]" />
                 {notice}
               </>
             ) : (

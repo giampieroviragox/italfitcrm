@@ -48,11 +48,11 @@ export function CoachNote({
     .join("");
   return (
     <section
-      className="rounded-2xl border p-5"
+      className="rounded-3xl border bg-card p-4 sm:p-5"
       aria-label="Messaggio del coach"
     >
       <div className="mb-3 flex items-center gap-3">
-        <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground text-xs font-medium text-background">
+        <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-bold text-[var(--workspace-accent)]">
           {coach?.avatarUrl && failedImage !== coach.avatarUrl ? (
             <Image
               src={coach.avatarUrl}
@@ -75,7 +75,7 @@ export function CoachNote({
           )}
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-medium">Dal tuo coach</h3>
+          <h3 className="text-sm font-semibold">Dal tuo coach</h3>
           <p className="truncate text-xs text-muted-foreground">
             {coach?.name ?? "Team Italfit"}
           </p>
@@ -93,7 +93,7 @@ export function CoachNote({
           type="button"
           aria-expanded={expanded}
           aria-controls={id}
-          className="mt-1 inline-flex min-h-9 items-center gap-1 text-[13px] font-medium"
+          className="mt-1 inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[var(--workspace-accent)]"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "Leggi di meno" : "Leggi di più"}
@@ -133,12 +133,9 @@ export function RecoveryNote({
 export function ProgramReference({ program }: { program: WorkoutProgram }) {
   const zones = program.paceZones;
   return (
-    <section aria-label="Riferimenti del programma" className="space-y-3 pt-4">
-      <h3 className="text-sm font-medium text-muted-foreground">
-        Da tenere a mente
-      </h3>
+    <section aria-label="Riferimenti del programma" className="space-y-3">
       {zones.length > 0 && (
-        <section className="overflow-hidden rounded-xl border">
+        <section className="overflow-hidden rounded-2xl border bg-card">
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <Gauge
               className="size-4 text-muted-foreground"
@@ -146,7 +143,7 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
             />
             <h4 className="text-sm font-medium">Le tue zone di passo</h4>
           </div>
-          <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-px bg-border">
             {zones.map((zone, i) => (
               <div
                 key={`${zone.name}-${i}`}
@@ -159,7 +156,7 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
                   />
                   {zone.name}
                 </dt>
-                <dd className="text-base font-medium tabular-nums">
+                <dd className="text-base font-semibold text-[var(--workspace-accent)] tabular-nums">
                   {zone.pace}
                 </dd>
               </div>
@@ -172,7 +169,7 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors hover:bg-foreground/[.02]"
+              className="flex w-full items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition-colors hover:bg-foreground/[.02]"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[.045]">
                 <Flag className="size-4" strokeWidth={1.75} />
@@ -190,7 +187,7 @@ export function ProgramReference({ program }: { program: WorkoutProgram }) {
           </SheetTrigger>
           <SheetContent
             showCloseButton={false}
-            className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-lg"
+            className="student-area dark gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-lg"
           >
             <SheetClose asChild>
               <Button

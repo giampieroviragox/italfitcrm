@@ -1,3 +1,4 @@
+import { coachName } from "./student-coach.ts";
 import { studentAccessLabel } from "./student-access.ts";
 import { studentTierIds, studentTierLabel } from "./student-tiers.ts";
 import { assertFitnessTransition } from "./fitness-logic.ts";
@@ -197,7 +198,7 @@ export function selectStudents(
             s.lastName,
             s.email,
             s.phone ?? "",
-            s.coach,
+            coachName(s.coach),
             studentTierLabel(s, tiers),
             ...active.flatMap((p) => {
               const v = s.properties[p.id];
@@ -218,7 +219,7 @@ export function selectStudents(
         : config.sortKey === "tier"
           ? studentTierLabel(s, tiers)
           : config.sortKey === "coach"
-            ? s.coach
+            ? coachName(s.coach)
             : config.sortKey === "access"
               ? studentAccessLabel(s)
               : config.sortKey === "email"

@@ -1,79 +1,73 @@
 import Link from "next/link";
-import { CalendarDays, Dumbbell } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Dumbbell } from "lucide-react";
 import type { TierAccess } from "./model";
-export type StudentView = "home" | "piano" | "prenotazioni";
 
-const tile =
-  "flex items-center gap-4 rounded-xl border p-4 text-left transition-colors sm:p-5";
-const icon =
-  "flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-foreground/[.045]";
+export type StudentView = "home" | "piano" | "prenotazioni";
 
 export function StudentHome({
   services,
   hasBookings,
-  hasPlan,
+  planTitle,
 }: {
   services: TierAccess;
   hasBookings: boolean;
-  hasPlan: boolean;
+  planTitle?: string;
 }) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {services.plans && hasPlan ? (
+  const links = [
+    ...(services.plans
+      ? [
+          {
+            href: "/area-studente/piano",
+            label: "Il mio piano",
+            title: planTitle ?? "Nessun piano per questo mese",
+            icon: Dumbbell,
+          },
+        ]
+      : []),
+    ...(services.lessons || hasBookings
+      ? [
+          {
+            href: "/area-studente/prenotazioni",
+            label: "Prenotazioni",
+            title: services.lessons ? "Lezioni in sede" : "Le mie lezioni",
+            icon: CalendarDays,
+          },
+        ]
+      : []),
+  ];
+
+  return links.length ? (
+    <div className="grid gap-3 md:grid-cols-2">
+      {links.map(({ href, label, title, icon: Icon }) => (
         <Link
-          href="/area-studente/piano"
-          className={`${tile} hover:bg-foreground/[.02]`}
+          key={href}
+          href={href}
+          className="group flex min-h-44 flex-col justify-between gap-6 rounded-3xl border bg-card p-5 transition-colors hover:border-primary/60 sm:min-h-56 sm:p-7"
         >
-          <span className={icon}>
-            <Dumbbell className="size-5" strokeWidth={1.75} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-medium">Il mio piano</span>
-            <span className="block text-[13px] text-muted-foreground">
-              Il programma e i tuoi allenamenti
+          <div className="flex items-start justify-between">
+            <span className="grid size-11 place-items-center rounded-full border border-foreground/15">
+              <Icon
+                className="size-5 text-[var(--workspace-accent)]"
+                aria-hidden
+              />
             </span>
-          </span>
+            <ArrowUpRight
+              className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              aria-hidden
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-sm text-muted-foreground">{label}</p>
+            <p className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {title}
+            </p>
+          </div>
         </Link>
-      ) : (
-        <div className={`${tile} bg-foreground/[.02] text-muted-foreground`}>
-          <span className={`${icon} opacity-60`}>
-            <Dumbbell className="size-5" strokeWidth={1.75} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-medium">Il mio piano</span>
-            <span className="block text-[13px]">
-              {services.plans
-                ? "Nessun piano per questo mese"
-                : "Non incluso nel tuo percorso"}
-            </span>
-          </span>
-        </div>
-      )}
-      {(services.lessons || hasBookings) && (
-        <Link
-          href="/area-studente/prenotazioni"
-          className={`${tile} hover:bg-foreground/[.02]`}
-        >
-          <span className={icon}>
-            <CalendarDays className="size-5" strokeWidth={1.75} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-medium">
-              {services.lessons ? "Prenota una lezione" : "Le mie prenotazioni"}
-            </span>
-            <span className="block text-[13px] text-muted-foreground">
-              {services.lessons
-                ? "Scegli un orario in sede"
-                : "Consulta o annulla le prenotazioni"}
-            </span>
-          </span>
-        </Link>
-      )}
-      {!services.plans && !services.lessons && !hasBookings && (
-        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground sm:col-span-2">
-          Il team non ha ancora abilitato servizi per il tuo percorso.
-        </p>
-      )}
+      ))}
     </div>
+  ) : (
+    <p className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">
+      Il team non ha ancora abilitato servizi per il tuo percorso.
+    </p>
   );
 }

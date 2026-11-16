@@ -1,4 +1,5 @@
 "use client";
+import { defaultCoachName } from "./student-coach";
 import { CoachSelect } from "./coach-select";
 import { TierPicker } from "./tier-picker";
 import { studentTierIds } from "./student-tiers";
@@ -35,6 +36,7 @@ export function StudentCreateDialog({
     [lastName, setLastName] = useState(""),
     [email, setEmail] = useState(""),
     [phone, setPhone] = useState(""),
+    [coach, setCoach] = useState(defaultCoachName),
     [tierIds, setTierIds] = useState<string[]>([]),
     [joinedAt] = useState(today),
     [properties, setProperties] = useState<Record<string, PropertyValue>>({}),
@@ -99,7 +101,7 @@ export function StudentCreateDialog({
                     lastName: last,
                     email: address,
                     phone,
-                    coach: "",
+                    coach,
 
                     status: "active",
                     tierId: tierIds[0]!,
@@ -155,6 +157,7 @@ export function StudentCreateDialog({
           />
         </Field>
         <PhoneField value={phone} onChange={setPhone} />
+        <CoachSelect value={coach} onChange={setCoach} />
         <TierPicker tiers={state.tiers} value={tierIds} onChange={setTierIds} />
         {required.map((p) => (
           <PropertyField

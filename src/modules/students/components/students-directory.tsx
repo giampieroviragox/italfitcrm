@@ -3,17 +3,24 @@ import { useEffect, useRef, useState } from "react";
 import { Popover } from "radix-ui";
 import {
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Columns3,
   Group,
+  List,
   Plus,
   Search,
   SlidersHorizontal,
+  Table2,
+  Users,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { SelectControl } from "@/components/ui/select-control";
+import { StudentIdentity } from "./student-identity";
+import { studentAccessLabel } from "@/modules/crm/student-access";
 import { StudentDataGrid } from "./student-data-grid";
 import { PropertyEditor } from "@/modules/crm/property-manager";
 import { StudentProfileSheet } from "@/modules/crm/student-profile-sheet";
@@ -51,6 +58,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
     state,
   );
   const [queryDraft, setQuery] = useState<string | null>(null);
+  const [mobileGrid, setMobileGrid] = useState(false);
   const query = queryDraft ?? persisted.query;
   const config: DirectoryConfig = {
     ...persisted,
@@ -66,6 +74,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
     Partial<Record<Panel, HTMLButtonElement | null>>
   >({});
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   useEffect(
     () => () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -116,6 +125,17 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   );
   const shown = groups.flatMap((g) => g.students);
   const filterCount = config.filters.length + Number(config.tier !== "all");
+  const searched = Boolean(query.trim()) || filterCount > 0;
+  const search = (value: string) => {
+    setQuery(value);
+    setInteraction(null);
+    setPage(1);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(
+      () => void setConfig({ query: value }),
+      350,
+    );
+  };
   const openPanel = (kind: Panel, open: boolean) => {
     if (open) {
       setDraft(structuredClone(config));
@@ -126,31 +146,45 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   return (
     <section
       aria-label="Elenco studenti"
-      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border bg-card"
     >
-      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-3 sm:px-4">
+        <div className="relative w-full min-w-0 sm:mr-auto sm:min-w-52 sm:max-w-sm sm:flex-1">
           <Search
             className="absolute top-3 left-3 size-4 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
+            ref={searchInput}
             aria-label="Cerca studenti"
-            placeholder="Cerca studenti…"
-            className="pl-9 rounded-xl"
+            placeholder="Cerca nome o email…"
+            className="rounded-xl bg-subtle pr-11 pl-9"
             value={query}
-            onChange={(e) => {
-              const value = e.target.value;
-              setQuery(value);
-              setInteraction(null);
-              setPage(1);
-              if (searchTimer.current) clearTimeout(searchTimer.current);
-              searchTimer.current = setTimeout(() => {
-                void setConfig({ query: value });
-              }, 350);
-            }}
+            onChange={(event) => search(event.target.value)}
           />
+          {query && (
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 grid w-11 place-items-center text-muted-foreground hover:text-foreground"
+              aria-label="Cancella ricerca"
+              onClick={() => {
+                search("");
+                searchInput.current?.focus();
+              }}
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          )}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-10 md:hidden"
+          onClick={() => setMobileGrid((value) => !value)}
+        >
+          {mobileGrid ? <List /> : <Table2 />}
+          {mobileGrid ? "Elenco" : "Tabella"}
+        </Button>
         {(
           [
             { kind: "columns", label: "Campi", Icon: Columns3, active: false },
@@ -175,15 +209,18 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           >
             <Popover.Trigger asChild>
               <Button
+                aria-label={label}
                 variant={active ? "secondary" : "outline"}
-                className="h-10 rounded-xl px-3.5"
+                className="h-10 rounded-xl px-2.5 sm:px-3.5"
                 disabled={saving}
                 ref={(element) => {
                   panelTriggers.current[kind] = element;
                 }}
               >
                 <Icon className="size-4" />
-                <span className="hidden sm:inline">{label}</span>
+                <span className={kind === "filters" ? "" : "hidden sm:inline"}>
+                  {label}
+                </span>
               </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -388,87 +425,177 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
           </Popover.Root>
         ))}
       </div>
-      <FormError message={error} />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background">
-        <StudentDataGrid
-          students={shown}
-          groups={groups}
-          tiers={state.tiers}
-          properties={properties}
-          config={config}
-          saving={saving}
-          offset={(currentPage - 1) * config.pageSize}
-          activeCell={interaction?.kind === "cell" ? interaction : null}
-          onCellChange={(studentId, column, open) =>
-            setInteraction((current) =>
-              open
-                ? { kind: "cell", studentId, column }
-                : current?.kind === "cell" &&
-                    current.studentId === studentId &&
-                    current.column === column
-                  ? null
-                  : current,
-            )
-          }
-          onConfig={setConfig}
-          onOpenStudent={(id) => setInteraction({ kind: "student", id })}
-          onAddField={() => setInteraction({ kind: "property" })}
-          onEditField={(property) =>
-            setInteraction({ kind: "property", property })
-          }
-          onFilter={(property) => {
-            setDraft({
-              ...structuredClone(config),
-              filters: [
-                ...config.filters,
-                {
-                  id: crypto.randomUUID(),
-                  propertyId: property.id,
-                  operator: operatorsFor(property)[0]!.value,
-                  value: "",
-                  values: [],
-                },
-              ],
-            });
-            setInteraction({ kind: "filters" });
-          }}
-          onAdd={
-            onAdd
-              ? () => {
+      {error && (
+        <div className="px-4 py-2">
+          <FormError message={error} />
+        </div>
+      )}
+      {!shown.length ? (
+        <div className="grid min-h-56 flex-1 place-items-center overflow-y-auto p-5 text-center">
+          <div>
+            <span className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
+              {searched ? (
+                <Search className="size-5" />
+              ) : (
+                <Users className="size-5" />
+              )}
+            </span>
+            <p className="text-base font-semibold">
+              {searched ? "Nessun risultato" : "Nessuno studente in elenco"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {searched
+                ? "Prova un altro nome o rimuovi i filtri."
+                : "Aggiungi la prima scheda studente."}
+            </p>
+            {searched ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-4"
+                disabled={saving}
+                onClick={() => {
+                  if (searchTimer.current) clearTimeout(searchTimer.current);
+                  setQuery("");
                   setInteraction(null);
-                  onAdd();
-                }
-              : undefined
-          }
-        />
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-2.5">
-          <p role="status" className="text-[13px] text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? "studente" : "studenti"}
-          </p>
-          {pages > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {currentPage} / {pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setPage(currentPage - 1)}
+                  void setConfig({ query: "", filters: [], tier: "all" });
+                }}
               >
-                Precedente
+                Azzera ricerca e filtri
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === pages}
-                onClick={() => setPage(currentPage + 1)}
-              >
-                Successiva
-              </Button>
+            ) : (
+              onAdd && (
+                <Button type="button" className="mt-4" onClick={onAdd}>
+                  <Plus /> Aggiungi studente
+                </Button>
+              )
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {!mobileGrid && (
+            <div className="min-h-0 flex-1 overflow-auto md:hidden">
+              {groups.map((group) => (
+                <section
+                  key={group.key}
+                  aria-label={config.groupBy ? group.label : undefined}
+                >
+                  {config.groupBy && (
+                    <h3 className="sticky top-0 z-10 border-y bg-subtle px-4 py-2 text-xs font-semibold">
+                      {group.label}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        · {group.total}
+                      </span>
+                    </h3>
+                  )}
+                  <ul className="divide-y border-b">
+                    {group.students.map((student) => (
+                      <li key={student.id}>
+                        <button
+                          type="button"
+                          className="flex min-h-16 w-full items-center gap-2.5 px-4 py-2.5 text-left hover:bg-subtle focus-visible:outline-offset-[-3px]"
+                          aria-label={`Apri scheda di ${student.firstName} ${student.lastName}`}
+                          onClick={() =>
+                            setInteraction({ kind: "student", id: student.id })
+                          }
+                        >
+                          <span className="min-w-0 flex-1">
+                            <StudentIdentity student={student} />
+                          </span>
+                          <span className="max-w-24 text-right text-[11px] leading-tight text-muted-foreground">
+                            {studentAccessLabel(student)}
+                          </span>
+                          <ChevronRight
+                            className="size-4 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
             </div>
           )}
-        </div>
+          <div
+            className={`min-h-0 flex-1 flex-col ${mobileGrid ? "flex" : "hidden md:flex"}`}
+          >
+            <StudentDataGrid
+              students={shown}
+              groups={groups}
+              tiers={state.tiers}
+              properties={properties}
+              config={config}
+              saving={saving}
+              offset={(currentPage - 1) * config.pageSize}
+              activeCell={interaction?.kind === "cell" ? interaction : null}
+              onCellChange={(studentId, column, open) =>
+                setInteraction((current) =>
+                  open
+                    ? { kind: "cell", studentId, column }
+                    : current?.kind === "cell" &&
+                        current.studentId === studentId &&
+                        current.column === column
+                      ? null
+                      : current,
+                )
+              }
+              onConfig={setConfig}
+              onOpenStudent={(id) => setInteraction({ kind: "student", id })}
+              onAddField={() => setInteraction({ kind: "property" })}
+              onEditField={(property) =>
+                setInteraction({ kind: "property", property })
+              }
+              onFilter={(property) => {
+                setDraft({
+                  ...structuredClone(config),
+                  filters: [
+                    ...config.filters,
+                    {
+                      id: crypto.randomUUID(),
+                      propertyId: property.id,
+                      operator: operatorsFor(property)[0]!.value,
+                      value: "",
+                      values: [],
+                    },
+                  ],
+                });
+                setInteraction({ kind: "filters" });
+              }}
+            />
+          </div>
+        </>
+      )}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-2.5">
+        <p role="status" className="text-[13px] text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "studente" : "studenti"}
+          {searched &&
+            ` · ${state.students.filter((student) => !student.archived).length} in elenco`}
+        </p>
+        {pages > 1 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {currentPage} / {pages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              Precedente
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === pages}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              Successiva
+            </Button>
+          </div>
+        )}
       </div>
       {interaction?.kind === "property" && (
         <PropertyEditor

@@ -1,6 +1,7 @@
 "use client";
 import { AlertDialog } from "radix-ui";
 import { useRef } from "react";
+import { cn } from "@/lib/utils";
 import { useSaving } from "./store";
 import { Button } from "@/components/ui/button";
 import { SyncNotice } from "@/components/layout/sync-notice";
@@ -14,6 +15,7 @@ export function ConfirmDialog({
   busy = false,
   error = "",
   fallbackFocus,
+  className,
 }: {
   open: boolean;
   title: string;
@@ -24,6 +26,7 @@ export function ConfirmDialog({
   busy?: boolean;
   error?: string;
   fallbackFocus?: () => HTMLElement | null;
+  className?: string;
 }) {
   const storeSaving = useSaving();
   const saving = storeSaving || busy;
@@ -53,7 +56,10 @@ export function ConfirmDialog({
               target.focus();
             }
           }}
-          className="fixed top-1/2 left-1/2 z-[71] max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border bg-card p-6 shadow-[0_8px_40px_rgba(0,0,0,0.12)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98]"
+          className={cn(
+            "fixed top-1/2 left-1/2 z-[71] max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border bg-card p-6 shadow-[0_8px_40px_rgba(0,0,0,0.12)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98]",
+            className,
+          )}
         >
           <AlertDialog.Title className="text-base font-medium">
             {title}

@@ -8,11 +8,13 @@ export function PlanMonthSelect({
   value,
   months,
   onChange,
+  student = false,
   ...aria
 }: {
   value: string;
   months: readonly string[];
   onChange: (month: string) => void;
+  student?: boolean;
   "aria-label"?: string;
   "aria-labelledby"?: string;
   "aria-describedby"?: string;
@@ -22,14 +24,19 @@ export function PlanMonthSelect({
   return (
     <SelectControl
       {...aria}
-      className={control}
+      className={
+        student
+          ? "min-h-11 gap-2 rounded-full bg-card px-3 capitalize sm:px-4"
+          : control
+      }
+      contentClassName={student ? "student-area dark" : undefined}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >
       {available.map((month) => (
         <option key={month} value={month}>
           {formatMonth(month)}
-          {month === current ? " · Mese corrente" : ""}
+          {month === current && !student ? " · Mese corrente" : ""}
         </option>
       ))}
     </SelectControl>

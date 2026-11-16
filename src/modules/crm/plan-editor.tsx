@@ -4,7 +4,7 @@ import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { studentAccess } from "./tier-access";
 import { SelectControl } from "@/components/ui/select-control";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Dumbbell, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorCancel, Field, control, FormError } from "./ui";
 import { useCrm, updateCrm } from "./store";
@@ -14,7 +14,7 @@ import type {
   WorkoutSession,
   PlanAssignment,
 } from "./fitness-model";
-import { todayRome } from "./fitness-logic";
+import { todayRome, validateSessions } from "./fitness-logic";
 const exercise = (): WorkoutExercise => ({
   id: crypto.randomUUID(),
   name: "",
@@ -52,6 +52,19 @@ export function PlanEditor({
   const [original] = useState(JSON.stringify(plan)),
     [baseline] = useState(JSON.stringify(draft)),
     [error, setError] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const active =
+    draft.sessions.find((s) => s.id === sessionId) ?? draft.sessions[0];
+  const activeIndex = draft.sessions.findIndex((s) => s.id === active?.id);
+  const addSession = () => {
+    const next = {
+      ...session(),
+      name: `Sessione ${draft.sessions.length + 1}`,
+    };
+    setDraft((d) => ({ ...d, sessions: [...d.sessions, next] }));
+    setSessionId(next.id);
+    setError("");
+  };
   const setSession = (id: string, patch: Partial<WorkoutSession>) =>
     setDraft((d) => ({
       ...d,
@@ -78,14 +91,28 @@ export function PlanEditor({
   return (
     <Editor
       title={plan ? "Modifica piano" : "Nuovo piano"}
-      description="Organizza sessioni ed esercizi. Le assegnazioni già esistenti conservano la loro copia."
+      description={
+        plan
+          ? "Le assegnazioni già esistenti conservano la loro copia."
+          : "Imposta il piano e organizza le sessioni di allenamento."
+      }
+      wide
       dirty={JSON.stringify(draft) !== baseline}
       close={close}
     >
       <form
-        className="crm-editor-form"
+        className="crm-editor-form gap-4! [--border-focus:var(--border-hover)]"
         onSubmit={async (e) => {
           e.preventDefault();
+          for (const [index, item] of draft.sessions.entries()) {
+            try {
+              validateSessions({ status: draft.status, sessions: [item] });
+            } catch (issue) {
+              setSessionId(item.id);
+              setError(`Sessione ${index + 1}: ${(issue as Error).message}`);
+              return;
+            }
+          }
           try {
             await updateCrm((s) => {
               if (
@@ -115,29 +142,59 @@ export function PlanEditor({
           }
         }}
       >
-        <Field label="Nome piano *">
-          <input
-            className={control}
-            required
-            maxLength={100}
-            value={draft.title}
-            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            placeholder="Es. Forza · 3 giorni"
-          />
-        </Field>
-        <Field label="Descrizione e obiettivo">
-          <textarea
-            className={control}
-            rows={3}
-            value={draft.description}
-            onChange={(e) =>
-              setDraft({ ...draft, description: e.target.value })
-            }
-          />
-        </Field>
+        <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+          <Field label="Nome piano *">
+            <input
+              className={control}
+              required
+              maxLength={100}
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              placeholder="Es. Forza · 3 giorni"
+            />
+          </Field>
+          <Field label="Stato">
+            <SelectControl
+              className={control}
+              value={draft.status}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  status: e.target.value as WorkoutPlan["status"],
+                })
+              }
+            >
+              <option value="draft">Bozza</option>
+              <option value="published">Pubblicato</option>
+              {plan?.status === "archived" && (
+                <option value="archived">Archiviato</option>
+              )}
+            </SelectControl>
+          </Field>
+        </div>
+        <details
+          open={Boolean(plan?.description) || undefined}
+          className="rounded-xl border bg-card px-4 py-3"
+        >
+          <summary className="cursor-pointer text-sm font-semibold">
+            Descrizione del piano
+          </summary>
+          <div className="mt-3">
+            <Field label="Descrizione e obiettivo">
+              <textarea
+                className={control}
+                rows={3}
+                value={draft.description}
+                onChange={(e) =>
+                  setDraft({ ...draft, description: e.target.value })
+                }
+              />
+            </Field>
+          </div>
+        </details>
         {draft.program && (
-          <details className="space-y-4 rounded-xl border p-4">
-            <summary className="cursor-pointer text-sm font-medium">
+          <details className="rounded-xl border bg-card px-4 py-3">
+            <summary className="cursor-pointer text-sm font-semibold">
               Dettagli del programma
             </summary>
             <div className="mt-4 space-y-4">
@@ -233,86 +290,135 @@ export function PlanEditor({
             </div>
           </details>
         )}
-        <Field label="Stato">
-          <SelectControl
-            className={control}
-            value={draft.status}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                status: e.target.value as WorkoutPlan["status"],
-              })
-            }
+        <div className="mt-2 grid min-w-0 gap-4 md:grid-cols-[minmax(0,26%)_minmax(0,1fr)]">
+          <section
+            aria-label="Sessioni del piano"
+            className="min-w-0 rounded-xl border bg-card p-3 md:self-start"
           >
-            <option value="draft">Bozza</option>
-            <option value="published">Pubblicato</option>
-            {plan?.status === "archived" && (
-              <option value="archived">Archiviato</option>
-            )}
-          </SelectControl>
-        </Field>
-        {draft.sessions.map((s, i) => (
-          <section key={s.id} className="space-y-4 rounded-xl border p-4">
-            <div className="flex items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <Field label={`Sessione ${i + 1}`}>
-                  <input
-                    className={control}
-                    value={s.name}
-                    onChange={(e) => setSession(s.id, { name: e.target.value })}
-                  />
-                </Field>
-              </div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">
+                Sessioni{" "}
+                <span className="ml-0.5 text-xs font-normal text-muted-foreground">
+                  {draft.sessions.length}
+                </span>
+              </h3>
               <Button
-                variant="ghost"
-                size="icon"
                 type="button"
-                aria-label={`Rimuovi sessione ${i + 1}`}
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    sessions: draft.sessions.filter((x) => x.id !== s.id),
-                  })
-                }
+                variant="outline"
+                size="sm"
+                aria-label="Aggiungi sessione"
+                disabled={draft.sessions.length >= 52}
+                onClick={addSession}
               >
-                <Trash2 className="size-4" />
+                <Plus /> Aggiungi
               </Button>
             </div>
-            <details className="rounded-lg border bg-background p-3">
-              <summary className="cursor-pointer text-xs font-medium">
-                Settimana, giornata e indicazioni
-              </summary>
-              <div className="mt-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Settimana">
+            <div className="flex gap-1 overflow-auto p-1 md:max-h-72 md:flex-col">
+              {draft.sessions.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={item.id === active?.id}
+                  onClick={() => {
+                    setSessionId(item.id);
+                    setError("");
+                  }}
+                  className="flex min-h-11 min-w-28 shrink-0 items-center gap-2.5 rounded-lg px-2 text-left transition-colors hover:bg-muted aria-pressed:bg-muted md:w-full md:min-w-0"
+                >
+                  <span className="grid size-7 shrink-0 place-items-center rounded-md border bg-card text-xs font-semibold tabular-nums">
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">
+                      {item.name || "Senza nome"}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      Sett. {item.week ?? 1}
+                      {item.day ? ` · ${item.day}` : ""}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+          {active ? (
+            <section
+              key={active.id}
+              aria-label={`Modifica sessione ${activeIndex + 1}`}
+              className="min-w-0 space-y-4 rounded-2xl border bg-card p-4 sm:p-5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+                    <Dumbbell className="size-4" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="text-lg leading-tight font-semibold tracking-tight">
+                      Sessione {activeIndex + 1}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {active.exercises.length}{" "}
+                      {active.exercises.length === 1 ? "esercizio" : "esercizi"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  aria-label={`Rimuovi sessione ${activeIndex + 1}`}
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      sessions: draft.sessions.filter(
+                        (x) => x.id !== active.id,
+                      ),
+                    })
+                  }
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.5fr)_5rem_minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="col-span-2 sm:col-span-1">
+                  <Field label="Nome sessione">
                     <input
                       className={control}
-                      type="number"
-                      min={1}
-                      max={52}
-                      value={s.week ?? 1}
+                      value={active.name}
                       onChange={(e) =>
-                        setSession(s.id, { week: Number(e.target.value) })
-                      }
-                    />
-                  </Field>
-                  <Field label="Giorno">
-                    <input
-                      className={control}
-                      value={s.day ?? ""}
-                      placeholder="Es. Lunedì"
-                      onChange={(e) =>
-                        setSession(s.id, { day: e.target.value })
+                        setSession(active.id, { name: e.target.value })
                       }
                     />
                   </Field>
                 </div>
+                <Field label="Settimana">
+                  <input
+                    className={control}
+                    type="number"
+                    min={1}
+                    max={52}
+                    value={active.week ?? 1}
+                    onChange={(e) =>
+                      setSession(active.id, { week: Number(e.target.value) })
+                    }
+                  />
+                </Field>
+                <Field label="Giorno">
+                  <input
+                    className={control}
+                    value={active.day ?? ""}
+                    placeholder="Es. Lunedì"
+                    onChange={(e) =>
+                      setSession(active.id, { day: e.target.value })
+                    }
+                  />
+                </Field>
                 <Field label="Tipo di allenamento">
                   <SelectControl
                     className={control}
-                    value={s.kind ?? "strength"}
+                    value={active.kind ?? "strength"}
                     onChange={(e) =>
-                      setSession(s.id, {
+                      setSession(active.id, {
                         kind: e.target.value as "strength" | "run",
                       })
                     }
@@ -321,166 +427,193 @@ export function PlanEditor({
                     <option value="run">Corsa</option>
                   </SelectControl>
                 </Field>
-                <Field label="Riscaldamento">
-                  <textarea
-                    className={control}
-                    rows={4}
-                    value={s.preparation ?? ""}
-                    onChange={(e) =>
-                      setSession(s.id, { preparation: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Indicazioni e progressione">
-                  <textarea
-                    className={control}
-                    rows={3}
-                    value={s.guidance ?? ""}
-                    onChange={(e) =>
-                      setSession(s.id, { guidance: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Defaticamento">
-                  <textarea
-                    className={control}
-                    rows={3}
-                    value={s.cooldown ?? ""}
-                    onChange={(e) =>
-                      setSession(s.id, { cooldown: e.target.value })
-                    }
-                  />
-                </Field>
               </div>
-            </details>
-            {s.exercises.map((ex, j) => (
-              <div
-                key={ex.id}
-                className="space-y-3 rounded-xl border bg-background p-4"
-              >
-                <div className="flex items-end gap-2">
-                  <div className="min-w-0 flex-1">
-                    <Field label={`Esercizio ${j + 1}`}>
-                      <input
-                        className={control}
-                        value={ex.name}
-                        onChange={(e) =>
-                          setExercise(s.id, ex.id, { name: e.target.value })
-                        }
-                        placeholder="Nome esercizio"
-                      />
-                    </Field>
-                  </div>
+              <details className="rounded-xl border bg-background px-4 py-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Indicazioni della sessione
+                </summary>
+                <div className="mt-4 space-y-3">
+                  <Field label="Riscaldamento">
+                    <textarea
+                      className={control}
+                      rows={4}
+                      value={active.preparation ?? ""}
+                      onChange={(e) =>
+                        setSession(active.id, { preparation: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Indicazioni e progressione">
+                    <textarea
+                      className={control}
+                      rows={3}
+                      value={active.guidance ?? ""}
+                      onChange={(e) =>
+                        setSession(active.id, { guidance: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Defaticamento">
+                    <textarea
+                      className={control}
+                      rows={3}
+                      value={active.cooldown ?? ""}
+                      onChange={(e) =>
+                        setSession(active.id, { cooldown: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+              </details>
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                  <h4 className="text-base font-semibold">Esercizi</h4>
                   <Button
                     type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Rimuovi esercizio ${j + 1} dalla sessione ${i + 1}`}
+                    variant="outline"
+                    size="sm"
+                    disabled={active.exercises.length >= 30}
                     onClick={() =>
-                      setSession(s.id, {
-                        exercises: s.exercises.filter((x) => x.id !== ex.id),
+                      setSession(active.id, {
+                        exercises: [...active.exercises, exercise()],
                       })
                     }
                   >
-                    <Trash2 className="size-4" />
+                    <Plus /> Aggiungi esercizio
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Serie">
-                    <input
-                      className={control}
-                      type="number"
-                      min={1}
-                      max={20}
-                      required
-                      value={ex.sets}
-                      onChange={(e) =>
-                        setExercise(s.id, ex.id, {
-                          sets: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </Field>
-                  <Field label="Ripetizioni / durata">
-                    <input
-                      className={control}
-                      value={ex.reps}
-                      onChange={(e) =>
-                        setExercise(s.id, ex.id, { reps: e.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field label="Recupero (s)">
-                    <input
-                      className={control}
-                      type="number"
-                      min={0}
-                      max={900}
-                      required
-                      value={ex.restSeconds}
-                      onChange={(e) =>
-                        setExercise(s.id, ex.id, {
-                          restSeconds: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </Field>
+                <div className="divide-y">
+                  {active.exercises.map((ex, j) => (
+                    <div key={ex.id} className="space-y-2 py-3">
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-[minmax(0,1.6fr)_4rem_minmax(0,1fr)_5.5rem_2rem] sm:items-end">
+                        <div className="col-span-2 min-w-0 sm:col-span-1">
+                          <Field label={`Esercizio ${j + 1}`}>
+                            <input
+                              className={control}
+                              value={ex.name}
+                              placeholder="Nome esercizio"
+                              onChange={(e) =>
+                                setExercise(active.id, ex.id, {
+                                  name: e.target.value,
+                                })
+                              }
+                            />
+                          </Field>
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="col-start-3 row-start-1 self-end justify-self-end sm:col-start-5 sm:row-start-1"
+                          aria-label={`Rimuovi esercizio ${j + 1} dalla sessione ${activeIndex + 1}`}
+                          onClick={() =>
+                            setSession(active.id, {
+                              exercises: active.exercises.filter(
+                                (x) => x.id !== ex.id,
+                              ),
+                            })
+                          }
+                        >
+                          <Trash2 />
+                        </Button>
+                        <Field label="Serie">
+                          <input
+                            className={control}
+                            type="number"
+                            min={1}
+                            max={20}
+                            required
+                            value={Number.isNaN(ex.sets) ? "" : ex.sets}
+                            onChange={(e) =>
+                              setExercise(active.id, ex.id, {
+                                sets: e.target.valueAsNumber,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="Rip. / durata">
+                          <input
+                            className={control}
+                            value={ex.reps}
+                            onChange={(e) =>
+                              setExercise(active.id, ex.id, {
+                                reps: e.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="Rec. (s)">
+                          <input
+                            className={control}
+                            type="number"
+                            min={0}
+                            max={900}
+                            required
+                            value={
+                              Number.isNaN(ex.restSeconds) ? "" : ex.restSeconds
+                            }
+                            onChange={(e) =>
+                              setExercise(active.id, ex.id, {
+                                restSeconds: e.target.valueAsNumber,
+                              })
+                            }
+                          />
+                        </Field>
+                      </div>
+                      <details className="group">
+                        <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground">
+                          <ChevronDown
+                            className="size-3 transition-transform group-open:rotate-180"
+                            aria-hidden
+                          />
+                          Note e video
+                          {(ex.notes || ex.videoUrl) && (
+                            <span aria-hidden> ·</span>
+                          )}
+                        </summary>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Field label="Note esercizio">
+                            <input
+                              className={control}
+                              value={ex.notes}
+                              onChange={(e) =>
+                                setExercise(active.id, ex.id, {
+                                  notes: e.target.value,
+                                })
+                              }
+                            />
+                          </Field>
+                          <Field label="Link video">
+                            <input
+                              className={control}
+                              inputMode="url"
+                              value={ex.videoUrl ?? ""}
+                              placeholder="https://"
+                              onChange={(e) =>
+                                setExercise(active.id, ex.id, {
+                                  videoUrl: e.target.value,
+                                })
+                              }
+                            />
+                          </Field>
+                        </div>
+                      </details>
+                    </div>
+                  ))}
+                  {!active.exercises.length && (
+                    <p className="py-4 text-sm text-muted-foreground">
+                      Nessun esercizio in questa sessione.
+                    </p>
+                  )}
                 </div>
-                <Field label="Note esercizio">
-                  <input
-                    className={control}
-                    value={ex.notes}
-                    onChange={(e) =>
-                      setExercise(s.id, ex.id, { notes: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Video (facoltativo)">
-                  <input
-                    className={control}
-                    type="url"
-                    value={ex.videoUrl ?? ""}
-                    onChange={(e) =>
-                      setExercise(s.id, ex.id, { videoUrl: e.target.value })
-                    }
-                    placeholder="https://"
-                  />
-                </Field>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={s.exercises.length >= 30}
-              onClick={() =>
-                setSession(s.id, { exercises: [...s.exercises, exercise()] })
-              }
-            >
-              <Plus className="size-3.5" />
-              Aggiungi esercizio
-            </Button>
-          </section>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={draft.sessions.length >= 52}
-          onClick={() =>
-            setDraft({
-              ...draft,
-              sessions: [
-                ...draft.sessions,
-                {
-                  ...session(),
-                  name: `Sessione ${String.fromCharCode(65 + draft.sessions.length)}`,
-                },
-              ],
-            })
-          }
-        >
-          <Plus className="size-4" />
-          Aggiungi sessione
-        </Button>
+            </section>
+          ) : (
+            <p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">
+              Aggiungi una sessione per inserire gli esercizi.
+            </p>
+          )}
+        </div>
         <FormError message={error} />
         <div className="crm-form-actions">
           <EditorCancel />

@@ -20,7 +20,7 @@ export function prepareStudentBooking(
       : undefined);
   if (!lesson)
     throw new Error(
-      "Questo slot non è più disponibile. Aggiorna il calendario.",
+      "Questa fascia non è più disponibile. Aggiorna il calendario.",
     );
   const old = state.bookings?.find(
     (booking) =>

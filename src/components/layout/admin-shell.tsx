@@ -50,11 +50,11 @@ const footerLinks = [
 ];
 const itemClass = (active: boolean, collapsed: boolean) =>
   cn(
-    "flex h-8 items-center gap-2.5 rounded-[10px] text-sm font-medium transition-colors",
-    collapsed ? "w-8 justify-center" : "px-2",
+    "flex h-11 items-center gap-3 rounded-xl text-sm font-semibold transition-colors",
+    collapsed ? "w-10 justify-center" : "px-3",
     active
-      ? "bg-foreground/[.045] text-foreground"
-      : "text-muted-foreground hover:bg-foreground/[.03] hover:text-foreground",
+      ? "bg-muted text-foreground [&_svg]:text-[var(--workspace-accent)]"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 function SidebarContent({
   collapsed = false,
@@ -71,15 +71,15 @@ function SidebarContent({
         onClick={onNavigate}
         aria-label="Team Italfit, Home"
         className={cn(
-          "flex h-[50px] shrink-0 items-center",
-          collapsed ? "justify-center" : "px-4",
+          "flex h-16 shrink-0 items-center",
+          collapsed ? "justify-center" : "px-5",
         )}
       >
         <Brand compact={collapsed} />
       </Link>
       <nav
         aria-label="Navigazione principale"
-        className={cn("mt-1 space-y-0.5", collapsed ? "px-3.5" : "px-3")}
+        className={cn("mt-3 space-y-1", collapsed ? "px-2.5" : "px-3")}
       >
         {navigation.map((item) => {
           const Icon = icons[item.icon],
@@ -105,8 +105,8 @@ function SidebarContent({
       </nav>
       <div
         className={cn(
-          "mt-auto space-y-0.5 pb-3",
-          collapsed ? "px-3.5" : "px-3",
+          "mt-auto space-y-1 border-t pt-3 pb-3",
+          collapsed ? "px-2.5" : "px-3",
         )}
       >
         {footerLinks.map((item) => {
@@ -210,7 +210,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
             : null;
   const wide = wideRoutes.includes(pathname);
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="admin-area min-h-dvh bg-background">
       <a
         href="#main-content"
         className="sr-only z-[100] rounded bg-background p-3 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -220,7 +220,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r transition-[width] duration-150 lg:block",
-          collapsed ? "w-[60px]" : "w-[256px]",
+          collapsed ? "w-[60px]" : "w-[232px]",
         )}
       >
         <SidebarContent collapsed={collapsed} />
@@ -228,10 +228,10 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "min-w-0 transition-[padding] duration-150",
-          collapsed ? "lg:pl-[60px]" : "lg:pl-[256px]",
+          collapsed ? "lg:pl-[60px]" : "lg:pl-[232px]",
         )}
       >
-        <header className="sticky top-0 z-20 grid h-[50px] grid-cols-[1fr_auto_1fr] items-center gap-3 border-b bg-background/90 px-3 backdrop-blur-md sm:px-4">
+        <header className="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b bg-background/90 px-3 backdrop-blur-md sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5">
             <Button
               variant="ghost"
@@ -281,7 +281,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
           </div>
-          <div className="sm:w-[256px]">
+          <div className="sm:w-[232px]">
             <CommandSearch />
           </div>
           <div className="flex items-center justify-end gap-2">
@@ -309,7 +309,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   aria-label="Menu account"
-                  className="flex size-8 items-center justify-center rounded-full bg-foreground text-[11px] font-medium text-background outline-none ring-offset-2 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-foreground/20"
+                  className="flex size-10 items-center justify-center rounded-full border border-input bg-card text-xs font-bold text-foreground transition-colors hover:bg-muted"
                 >
                   {initials(owner?.name)}
                 </button>
@@ -361,10 +361,10 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           className={cn(
-            "mx-auto w-full px-4 pt-8 pb-12 sm:px-8 lg:pt-12",
+            "mx-auto w-full px-4 pt-6 pb-12 sm:px-8 lg:pt-8",
             wide ? "max-w-[1480px]" : "max-w-[1216px]",
             pathname === "/admin/studenti" &&
-              "flex h-[calc(100dvh-50px)] min-h-[480px] flex-col pb-6 lg:pb-8",
+              "flex h-[calc(100dvh-4rem)] min-h-[480px] flex-col pb-6 lg:pb-8",
           )}
         >
           <SyncNotice />

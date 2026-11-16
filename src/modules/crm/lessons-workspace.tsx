@@ -19,6 +19,8 @@ import { useCrm, updateCrm, useHydrated } from "./store";
 import { todayRome, addDays, romeLocal, romeToIso } from "./fitness-logic";
 import { ConfirmDialog } from "./confirm-dialog";
 import type { Lesson } from "./fitness-model";
+import { coachName, defaultCoachName } from "./student-coach";
+import { withAvailabilityCapacity } from "./availability-lessons";
 import { bookingRestriction } from "./tier-access";
 import { AvailabilityCalendar } from "./availability-calendar";
 export const lessonDate = (iso: string) =>
@@ -81,7 +83,7 @@ function LessonEditor({
               startsAt: romeToIso(String(f.get("date"))),
               durationMinutes: Number(f.get("duration")),
               capacity: Number(f.get("capacity")),
-              coach: String(f.get("coach")).trim(),
+              coach: coachName(String(f.get("coach") ?? "")),
               location: String(f.get("location")).trim(),
               cancelled: lesson?.cancelled ?? false,
             };
@@ -151,7 +153,8 @@ function LessonEditor({
             className={control}
             required
             name="coach"
-            defaultValue={lesson?.coach}
+            defaultValue={coachName(lesson?.coach ?? "")}
+            placeholder={defaultCoachName}
           />
         </Field>
         <Field label="Sala o luogo *">
@@ -194,7 +197,11 @@ export function LessonsWorkspace() {
         title="Calendario"
         description="Disponibilità, lezioni e prenotazioni in sede."
         action={
-          <Button onClick={() => setEditing(true)}>
+          <Button
+            size="lg"
+            className="rounded-full"
+            onClick={() => setEditing(true)}
+          >
             <Plus className="size-4" />
             Aggiungi lezione
           </Button>
@@ -214,7 +221,8 @@ export function LessonDetail({ id }: { id: string }) {
     [confirm, setConfirm] = useState(false),
     [error, setError] = useState(""),
     [studentId, setStudentId] = useState("");
-  const lesson = state.lessons?.find((l) => l.id === id);
+  const savedLesson = state.lessons?.find((l) => l.id === id);
+  const lesson = savedLesson && withAvailabilityCapacity(state, savedLesson);
   if (!hydrated) return <p role="status">Caricamento lezione…</p>;
   if (!lesson)
     return (

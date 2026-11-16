@@ -13,14 +13,17 @@ export function StudentIdentity({
   student,
   index = 0,
   large = false,
+  showEmail = true,
 }: {
   student: Student;
   index?: number;
   large?: boolean;
+  showEmail?: boolean;
 }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-3">
+    <span className="inline-flex max-w-full min-w-0 items-center gap-2.5">
       <span
+        aria-hidden
         className={cn(
           "flex shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
           avatarColors[index % avatarColors.length],
@@ -36,11 +39,13 @@ export function StudentIdentity({
             large ? "text-xl tracking-[-0.02em]" : "text-sm",
           )}
         >
-          {student.firstName} {student.lastName}
+          {`${student.firstName} ${student.lastName}`}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {student.email}
-        </span>
+        {showEmail && (
+          <span className="block truncate text-xs text-muted-foreground">
+            {student.email}
+          </span>
+        )}
       </span>
     </span>
   );
