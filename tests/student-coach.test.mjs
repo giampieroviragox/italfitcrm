@@ -74,6 +74,7 @@ test("Giorgio Galbiati è il predefinito e la foto richiede un profilo univoco",
   s.students[0].coach = "";
   assert.deepEqual(assignedStudentCoach(s, s.students[0]), {
     name: "Giorgio Galbiati",
+    avatarUrl: "/coaches/giorgio-galbiati.jpg",
   });
   s.students[0].coach = "Giorgio";
   s.admins[1].name = "Giorgio Galbiati";

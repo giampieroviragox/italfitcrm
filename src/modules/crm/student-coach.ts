@@ -1,5 +1,7 @@
 import { normalize, type CrmState, type CrmStudent } from "./model.ts";
 export const defaultCoachName = "Giorgio Galbiati";
+/** Used when the default coach has no photo on an admin record. */
+export const defaultCoachAvatarUrl = "/coaches/giorgio-galbiati.jpg";
 
 export function coachName(value: string) {
   const name = value.trim();
@@ -36,6 +38,11 @@ export function assignedStudentCoach(
   const matches = state.admins.filter(
     (a) => normalize(coachName(a.name)) === normalize(name),
   );
-  const avatarUrl = matches.length === 1 ? matches[0]?.avatarUrl : undefined;
-  return { name, ...(validCoachImage(avatarUrl) ? { avatarUrl } : {}) };
+  const saved = matches.length === 1 ? matches[0]?.avatarUrl : undefined;
+  const avatarUrl = validCoachImage(saved)
+    ? saved
+    : normalize(name) === normalize(defaultCoachName)
+      ? defaultCoachAvatarUrl
+      : undefined;
+  return { name, ...(avatarUrl ? { avatarUrl } : {}) };
 }
