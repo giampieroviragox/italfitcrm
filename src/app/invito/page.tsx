@@ -41,14 +41,20 @@ export default async function InvitePage({
     redirect("/login?link=scaduto");
   return (
     <AuthLayout
-      title="Il tuo accesso a Team Italfit"
+      title={
+        params.type === "recovery"
+          ? "Recupera la password"
+          : "Il tuo accesso a Team Italfit"
+      }
       description="Conferma per continuare e scegliere la tua password. Il link è personale e utilizzabile una sola volta."
     >
       <form method="POST" action="/auth/confirm" className="mt-8">
         <input type="hidden" name="token_hash" value={params.token_hash} />
         <input type="hidden" name="type" value={params.type} />
         <Button type="submit" size="lg" className="w-full">
-          Continua e imposta la password
+          {params.type === "recovery"
+            ? "Continua al recupero"
+            : "Continua e imposta la password"}
         </Button>
       </form>
     </AuthLayout>

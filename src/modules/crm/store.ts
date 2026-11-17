@@ -2,6 +2,7 @@
 import { useContext, useSyncExternalStore } from "react";
 import { tiers } from "@/modules/students/config";
 import type { CrmState } from "./model";
+import { applyWalletCommand, type WalletCommand } from "./lesson-wallet";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
@@ -130,6 +131,15 @@ export async function removeCrmRecord(target: RemovalTarget) {
     return activeRemoteStore.remove(target);
   }
   return updateCrm((s) => removalState(s, target).state);
+}
+
+export async function updateLessonWallet(command: WalletCommand) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.wallet(command);
+  }
+  return updateCrm((state) => applyWalletCommand(state, command));
 }
 
 export async function addStudentComment(studentId: string, text: string) {

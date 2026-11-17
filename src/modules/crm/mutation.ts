@@ -9,6 +9,7 @@ export function mutationState(current: CrmState, proposed: CrmState): CrmState {
       return {
         ...s,
         history: undefined,
+        lessonWallet: undefined,
         notes:
           JSON.stringify(s.notes ?? []) === JSON.stringify(old?.notes ?? [])
             ? undefined

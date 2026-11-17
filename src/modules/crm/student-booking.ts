@@ -22,6 +22,7 @@ export function prepareStudentBooking(
     throw new Error(
       "Questa fascia non è più disponibile. Aggiorna il calendario.",
     );
+  if (lesson.settlement) throw new Error("La lezione è già conclusa.");
   const old = state.bookings?.find(
     (booking) =>
       booking.studentId === studentId && booking.lessonId === lessonId,

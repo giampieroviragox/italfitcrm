@@ -44,6 +44,7 @@ export interface AccountAccess {
   invitedAt: string;
 }
 export interface CrmStudent extends Omit<Student, "tierId"> {
+  lessonWallet?: import("./lesson-wallet.ts").LessonWallet;
   workoutEntries?: import("./fitness-model").WorkoutEntry[];
   access?: AccountAccess | null;
   tierId: string;

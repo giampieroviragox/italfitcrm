@@ -18,6 +18,7 @@ import {
   parseStudentPortalData,
   type StudentPortalData,
 } from "./student-portal-model";
+import { LessonWalletView } from "./lesson-wallet-view";
 export function StudentPortal({
   initial,
   view = "home",
@@ -132,7 +133,8 @@ export function StudentPortal({
       view={view}
       items={studentNavItems(
         data.services,
-        data.lessons.some((lesson) => lesson.enrolled),
+        Boolean(data.lessonWallet) ||
+          data.lessons.some((lesson) => lesson.enrolled),
       )}
       actions={<StudentAccountMenu student={data.student} />}
     >
@@ -166,7 +168,10 @@ export function StudentPortal({
         <StudentHome
           services={data.services}
           planTitle={assignment?.snapshot.title}
-          hasBookings={data.lessons.some((lesson) => lesson.enrolled)}
+          hasBookings={
+            Boolean(data.lessonWallet) ||
+            data.lessons.some((lesson) => lesson.enrolled)
+          }
         />
       )}
       {message && (
@@ -195,6 +200,12 @@ export function StudentPortal({
             onChange={changeBooking}
           />
         )}
+      {view === "prenotazioni" &&
+        (data.lessonWallet || data.services.lessons) && (
+          <div className="mt-8">
+            <LessonWalletView wallet={data.lessonWallet} />
+          </div>
+        )}
       {view === "piano" && data.services.plans && (
         <>
           {assignment ? (
@@ -217,7 +228,8 @@ export function StudentPortal({
         ((view === "piano" && !data.services.plans) ||
           (view === "prenotazioni" &&
             !data.services.lessons &&
-            !data.lessons.length)) && (
+            !data.lessons.length &&
+            !data.lessonWallet)) && (
           <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Il team non ha ancora abilitato questo servizio per il tuo percorso.
           </p>

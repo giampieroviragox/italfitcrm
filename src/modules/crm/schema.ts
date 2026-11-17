@@ -1,3 +1,4 @@
+import { lessonWallet } from "./lesson-wallet.ts";
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
 import { validCoachImage } from "./student-coach.ts";
 import { isWorkoutEntries } from "./workout-entry-schema.ts";
@@ -132,6 +133,8 @@ export function isCrmState(v: unknown): v is CrmState {
               (v.tiers as Record<string, unknown>[]).some((t) => t.id === id),
             ))) &&
         ["active", "invited", "paused"].includes(String(s.status)) &&
+        (s.lessonWallet === undefined ||
+          lessonWallet.safeParse(s.lessonWallet).success) &&
         (s.workoutEntries === undefined ||
           isWorkoutEntries(s.workoutEntries)) &&
         (s.phone === undefined || typeof s.phone === "string") &&

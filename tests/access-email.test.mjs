@@ -84,3 +84,27 @@ test("provider failure is not reported as success and no send occurs for an untr
   );
   assert.equal(calls, 1);
 });
+
+test("first invite, renewed invite and recovery have distinct copy and preserve the confirmation link", async () => {
+  const { recoveryEmailTemplate } =
+    await import("../src/modules/auth/email-template.ts");
+  const { readFileSync } = await import("node:fs");
+  const recovery = recoveryEmailTemplate();
+  const invite = accessEmail("Giulia", link);
+  const renewed = accessEmail("Giulia", link, "reinvite");
+  assert.equal(
+    new Set([recovery.subject, invite.subject, renewed.subject]).size,
+    3,
+  );
+  assert.match(invite.html, /Attiva il tuo accesso/);
+  assert.match(renewed.html, /Torna nel tuo account/);
+  const href =
+    "{{ .SiteURL }}/invito?token_hash={{ .TokenHash }}&amp;type=recovery";
+  assert.ok(recovery.html.includes(`href="${href}"`));
+  const deployable = readFileSync(
+    new URL("../supabase/templates/recovery.html", import.meta.url),
+    "utf8",
+  );
+  assert.ok(deployable.includes(`href="${href}"`));
+  assert.ok(deployable.includes(recovery.subject));
+});

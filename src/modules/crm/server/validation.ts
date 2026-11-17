@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type { CrmState } from "../model.ts";
 import { prepareTransition } from "../transition.ts";
 import type { Access } from "./auth";
@@ -96,8 +97,18 @@ export function validateStaffUpdate(
       current.admins.find((a) => a.id === access.record_id)?.name ??
       "Amministratore",
   };
+  const lessons = proposed.lessons?.map((lesson) => {
+    const before = current.lessons?.find((item) => item.id === lesson.id);
+    const next = { ...lesson };
+    if (before?.settlement) next.settlement = before.settlement;
+    else delete next.settlement;
+    if (before?.settlement && !isDeepStrictEqual(before, next))
+      throw new HttpError(409, "La lezione è già chiusa nel wallet.");
+    return next;
+  });
   const cleaned = {
     ...proposed,
+    lessons,
     admins: proposed.admins.map((a) => ({
       ...a,
       access: current.admins.find((old) => old.id === a.id)?.access ?? null,
@@ -107,6 +118,7 @@ export function validateStaffUpdate(
       return {
         ...s,
         access: old?.access ?? null,
+        lessonWallet: old?.lessonWallet,
         // Logs of a removed assignment go with it.
         workoutEntries: (old?.workoutEntries ?? []).filter(
           (entry) => !removed.assignments?.includes(entry.assignmentId),

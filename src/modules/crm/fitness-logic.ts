@@ -1,3 +1,4 @@
+import { lessonSettlement } from "./lesson-wallet.ts";
 import {
   availabilityLessonId,
   publishedAvailabilityCapacity,
@@ -142,6 +143,8 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             typeof l.durationMinutes === "number" &&
             typeof l.capacity === "number" &&
             typeof l.cancelled === "boolean" &&
+            (l.settlement === undefined ||
+              lessonSettlement.safeParse(l.settlement).success) &&
             (l.availability === undefined ||
               (obj(l.availability) &&
                 typeof l.availability.adminId === "string")),
@@ -359,6 +362,20 @@ export function assertFitnessTransition(
       old = previous.bookings?.find((x) => x.id === b.id);
     if (!l || !s || !Number.isFinite(Date.parse(b.createdAt)))
       throw new Error("Iscrizione non valida.");
+    const closed = previous.lessons?.some(
+      (lesson) =>
+        lesson.settlement &&
+        (lesson.id === l.id || lesson.id === old?.lessonId),
+    );
+    if (
+      closed &&
+      (!old ||
+        old.lessonId !== b.lessonId ||
+        old.studentId !== b.studentId ||
+        old.createdAt !== b.createdAt ||
+        (old.cancelled !== b.cancelled && !(s.archived && b.cancelled)))
+    )
+      throw new Error("La lezione è già chiusa nel wallet.");
     if (
       !b.cancelled &&
       (!old ||

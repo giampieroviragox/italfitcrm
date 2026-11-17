@@ -1,3 +1,4 @@
+import { lessonWallet, type LessonWallet } from "./lesson-wallet.ts";
 import {
   assignedStudentCoach,
   isStudentCoach,
@@ -23,6 +24,7 @@ export interface StudentPortalData {
   coach?: StudentCoach;
   workoutEntries?: import("./fitness-model.ts").WorkoutEntry[];
   assignments: PlanAssignment[];
+  lessonWallet?: LessonWallet;
   lessons: (Lesson & {
     enrolled: boolean;
     occupied: number;
@@ -50,6 +52,9 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
     ("coach" in value &&
       value.coach !== undefined &&
       !isStudentCoach(value.coach)) ||
+    ("lessonWallet" in value &&
+      value.lessonWallet !== undefined &&
+      !lessonWallet.safeParse(value.lessonWallet).success) ||
     ("workoutEntries" in value && !isWorkoutEntries(value.workoutEntries)) ||
     !value.lessons.every(
       (lesson) =>
@@ -86,6 +91,7 @@ export function studentProjection(
   );
   return {
     services,
+    lessonWallet: student.lessonWallet,
     coach: assignedStudentCoach(state, student),
     workoutEntries: services.plans ? (student.workoutEntries ?? []) : [],
     student: {

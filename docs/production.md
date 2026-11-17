@@ -23,17 +23,15 @@ Le regole sono nel campo `entitlements` del tier, salvato nel payload Postgres. 
 
 Il limite delle lezioni è facoltativo e segue il mese della lezione in Europe/Rome. Prenotazioni e lezioni annullate non consumano disponibilità. Il controllo usa la stessa transazione versionata delle prenotazioni, anche in concorrenza. Ridurre i servizi o il limite non elimina lo storico; lo studente può annullare posti già prenotati.
 
-## Modalità senza Resend
+## Inviti e recupero password con Resend
 
-La versione corrente non richiede un dominio email. L’admin prepara il link personale, lo copia e lo condivide direttamente. Il destinatario apre `/invito`, trova l’email già compilata e non modificabile e inserisce e conferma la password. Al salvataggio il server verifica il token e i permessi CRM, salva la password e apre l’area corretta. Email, tipo di invito e token sono protetti da una firma server. I link precedenti restano compatibili con il passaggio di conferma. Il token non viene consumato dalle normali scansioni GET delle email o dei servizi di anteprima.
+L’admin può inviare un invito o un reinvito via email oppure copiare e condividere il link personale. Il destinatario apre `/invito`, trova l’email già compilata e non modificabile e inserisce e conferma la password. Al salvataggio il server verifica il token e i permessi CRM, salva la password e apre l’area corretta. Email, tipo di invito e token sono protetti da una firma server. I link precedenti restano compatibili con il passaggio di conferma. L’anteprima GET può aprire il link e il token viene verificato al momento della conferma.
 
-Per il recupero dell’accesso lo studente contatta il team: l’admin genera un nuovo link dalla scheda. La pagina pubblica non promette un’email che il servizio non è configurato per inviare.
+Per il recupero autonomo, lo studente apre **Password dimenticata?** e richiede un link. Supabase Auth invia l’email tramite SMTP Resend. Il template apre `/invito` con `TokenHash` e tipo `recovery`. La conferma esplicita invia il token a `/auth/confirm` e apre `/imposta-password`. Il link è utilizzabile una volta.
 
-Resend è integrato ma l’opzione di invio rimane nascosta senza mittente configurato. Un test tecnico è stato accettato dall’indirizzo di test ufficiale del provider; nessun invito è stato inviato a persone reali. Per abilitare l’email in futuro:
+Il dominio verificato è `teamitalfit.com` e il mittente pubblico è `inviti@teamitalfit.com`. Gli inviti richiedono `RESEND_API_KEY`, `RESEND_FROM_EMAIL` e l’URL pubblico HTTPS su Vercel. Per il recupero, Supabase usa `smtp.resend.com` sulla porta `465`, con utente `resend` e una chiave Resend come credenziale SMTP. Vercel abilita la pagina pubblica tramite `AUTH_EMAIL_ENABLED=true`.
 
-1. Verificare un dominio mittente in Resend tramite i DNS del dominio scelto dal cliente.
-2. Impostare `RESEND_FROM_EMAIL` sul progetto Vercel e ridistribuire.
-3. Per il recupero password autonomo, configurare anche SMTP e template in Supabase Auth, quindi abilitare `AUTH_EMAIL_ENABLED=true`.
+Per pubblicare il template brandizzato di recupero, apri **Authentication → Email Templates → Reset password** in Supabase. Usa come oggetto **Reimposta la password di Team Italfit** e incolla [recovery.html](../supabase/templates/recovery.html) come corpo. Mantieni il passaggio intermedio su `/invito`: il recupero deve continuare solo dopo la conferma esplicita del destinatario. Inviti e reinviti usano i template inclusi nell’app e si aggiornano con il deploy del codice.
 
 Il servizio segnala conferma o mancata conferma dell’invio; in caso di errore conserva l’alternativa del link manuale. Non effettua reinvii automatici.
 

@@ -15,6 +15,8 @@ import type { PlanAssignment } from "./fitness-model";
 import { lessonDate } from "./lessons-workspace";
 import { StudentAccessControl } from "./student-access-control";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
+import { LessonWalletView } from "./lesson-wallet-view";
+const profileTabs = ["properties", "plans", "wallet", "notes", "history"];
 const timestamp = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -104,17 +106,17 @@ export function StudentProfile({
             role="tablist"
             aria-label="Dettagli studente"
             onKeyDown={(e) => {
-              const ids = ["properties", "plans", "notes", "history"];
+              const ids = profileTabs;
               const index = ids.indexOf(tab);
               const next =
                 e.key === "ArrowRight"
-                  ? (index + 1) % 4
+                  ? (index + 1) % ids.length
                   : e.key === "ArrowLeft"
-                    ? (index + 3) % 4
+                    ? (index + ids.length - 1) % ids.length
                     : e.key === "Home"
                       ? 0
                       : e.key === "End"
-                        ? 3
+                        ? ids.length - 1
                         : -1;
               if (next >= 0) {
                 e.preventDefault();
@@ -133,6 +135,7 @@ export function StudentProfile({
             {[
               { id: "properties", label: "Proprietà" },
               { id: "plans", label: "Piani e lezioni" },
+              { id: "wallet", label: "Wallet lezioni" },
               {
                 id: "notes",
                 label: (
@@ -283,6 +286,12 @@ export function StudentProfile({
                   )}
                 </section>
               </>
+            )}
+            {tab === "wallet" && (
+              <LessonWalletView
+                wallet={student.lessonWallet}
+                staff={{ studentId: id, archived: !!student.archived }}
+              />
             )}
             {tab === "notes" && (
               <div className="space-y-6">

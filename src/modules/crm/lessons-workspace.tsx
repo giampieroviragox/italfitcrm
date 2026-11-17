@@ -23,6 +23,8 @@ import { coachName, defaultCoachName } from "./student-coach";
 import { withAvailabilityCapacity } from "./availability-lessons";
 import { bookingRestriction } from "./tier-access";
 import { AvailabilityCalendar } from "./availability-calendar";
+import { lessonHasEnded } from "./lesson-wallet";
+import { LessonWalletSettlement } from "./lesson-wallet-settlement";
 export const lessonDate = (iso: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "full",
@@ -258,20 +260,22 @@ export function LessonDetail({ id }: { id: string }) {
           </span>
         }
         action={
-          <>
-            {!lesson.availability && (
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                Modifica
+          !lesson.settlement && (
+            <>
+              {!lesson.availability && (
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  Modifica
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                disabled={lesson.cancelled && !future}
+                onClick={() => setConfirm(true)}
+              >
+                {lesson.cancelled ? "Ripristina lezione" : "Annulla lezione"}
               </Button>
-            )}
-            <Button
-              variant="outline"
-              disabled={lesson.cancelled && !future}
-              onClick={() => setConfirm(true)}
-            >
-              {lesson.cancelled ? "Ripristina lezione" : "Annulla lezione"}
-            </Button>
-          </>
+            </>
+          )
         }
       />
       <LocalNotice />
@@ -357,7 +361,10 @@ export function LessonDetail({ id }: { id: string }) {
           <Button
             type="submit"
             disabled={
-              lesson.cancelled || !future || bookings.length >= lesson.capacity
+              lesson.cancelled ||
+              !!lesson.settlement ||
+              !future ||
+              bookings.length >= lesson.capacity
             }
           >
             Iscrivi
@@ -380,6 +387,7 @@ export function LessonDetail({ id }: { id: string }) {
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled={!!lesson.settlement}
                   onClick={() =>
                     run(async () => changeBooking(id, b.studentId, true))
                   }
@@ -396,7 +404,16 @@ export function LessonDetail({ id }: { id: string }) {
           </p>
         )}
       </section>
-      {editing && (
+      {!lesson.cancelled &&
+        (lesson.settlement || lessonHasEnded(lesson, now)) && (
+          <LessonWalletSettlement
+            key={id}
+            lesson={lesson}
+            bookings={bookings}
+            students={state.students}
+          />
+        )}
+      {editing && !lesson.settlement && (
         <LessonEditor lesson={lesson} close={() => setEditing(false)} />
       )}
       <ConfirmDialog

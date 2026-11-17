@@ -55,6 +55,7 @@ export interface PlanAssignment {
   };
 }
 export interface Lesson {
+  settlement?: import("./lesson-wallet.ts").LessonSettlement;
   availability?: { adminId: string };
   id: string;
   title: string;

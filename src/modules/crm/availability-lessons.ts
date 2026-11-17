@@ -34,6 +34,7 @@ export function withAvailabilityCapacity(
   state: CrmState,
   lesson: Lesson,
 ): Lesson {
+  if (lesson.settlement) return lesson;
   const capacity = publishedAvailabilityCapacity(state, lesson);
   return capacity === undefined || capacity === lesson.capacity
     ? lesson

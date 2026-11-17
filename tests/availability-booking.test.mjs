@@ -9,6 +9,8 @@ import { prepareStudentBooking } from "../src/modules/crm/student-booking.ts";
 import { studentProjection } from "../src/modules/crm/student-portal-model.ts";
 import { prepareTransition } from "../src/modules/crm/transition.ts";
 
+import { applyWalletCommand } from "../src/modules/crm/lesson-wallet.ts";
+
 const start = "2090-11-06T06:00:00.000Z",
   end = "2090-11-06T08:00:00.000Z";
 const student = (id) => ({
@@ -223,4 +225,46 @@ test("modificare solo la capienza mantiene le prenotazioni e non può escludere 
   assert.equal(updated.lessons[0].id, id);
   assert.equal(updated.lessons[0].capacity, 8);
   assert.deepEqual(updated.bookings, booked.bookings);
+});
+
+test("una disponibilità prenotata entra nel wallet al consuntivo e conserva lo storico se la fascia cambia", () => {
+  const initial = state();
+  initial.admins[0].availability = [
+    createAvailability(start, "2090-11-06T07:00:00.000Z", 4),
+  ];
+  const [lesson] = availabilityLessons(initial);
+  const booked = ["a", "b"].reduce(
+    (current, studentId) =>
+      prepareStudentBooking(current, studentId, lesson.id, false),
+    initial,
+  );
+  const closed = prepareTransition(
+    booked,
+    applyWalletCommand(
+      booked,
+      {
+        action: "settle",
+        lessonId: lesson.id,
+        venue: "milano",
+        roster: booked.bookings.map((booking) => ({
+          bookingId: booking.id,
+          present: booking.studentId === "a",
+        })),
+      },
+      new Date("2090-11-06T07:00:00.000Z"),
+    ),
+  );
+  const withdrawn = prepareTransition(closed, {
+    ...closed,
+    admins: closed.admins.map((admin) => ({ ...admin, availability: [] })),
+  });
+  assert.equal(
+    studentProjection(withdrawn, "a").lessonWallet.lessons[0].price,
+    7000,
+  );
+  assert.equal(studentProjection(withdrawn, "b").lessonWallet, undefined);
+  assert.throws(
+    () => prepareStudentBooking(withdrawn, "a", lesson.id, true),
+    /già conclusa/,
+  );
 });

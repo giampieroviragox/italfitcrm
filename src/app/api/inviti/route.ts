@@ -115,6 +115,8 @@ export async function POST(request: Request) {
           person.email,
           "firstName" in person ? person.firstName : person.name,
           link.toString(),
+          undefined,
+          person.access ? "reinvite" : "invite",
         );
         emailSent = true;
       } catch {
