@@ -1,3 +1,11 @@
+import {
+  feedbackFor,
+  overallRatings,
+  sessionLengths,
+  upcomingRaces,
+} from "./cycle-feedback.ts";
+import { loggedSessions, setLabel } from "./workout-log.ts";
+import { todayRome } from "./fitness-logic.ts";
 import type {
   PlanAssignment,
   WorkoutExercise,
@@ -75,6 +83,29 @@ export type McpStudentPlan =
       mese: string;
       modelloId: string;
       piano: PlanAssignment["snapshot"];
+      /** Questionnaire answers for this plan, when submitted. */
+      feedbackFinePiano?: {
+        comeEAndato: string;
+        durataSessioni: string;
+        sessioniSettimanaProssimoPiano: number;
+        daCambiare: string;
+        note: string;
+        inviatoIl: string;
+      };
+      /** What the student logged for each completed session. */
+      registroAllenamenti: {
+        sessione: string;
+        data: string;
+        fatica?: number;
+        note: string;
+        esercizi: { esercizio: string; serie: string[] }[];
+      }[];
+      gareInProgramma: {
+        nome: string;
+        data: string;
+        luogo: string;
+        note?: string;
+      }[];
     };
 
 export function mcpStudentPlan(
@@ -105,12 +136,51 @@ export function mcpStudentPlan(
         : "Lo studente non ha ancora piani assegnati.",
       mesiDisponibili: months,
     };
+  const feedback = feedbackFor(student, assignment);
   return {
     trovato: true,
     studente: `${student.firstName} ${student.lastName}`.trim(),
     mese: assignment.month,
     modelloId: assignment.planId,
     piano: assignment.snapshot,
+    ...(feedback
+      ? {
+          feedbackFinePiano: {
+            comeEAndato:
+              overallRatings[feedback.rating as keyof typeof overallRatings],
+            durataSessioni: sessionLengths[feedback.sessionLength],
+            sessioniSettimanaProssimoPiano: feedback.sessionsPerWeek,
+            daCambiare: feedback.changes,
+            note: feedback.notes,
+            inviatoIl: feedback.submittedAt,
+          },
+        }
+      : {}),
+    registroAllenamenti: loggedSessions(
+      [assignment],
+      student.workoutEntries ?? [],
+    )
+      .toReversed()
+      .map(({ entry, session, date }) => ({
+        sessione: session.name,
+        data: date,
+        ...(entry.rpe ? { fatica: entry.rpe } : {}),
+        note: entry.notes,
+        esercizi: (entry.exercises ?? []).flatMap((log) => {
+          const exercise = session.exercises.find(
+            (e) => e.id === log.exerciseId,
+          );
+          return exercise
+            ? [{ esercizio: exercise.name, serie: log.sets.map(setLabel) }]
+            : [];
+        }),
+      })),
+    gareInProgramma: upcomingRaces(student.races, todayRome()).map((r) => ({
+      nome: r.name,
+      data: r.date,
+      luogo: r.location,
+      ...(r.notes ? { note: r.notes } : {}),
+    })),
   };
 }
 

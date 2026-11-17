@@ -13,6 +13,7 @@ import {
   type OnlineSubscription,
 } from "./online-coaching.ts";
 import { formatKg, type MaxRecord } from "./workout-log.ts";
+import { overallRatings, sessionLengths, type Race } from "./cycle-feedback.ts";
 
 type Change = { text: string; details?: string[] };
 const different = (a: unknown, b: unknown) =>
@@ -175,6 +176,9 @@ export function studentChanges(
       changes.push({ text: "Proprietà CRM aggiornate", details: properties });
     changes.push(...subscriptionChanges(old, student, next));
     changes.push(...maxChanges(old, student));
+    changes.push(...feedbackChanges(old, student, next));
+    changes.push(...raceChanges(old, student));
+    changes.push(...walletChanges(old, student));
     for (const p of next.properties) {
       const before = current.properties.find((x) => x.id === p.id);
       if (!before || !different(before, p) || !(p.id in student.properties))
@@ -408,4 +412,108 @@ function maxChanges(old: CrmStudent, student: CrmStudent): Change[] {
       ? [{ text: "Massimale eliminato", details: removed.map(maxLine) }]
       : []),
   ];
+}
+
+function feedbackChanges(
+  old: CrmStudent,
+  student: CrmStudent,
+  next: CrmState,
+): Change[] {
+  return (student.cycleFeedback ?? []).flatMap((f) => {
+    const before = old.cycleFeedback?.find(
+      (x) =>
+        x.assignmentId === f.assignmentId &&
+        x.assignmentCreatedAt === f.assignmentCreatedAt,
+    );
+    if (before && !different(before, f)) return [];
+    const plan = next.assignments?.find((a) => a.id === f.assignmentId);
+    return [
+      {
+        text: before
+          ? "Questionario di fine piano aggiornato"
+          : "Questionario di fine piano compilato",
+        details: [
+          ...(plan
+            ? [`Piano: “${plan.snapshot.title}” · mese ${plan.month}`]
+            : []),
+          `Com’è andato: ${overallRatings[f.rating as keyof typeof overallRatings]}`,
+          `Durata delle sessioni: ${sessionLengths[f.sessionLength]}`,
+          `Sessioni a settimana per il prossimo piano: ${f.sessionsPerWeek}`,
+          ...(f.changes ? [`Da cambiare: ${f.changes}`] : []),
+          ...(f.notes ? [`Note: ${f.notes}`] : []),
+        ],
+      },
+    ];
+  });
+}
+const raceLine = (r: Race) =>
+  `${r.name} · ${day(r.date)}${r.location ? ` · ${r.location}` : ""}${r.addedBy ? ` · inserita da ${r.addedBy}` : ""}`;
+function raceChanges(old: CrmStudent, student: CrmStudent): Change[] {
+  const before = old.races ?? [],
+    after = student.races ?? [];
+  const added = after.filter((r) => !before.some((x) => x.id === r.id));
+  const removed = before.filter((r) => !after.some((x) => x.id === r.id));
+  const edited = after.filter((r) => {
+    const b = before.find((x) => x.id === r.id);
+    return b && different(b, r);
+  });
+  return [
+    ...(added.length
+      ? [{ text: "Gara aggiunta", details: added.map(raceLine) }]
+      : []),
+    ...(edited.length
+      ? [{ text: "Gara modificata", details: edited.map(raceLine) }]
+      : []),
+    ...(removed.length
+      ? [{ text: "Gara rimossa", details: removed.map(raceLine) }]
+      : []),
+  ];
+}
+
+const methodLabels = {
+  paypal: "PayPal",
+  bonifico: "Bonifico",
+  contanti: "Di persona",
+};
+function walletChanges(old: CrmStudent, student: CrmStudent): Change[] {
+  const before = old.lessonWallet,
+    after = student.lessonWallet;
+  if (!after || !different(before, after)) return [];
+  const changes: Change[] = [];
+  for (const r of after.receipts ?? []) {
+    const prev = before?.receipts?.find((x) => x.id === r.id);
+    const line = `${euros(r.amount)} · ${methodLabels[r.method]} · pagato il ${day(r.paidOn)}`;
+    if (!prev)
+      changes.push({
+        text: "Pagamento dichiarato dallo studente",
+        details: [line, ...(r.note ? [r.note] : [])],
+      });
+    else if (prev.status !== r.status)
+      changes.push({
+        text:
+          r.status === "approved"
+            ? "Pagamento approvato"
+            : "Pagamento rifiutato",
+        details: [
+          line,
+          ...(r.status === "approved" && r.approvedAmount !== r.amount
+            ? [`Importo approvato: ${euros(r.approvedAmount ?? 0)}`]
+            : []),
+          ...(r.rejectionReason ? [`Motivo: ${r.rejectionReason}`] : []),
+        ],
+      });
+  }
+  for (const l of after.lessons)
+    if (
+      l.id.startsWith("manual-") &&
+      !before?.lessons.some((x) => x.id === l.id)
+    )
+      changes.push({
+        text: "Lezione svolta registrata",
+        details: [
+          `${l.title} · ${dateTime(l.startsAt)} · ${l.minutes} min · ${l.participants} ${l.participants === 1 ? "partecipante" : "partecipanti"}`,
+          l.creditId ? "Scalata da un pacchetto" : `Prezzo ${euros(l.price)}`,
+        ],
+      });
+  return changes;
 }

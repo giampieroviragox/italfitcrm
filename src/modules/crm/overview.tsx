@@ -6,7 +6,9 @@ import {
   ChevronRight,
   ClipboardList,
   Dumbbell,
+  Flag,
   MapPin,
+  Receipt,
   UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +20,9 @@ import { useCrm, useViewer } from "./store";
 import { validPropertyValue } from "./model";
 import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
-import { formatMonth } from "@/lib/format";
+import { formatDate, formatMonth } from "@/lib/format";
+import { daysUntil, racesSoon } from "./cycle-feedback";
+import { pendingReceipts } from "./payments-workspace";
 
 const fullDate = new Intl.DateTimeFormat("it-IT", {
   dateStyle: "full",
@@ -52,6 +56,7 @@ export default function OverviewPage() {
   const assigned = new Set(
     state.assignments?.filter((a) => a.month === month).map((a) => a.studentId),
   );
+  const races = racesSoon(state, today, 14);
   const unassigned = students.filter(
     (s) => studentAccess(state, s).plans && !assigned.has(s.id),
   );
@@ -215,6 +220,59 @@ export default function OverviewPage() {
           </section>
         </div>
         <div className="grid min-w-0 gap-4 lg:gap-5">
+          {races.length > 0 && (
+            <section
+              className="min-w-0 overflow-hidden rounded-2xl border bg-card"
+              aria-labelledby="races-heading"
+            >
+              <PanelHeading
+                id="races-heading"
+                title="Gare in arrivo"
+                icon={<Flag className="size-4" />}
+              />
+              <p className="border-b bg-subtle px-4 py-2.5 text-xs text-muted-foreground sm:px-5">
+                Prossimi 14 giorni: un messaggio di in bocca al lupo fa sempre
+                piacere.
+              </p>
+              <ul className="divide-y">
+                {races.map(({ student, race }) => {
+                  const days = daysUntil(today, race.date);
+                  return (
+                    <li key={`${student.id}:${race.id}`}>
+                      <Link
+                        href={`/admin/studenti/${encodeURIComponent(student.id)}?tab=training`}
+                        className={`${rowClass} justify-between`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold">
+                            {student.firstName} {student.lastName}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {race.name}
+                            {race.location ? ` · ${race.location}` : ""}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right text-xs">
+                          <span
+                            className={`block font-semibold ${days <= 2 ? "text-[var(--workspace-accent)]" : ""}`}
+                          >
+                            {days === 0
+                              ? "Oggi"
+                              : days === 1
+                                ? "Domani"
+                                : `Tra ${days} giorni`}
+                          </span>
+                          <span className="block text-muted-foreground">
+                            {formatDate(race.date)}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
           <section
             className="min-w-0 overflow-hidden rounded-2xl border bg-card"
             aria-labelledby="followup-heading"
@@ -241,6 +299,13 @@ export default function OverviewPage() {
                   hint: formatMonth(month),
                   icon: Dumbbell,
                   href: "/admin/piani",
+                },
+                {
+                  title: "Pagamenti da verificare",
+                  items: pendingReceipts(state.students),
+                  hint: "Ricevute caricate dagli studenti",
+                  icon: Receipt,
+                  href: "/admin/pagamenti",
                 },
               ].map(({ title, items, hint, icon: Icon, href }) => (
                 <li key={title}>

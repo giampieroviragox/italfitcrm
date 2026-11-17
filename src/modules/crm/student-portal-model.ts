@@ -13,8 +13,19 @@ import {
 } from "./availability-lessons.ts";
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
 import { validDate, type CrmState, type TierAccess } from "./model.ts";
+import {
+  bookingClosedMessage,
+  bookingWindowClosed,
+  cancelClosedMessage,
+} from "./student-booking.ts";
 import { isFitnessData, todayRome } from "./fitness-logic.ts";
 import { maxRecords, type MaxRecord } from "./workout-log.ts";
+import {
+  cycleFeedbacks,
+  races as raceList,
+  type CycleFeedback,
+  type Race,
+} from "./cycle-feedback.ts";
 import { assignmentCoachId, currentSubscription } from "./online-coaching.ts";
 import {
   studentAccess,
@@ -29,6 +40,8 @@ export interface StudentPortalData {
   planCoaches?: Record<string, StudentCoach>;
   workoutEntries?: import("./fitness-model.ts").WorkoutEntry[];
   maxes?: MaxRecord[];
+  cycleFeedback?: CycleFeedback[];
+  races?: Race[];
   assignments: PlanAssignment[];
   lessonWallet?: LessonWallet;
   coaching?: StudentCoaching;
@@ -36,6 +49,8 @@ export interface StudentPortalData {
     enrolled: boolean;
     occupied: number;
     restriction: string;
+    /** Why an existing booking can no longer be cancelled. */
+    cancelRestriction?: string;
   })[];
 }
 /** The student's current online coaching subscription, without staff-only data. */
@@ -82,6 +97,12 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
       value.lessonWallet !== undefined &&
       !lessonWallet.safeParse(value.lessonWallet).success) ||
     ("workoutEntries" in value && !isWorkoutEntries(value.workoutEntries)) ||
+    ("cycleFeedback" in value &&
+      value.cycleFeedback !== undefined &&
+      !cycleFeedbacks.safeParse(value.cycleFeedback).success) ||
+    ("races" in value &&
+      value.races !== undefined &&
+      !raceList.safeParse(value.races).success) ||
     ("maxes" in value &&
       value.maxes !== undefined &&
       !maxRecords.safeParse(value.maxes).success) ||
@@ -158,6 +179,8 @@ export function studentProjection(
     coach: assignedStudentCoach(state, student),
     workoutEntries: services.plans ? (student.workoutEntries ?? []) : [],
     maxes: services.plans ? (student.maxes ?? []) : [],
+    cycleFeedback: services.plans ? (student.cycleFeedback ?? []) : [],
+    races: student.races ?? [],
     student: {
       id: student.id,
       firstName: student.firstName,
@@ -174,21 +197,29 @@ export function studentProjection(
             availabilityIsPublished(state, l)) ||
           own.some((b) => b.lessonId === l.id),
       )
-      .map((l) => ({
-        ...l,
-        restriction: bookingRestriction(
-          state.lessons?.some((item) => item.id === l.id)
-            ? state
-            : { ...state, lessons: [...(state.lessons ?? []), l] },
-          id,
-          l.id,
-        ),
-        enrolled: (state.bookings ?? []).some(
+      .map((l) => {
+        const enrolled = (state.bookings ?? []).some(
           (b) => b.lessonId === l.id && b.studentId === id && !b.cancelled,
-        ),
-        occupied: (state.bookings ?? []).filter(
-          (b) => b.lessonId === l.id && !b.cancelled,
-        ).length,
-      })),
+        );
+        const closed = bookingWindowClosed(l.startsAt);
+        return {
+          ...l,
+          restriction:
+            bookingRestriction(
+              state.lessons?.some((item) => item.id === l.id)
+                ? state
+                : { ...state, lessons: [...(state.lessons ?? []), l] },
+              id,
+              l.id,
+            ) || (closed && !enrolled ? bookingClosedMessage : ""),
+          ...(closed && enrolled
+            ? { cancelRestriction: cancelClosedMessage }
+            : {}),
+          enrolled,
+          occupied: (state.bookings ?? []).filter(
+            (b) => b.lessonId === l.id && !b.cancelled,
+          ).length,
+        };
+      }),
   };
 }

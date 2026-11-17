@@ -1,6 +1,7 @@
 import type { WalletCommand } from "./lesson-wallet.ts";
 import type { CoachingCommand } from "./online-coaching.ts";
 import type { MaxCommand } from "./workout-log.ts";
+import type { RaceCommand } from "./cycle-feedback.ts";
 import type { CrmState } from "./model.ts";
 import { isCrmEnvelope, type CrmEnvelope } from "./envelope.ts";
 import { assertCrmTransition } from "./logic.ts";
@@ -29,6 +30,7 @@ export interface RemoteStore {
   wallet: (command: WalletCommand) => Promise<void>;
   coaching: (command: CoachingCommand) => Promise<void>;
   maxes: (studentId: string, command: MaxCommand) => Promise<void>;
+  races: (studentId: string, command: RaceCommand) => Promise<void>;
   remove: (target: RemovalTarget) => Promise<void>;
   pending: () => boolean;
   error: () => string;
@@ -190,6 +192,14 @@ export function createRemoteStore(
     maxes: (studentId, command) =>
       write(() =>
         send("/api/crm/massimali", {
+          studentId,
+          command,
+          revision: envelope.revision,
+        }),
+      ),
+    races: (studentId, command) =>
+      write(() =>
+        send("/api/crm/gare", {
           studentId,
           command,
           revision: envelope.revision,

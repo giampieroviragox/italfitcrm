@@ -1,6 +1,7 @@
 import { lessonWallet } from "./lesson-wallet.ts";
 import { onlineSubscriptions } from "./online-coaching.ts";
 import { maxRecords } from "./workout-log.ts";
+import { cycleFeedbacks, races } from "./cycle-feedback.ts";
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
 import { validCoachImage } from "./student-coach.ts";
 import { isWorkoutEntries } from "./workout-entry-schema.ts";
@@ -138,6 +139,9 @@ export function isCrmState(v: unknown): v is CrmState {
         (s.lessonWallet === undefined ||
           lessonWallet.safeParse(s.lessonWallet).success) &&
         (s.maxes === undefined || maxRecords.safeParse(s.maxes).success) &&
+        (s.cycleFeedback === undefined ||
+          cycleFeedbacks.safeParse(s.cycleFeedback).success) &&
+        (s.races === undefined || races.safeParse(s.races).success) &&
         (s.onlineSubscriptions === undefined ||
           onlineSubscriptions.safeParse(s.onlineSubscriptions).success) &&
         (s.workoutEntries === undefined ||

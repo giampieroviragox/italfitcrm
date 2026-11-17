@@ -25,6 +25,19 @@ import {
 import { LessonWalletView } from "./lesson-wallet-view";
 import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
 import { loggedSessions, type MaxCommand } from "./workout-log";
+import {
+  feedbackFor,
+  feedbackIsOpen,
+  pendingFeedback,
+  type FeedbackCommand,
+  type RaceCommand,
+} from "./cycle-feedback";
+import {
+  FeedbackPrompt,
+  FeedbackWizard,
+  RacesPanel,
+} from "./cycle-feedback-view";
+import type { PlanAssignment } from "./fitness-model";
 export function StudentPortal({
   initial,
   view = "home",
@@ -38,7 +51,8 @@ export function StudentPortal({
     [refreshing, setRefreshing] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
-    [authRequired, setAuthRequired] = useState(false);
+    [authRequired, setAuthRequired] = useState(false),
+    [feedbackPlan, setFeedbackPlan] = useState<PlanAssignment | null>(null);
   const pendingRef = useRef(false);
   const refreshRef = useRef<Promise<void> | null>(null);
   const refresh = useCallback(() => {
@@ -107,12 +121,13 @@ export function StudentPortal({
       pendingRef.current = false;
     }
   };
-  const saveMax = async (command: MaxCommand) => {
+  /** Sends a student command; returns an error message or "". */
+  const sendCommand = async (url: string, command: unknown) => {
     if (pendingRef.current || refreshRef.current)
       return "Attendi il salvataggio in corso e riprova.";
     pendingRef.current = true;
     try {
-      const next = await requestJson("/api/massimali", {
+      const next = await requestJson(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command }),
@@ -127,6 +142,39 @@ export function StudentPortal({
       pendingRef.current = false;
     }
   };
+  const sendReceipt = async (form: FormData) => {
+    if (pendingRef.current || refreshRef.current)
+      return "Attendi il salvataggio in corso e riprova.";
+    pendingRef.current = true;
+    try {
+      const next = await requestJson("/api/ricevute", {
+        method: "POST",
+        body: form,
+      });
+      setData(parseStudentPortalData(next));
+      setAuthRequired(false);
+      return "";
+    } catch (e) {
+      setAuthRequired(e instanceof RequestError && e.status === 401);
+      return (e as Error).message;
+    } finally {
+      pendingRef.current = false;
+    }
+  };
+  const saveMax = (command: MaxCommand) =>
+    sendCommand("/api/massimali", command);
+  const saveRace = (command: RaceCommand) => sendCommand("/api/gare", command);
+  const saveFeedback = (command: FeedbackCommand) =>
+    sendCommand("/api/questionario", command);
+  const today = todayRome();
+  const feedbackDue = data.services.plans
+    ? pendingFeedback(
+        { cycleFeedback: data.cycleFeedback },
+        data.assignments,
+        data.workoutEntries ?? [],
+        today,
+      )
+    : undefined;
   const saveWorkout = async (input: WorkoutInput) => {
     if (pendingRef.current || refreshRef.current) return false;
     pendingRef.current = true;
@@ -201,6 +249,14 @@ export function StudentPortal({
           </div>
         )}
       </header>
+      {view === "home" && feedbackDue && (
+        <div>
+          <FeedbackPrompt
+            assignment={feedbackDue}
+            onOpen={() => setFeedbackPlan(feedbackDue)}
+          />
+        </div>
+      )}
       {view === "home" && (
         <StudentHome
           services={data.services}
@@ -243,11 +299,22 @@ export function StudentPortal({
       {view === "prenotazioni" &&
         (data.lessonWallet || data.services.lessons) && (
           <div className="mt-8">
-            <LessonWalletView wallet={data.lessonWallet} />
+            <LessonWalletView
+              wallet={data.lessonWallet}
+              onSubmitReceipt={sendReceipt}
+            />
           </div>
         )}
       {view === "piano" && data.services.plans && (
         <>
+          {assignment &&
+            !feedbackFor({ cycleFeedback: data.cycleFeedback }, assignment) &&
+            feedbackIsOpen(assignment, data.workoutEntries ?? [], today) && (
+              <FeedbackPrompt
+                assignment={assignment}
+                onOpen={() => setFeedbackPlan(assignment)}
+              />
+            )}
           {assignment ? (
             <StudentPlan
               key={assignment.id + assignment.createdAt}
@@ -271,13 +338,35 @@ export function StudentPortal({
             assignments={data.assignments}
             entries={data.workoutEntries ?? []}
           />
-          <MaxesPanel
-            maxes={data.maxes ?? []}
-            exerciseNames={exerciseNames}
-            today={todayRome()}
-            onCommand={saveMax}
-          />
+          <div className="space-y-8">
+            <RacesPanel
+              title="Le mie gare"
+              races={data.races ?? []}
+              today={today}
+              onCommand={saveRace}
+            />
+            <MaxesPanel
+              maxes={data.maxes ?? []}
+              exerciseNames={exerciseNames}
+              today={today}
+              onCommand={saveMax}
+            />
+          </div>
         </div>
+      )}
+      {feedbackPlan && (
+        <FeedbackWizard
+          key={feedbackPlan.id}
+          assignment={feedbackPlan}
+          races={data.races ?? []}
+          today={today}
+          existing={feedbackFor(
+            { cycleFeedback: data.cycleFeedback },
+            feedbackPlan,
+          )}
+          onSubmit={saveFeedback}
+          close={() => setFeedbackPlan(null)}
+        />
       )}
       {view !== "home" &&
         (((view === "piano" || view === "progressi") && !data.services.plans) ||

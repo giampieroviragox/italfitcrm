@@ -1,4 +1,5 @@
 "use client";
+import { bookingWindowClosed } from "./student-booking";
 import { useRef, useState } from "react";
 import {
   CalendarDays,
@@ -93,6 +94,7 @@ export function StudentCalendar({
   const selected = data.lessons.find((lesson) => lesson.id === selectedId);
   const blocked = (lesson: StudentLesson) =>
     lesson.cancelled ||
+    (lesson.enrolled && Boolean(lesson.cancelRestriction)) ||
     (!lesson.enrolled &&
       (lesson.occupied >= lesson.capacity || Boolean(lesson.restriction)));
   const status = (lesson: StudentLesson) =>
@@ -380,9 +382,13 @@ export function StudentCalendar({
                   </div>
                 ))}
               </div>
-              {!selected.enrolled && selected.restriction && (
+              {(selected.enrolled
+                ? selected.cancelRestriction
+                : selected.restriction) && (
                 <p className="rounded-[10px] bg-muted px-3 py-2.5 text-[13px] leading-5">
-                  {selected.restriction}
+                  {selected.enrolled
+                    ? selected.cancelRestriction
+                    : selected.restriction}
                 </p>
               )}
               <FormError message={error} />
@@ -399,11 +405,15 @@ export function StudentCalendar({
                   : selected.cancelled
                     ? "Lezione annullata"
                     : selected.enrolled
-                      ? "Annulla prenotazione"
+                      ? selected.cancelRestriction
+                        ? "Non più annullabile"
+                        : "Annulla prenotazione"
                       : selected.occupied >= selected.capacity
                         ? "Lezione completa"
                         : selected.restriction
-                          ? "Non disponibile per il percorso"
+                          ? bookingWindowClosed(selected.startsAt)
+                            ? "Prenotazioni chiuse"
+                            : "Non disponibile per il percorso"
                           : "Conferma prenotazione"}
               </Button>
             </div>

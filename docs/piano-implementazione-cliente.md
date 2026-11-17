@@ -30,11 +30,11 @@ Requisiti raccolti dalle registrazioni **Via Pantigliate** e **Fisic Center** e 
 | 8            |                                 25 € |        Tariffa non indicata |
 
 - [x] Calcolare al consuntivo il prezzo per partecipante in base alla sede e ai presenti. Dove manca una tariffa, l’admin indica il prezzo.
-- [ ] Gestire le fasce prenotabili nel CRM, con la capienza impostata dall’admin. Nel colloquio sono citate le lezioni del mattino e quelle serali di Monza.
-- [ ] Applicare alle lezioni di gruppo di Milano la regola delle **12 ore prima della lezione**. Confermare se la prenotazione chiude 12 ore prima o si apre nelle ultime 12 ore.
-- [ ] Consentire al team di inserire nel CRM le lezioni individuali 1:1 concordate direttamente con gli studenti. Includerle nei conteggi.
+- [x] Gestire le fasce prenotabili nel CRM, con la capienza impostata dall’admin. Nel colloquio sono citate le lezioni del mattino e quelle serali di Monza.
+- [x] Applicare alle lezioni di gruppo di Milano la regola delle **12 ore prima della lezione**. Confermare se la prenotazione chiude 12 ore prima o si apre nelle ultime 12 ore. Il 17 novembre 2026 confermato: prenotazione e disdetta dello studente chiudono 12 ore prima, per tutte le lezioni; lo staff può sempre iscrivere e disiscrivere.
+- [x] Consentire al team di inserire nel CRM le lezioni individuali 1:1 concordate direttamente con gli studenti. Includerle nei conteggi. Si registrano dal wallet dello studente anche dopo la lezione, con prezzo da listino, prezzo concordato o pacchetto.
 - [x] Mostrare allo studente lo storico delle lezioni svolte, l’importo di ciascuna e il totale dovuto. Consentire all’admin di ricostruire il totale per studente dagli stessi dati, oggi aggiornati a mano in Splitwise.
-- [ ] Definire se il prezzo si calcola in base agli iscritti o ai presenti effettivi, quando viene fissato e come si gestiscono annullamenti, assenze e recuperi. Confermare eventuale finestra di prenotazione a Monza e se è previsto un ottavo partecipante.
+- [ ] Definire se il prezzo si calcola in base agli iscritti o ai presenti effettivi, quando viene fissato e come si gestiscono annullamenti, assenze e recuperi. Confermare eventuale finestra di prenotazione a Monza e se è previsto un ottavo partecipante. Implementato sui presenti al consuntivo.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 00:00–00:31 e 03:48–05:48.
 
@@ -52,11 +52,11 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 05:50–06:18.
 
 ## 3. Pagamenti esterni e ricevute
 
-- [ ] Consentire allo studente di registrare un pagamento effettuato fuori dal CRM, indicando l’importo e allegando una ricevuta o uno screenshot. I metodi citati sono PayPal, bonifico e pagamento di persona.
+- [x] Consentire allo studente di registrare un pagamento effettuato fuori dal CRM, indicando l’importo e allegando una ricevuta o uno screenshot. I metodi citati sono PayPal, bonifico e pagamento di persona.
 - [x] Consentire all’admin di registrare più versamenti parziali per lo stesso importo dovuto.
-- [ ] Creare una lista dei pagamenti in attesa affinché l’admin possa aprire la ricevuta, verificare l’incasso e approvarlo quando vuole.
-- [ ] Registrare l’incasso approvato e aggiornare il saldo dovuto una sola volta per versamento. Le richieste in attesa restano visibili da revisionare.
-- [ ] Definire la prova da allegare per i pagamenti di persona e quali account possono revisionare gli incassi.
+- [x] Creare una lista dei pagamenti in attesa affinché l’admin possa aprire la ricevuta, verificare l’incasso e approvarlo quando vuole.
+- [x] Registrare l’incasso approvato e aggiornare il saldo dovuto una sola volta per versamento. Le richieste in attesa restano visibili da revisionare. L’incasso salda le voci aperte dalla più vecchia; l’admin può correggere l’importo.
+- [ ] Definire la prova da allegare per i pagamenti di persona e quali account possono revisionare gli incassi. Impostazione attuale: ricevuta obbligatoria per PayPal e bonifico, facoltativa di persona; verificano tutti gli admin.
 - [ ] Valutare il controllo preliminare della ricevuta con IA. L’approvazione definitiva resta dell’admin.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 00:24–01:52.
@@ -104,14 +104,14 @@ Fonti. Appunti di Giampiero. Fisic Center, 01:13–05:46 e 07:47–09:17.
 
 ## 7. Feedback di fine ciclo, gare e Claude
 
-- [ ] Aprire il questionario al termine di ogni piano da quattro settimane, per tutti gli abbonamenti da 3, 6 e 12 mesi.
-- [ ] Chiedere allo studente come è andato il piano, se la durata delle sessioni era giusta, troppo lunga o troppo corta, se vuole confermare o cambiare il numero di sessioni a settimana e cosa vorrebbe modificare. Prevedere note libere finali.
-- [ ] Chiedere allo studente di confermare, modificare o aggiungere le gare pianificate anche dal questionario.
-- [ ] Salvare ogni risposta nello storico del relativo piano, consultabile dal coach. Confermare i campi essenziali obbligatori, il momento esatto in cui mostrare il questionario e cosa succede se rimane incompleto.
-- [ ] Aggiungere al profilo studente un elenco di gare ed eventi, ad esempio maratone e HYROX, con date e iscrizioni. Lo studente aggiorna gli eventi e il coach li consulta per adattare la preparazione.
-- [ ] Inviare all’admin un promemoria prima della gara affinché possa contattare lo studente e augurargli in bocca al lupo. Scegliere anticipo e canale. Nell’audio si parla di avviso in calendario o di un messaggio.
-- [ ] Estendere il collegamento con Claude affinché il coach possa recuperare note delle sessioni e feedback finali dell’ultimo piano per preparare il successivo.
-- [ ] Salvare il piano successivo come bozza nel CRM. Il coach verifica e corregge il risultato prima della consegna. Il connettore attuale legge i piani e salva già le bozze.
+- [x] Aprire il questionario al termine di ogni piano da quattro settimane, per tutti gli abbonamenti da 3, 6 e 12 mesi.
+- [x] Chiedere allo studente come è andato il piano, se la durata delle sessioni era giusta, troppo lunga o troppo corta, se vuole confermare o cambiare il numero di sessioni a settimana e cosa vorrebbe modificare. Prevedere note libere finali.
+- [x] Chiedere allo studente di confermare, modificare o aggiungere le gare pianificate anche dal questionario.
+- [x] Salvare ogni risposta nello storico del relativo piano, consultabile dal coach. Confermare i campi essenziali obbligatori, il momento esatto in cui mostrare il questionario e cosa succede se rimane incompleto.
+- [x] Aggiungere al profilo studente un elenco di gare ed eventi, ad esempio maratone e HYROX, con date e iscrizioni. Lo studente aggiorna gli eventi e il coach li consulta per adattare la preparazione.
+- [ ] Inviare all’admin un promemoria prima della gara affinché possa contattare lo studente e augurargli in bocca al lupo. Scegliere anticipo e canale. Nell’audio si parla di avviso in calendario o di un messaggio. Per ora in Home c’è «Gare in arrivo» per i prossimi 14 giorni; manca il canale esterno (calendario o messaggio).
+- [x] Estendere il collegamento con Claude affinché il coach possa recuperare note delle sessioni e feedback finali dell’ultimo piano per preparare il successivo.
+- [x] Salvare il piano successivo come bozza nel CRM. Il coach verifica e corregge il risultato prima della consegna. Il connettore attuale legge i piani e salva già le bozze.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 13:51–14:26. Fisic Center, 05:25–07:44 e 10:57–15:07.
 

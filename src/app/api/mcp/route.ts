@@ -207,7 +207,7 @@ const handler = createMcpHandler(
       {
         title: "Leggi il piano di uno studente",
         description:
-          "Restituisce il piano assegnato a uno studente per un mese (AAAA-MM). Senza mese restituisce il più recente.",
+          "Restituisce il piano assegnato a uno studente per un mese (AAAA-MM), con il questionario di fine piano compilato dallo studente, il registro degli allenamenti svolti (serie, carichi, fatica e note) e le gare in programma. Senza mese restituisce il più recente. Usalo per preparare il piano successivo come bozza: il coach lo rivede prima della consegna.",
         inputSchema: z.object({
           studenteId: z.string().min(1).max(100),
           mese: z

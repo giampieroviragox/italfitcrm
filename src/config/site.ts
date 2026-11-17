@@ -22,4 +22,9 @@ export const navigation = [
     label: "Calendario",
     icon: "calendar",
   },
+  {
+    href: "/admin/pagamenti",
+    label: "Pagamenti",
+    icon: "payments",
+  },
 ] as const;

@@ -10,6 +10,7 @@ import {
   useHydrated,
   addStudentComment,
   updateStudentMaxes,
+  updateStudentRaces,
 } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
 import { useNavigationRequest } from "./use-unsaved-changes";
@@ -22,6 +23,7 @@ import { StudentAccessControl } from "./student-access-control";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { LessonWalletView } from "./lesson-wallet-view";
 import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
+import { FeedbackHistory, RacesPanel } from "./cycle-feedback-view";
 import { todayRome } from "./fitness-logic";
 import { OnlineCoachingPanel, PlanCoachSelect } from "./online-coaching-view";
 const profileTabs = [
@@ -158,7 +160,7 @@ export function StudentProfile({
               { id: "properties", label: "Proprietà" },
               { id: "coaching", label: "Coaching online" },
               { id: "plans", label: "Piani e lezioni" },
-              { id: "training", label: "Allenamenti" },
+              { id: "training", label: "Progressi e gare" },
               { id: "wallet", label: "Wallet lezioni" },
               {
                 id: "notes",
@@ -315,6 +317,29 @@ export function StudentProfile({
             {tab === "coaching" && <OnlineCoachingPanel student={student} />}
             {tab === "training" && (
               <div className="space-y-8">
+                <FeedbackHistory
+                  assignments={(state.assignments ?? []).filter(
+                    (a) => a.studentId === id,
+                  )}
+                  feedback={student.cycleFeedback ?? []}
+                />
+                <RacesPanel
+                  races={student.races ?? []}
+                  today={todayRome()}
+                  staff
+                  onCommand={
+                    student.archived
+                      ? undefined
+                      : async (command) => {
+                          try {
+                            await updateStudentRaces(id, command);
+                            return "";
+                          } catch (e) {
+                            return (e as Error).message;
+                          }
+                        }
+                  }
+                />
                 <WorkoutHistory
                   assignments={(state.assignments ?? []).filter(
                     (a) => a.studentId === id,

@@ -15,6 +15,7 @@ import {
   Laptop,
   LogOut,
   PanelLeft,
+  Receipt,
   Settings2,
   Users,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const icons = {
   plans: Dumbbell,
   coaching: Laptop,
   calendar: CalendarDays,
+  payments: Receipt,
 };
 const footerLinks = [
   { href: "/admin/impostazioni", label: "Impostazioni", icon: Settings2 },

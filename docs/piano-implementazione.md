@@ -18,15 +18,15 @@ Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunt
 - [x] Confermare le presenze dopo la lezione e fissare la tariffa individuale in funzione della sede e del numero di presenti. Inserire la tariffa al consuntivo quando il listino non la copre.
 - [x] Assegnare crediti a ore o lezioni tramite i pacchetti standard, i pacchetti personalizzati e gli abbonamenti con lezioni in sede. Applicare eventuali vincoli di sede e di lezione individuale.
 - [x] Provvedere allo scalamento al consuntivo. Mostrare allo studente e all’admin le ore svolte, i crediti acquistati, usati e residui, il pagato e il saldo. Associare a ogni lezione il costo o la quota del pacchetto.
-- [ ] Confermare la finestra di prenotazione e stabilire le regole per assenze, annullamenti, recuperi e scadenza dei crediti. Definire come importare i saldi iniziali.
+- [ ] Confermare la finestra di prenotazione e stabilire le regole per assenze, annullamenti, recuperi e scadenza dei crediti. Definire come importare i saldi iniziali. Finestra confermata il 17 novembre 2026: 12 ore prima, per prenotare e disdire.
 - [ ] Prima del rilascio, provare prenotazione, consuntivo, lezione individuale coperta da pacchetto e lezione di gruppo per ciascuna sede.
 
 ## 3. Pagamenti esterni e ricevute
 
 - [x] Consentire all’admin di registrare incassi parziali e rifiutare importi superiori al residuo.
-- [ ] Consentire allo studente di registrare un pagamento esterno indicando l’importo e allegando una ricevuta.
-- [ ] Creare una coda di verifica per l’admin con esito e data della revisione. Aggiornare il residuo una sola volta quando il pagamento viene approvato.
-- [ ] Definire i permessi di approvazione e la prova richiesta per i pagamenti di persona.
+- [x] Consentire allo studente di registrare un pagamento esterno indicando l’importo e allegando una ricevuta.
+- [x] Creare una coda di verifica per l’admin con esito e data della revisione. Aggiornare il residuo una sola volta quando il pagamento viene approvato.
+- [ ] Definire i permessi di approvazione e la prova richiesta per i pagamenti di persona. Impostazione attuale: ricevuta facoltativa solo per i pagamenti di persona; verificano tutti gli admin.
 - [ ] Provare due versamenti parziali, il rifiuto di una ricevuta e una doppia richiesta di approvazione.
 
 ## 4. Coaching online
@@ -42,9 +42,9 @@ Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunt
 
 ## 5. Feedback, gare e piano successivo
 
-- [ ] Raccogliere a fine ciclo il feedback su durata e frequenza delle sessioni, difficoltà e note libere. Collegare le risposte alla versione del piano e renderle consultabili dal coach.
-- [ ] Permettere allo studente di aggiungere gare ed eventi anche dal questionario. Definire canale e anticipo del promemoria per l’admin.
-- [ ] Esportare note e feedback attraverso il connettore dei piani per preparare il piano successivo. Il coach controlla la bozza prima della consegna.
+- [x] Raccogliere a fine ciclo il feedback su durata e frequenza delle sessioni, difficoltà e note libere. Collegare le risposte alla versione del piano e renderle consultabili dal coach.
+- [ ] Permettere allo studente di aggiungere gare ed eventi anche dal questionario. Definire canale e anticipo del promemoria per l’admin. Gare aggiunte anche dal questionario; promemoria in Home a 14 giorni, canale esterno da decidere.
+- [x] Esportare note e feedback attraverso il connettore dei piani per preparare il piano successivo. Il coach controlla la bozza prima della consegna.
 - [ ] Associare foto dimostrative agli esercizi dove disponibili. Valutare ricerca e animazioni per gli altri. Conservare i video originali e i programmi standardizzati come sviluppi successivi.
 
 ## 6. Contabilità e compensi

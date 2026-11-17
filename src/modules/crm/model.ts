@@ -47,6 +47,8 @@ export interface CrmStudent extends Omit<Student, "tierId"> {
   lessonWallet?: import("./lesson-wallet.ts").LessonWallet;
   onlineSubscriptions?: import("./online-coaching.ts").OnlineSubscription[];
   maxes?: import("./workout-log.ts").MaxRecord[];
+  cycleFeedback?: import("./cycle-feedback.ts").CycleFeedback[];
+  races?: import("./cycle-feedback.ts").Race[];
   workoutEntries?: import("./fitness-model").WorkoutEntry[];
   access?: AccountAccess | null;
   tierId: string;

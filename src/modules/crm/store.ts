@@ -5,6 +5,7 @@ import type { CrmState } from "./model";
 import { applyWalletCommand, type WalletCommand } from "./lesson-wallet";
 import { applyCoachingCommand, type CoachingCommand } from "./online-coaching";
 import { applyMaxCommand, type MaxCommand } from "./workout-log";
+import { applyRaceCommand, type RaceCommand } from "./cycle-feedback";
 import { todayRome } from "./fitness-logic";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
@@ -142,7 +143,9 @@ export async function updateLessonWallet(command: WalletCommand) {
       throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
     return activeRemoteStore.wallet(command);
   }
-  return updateCrm((state) => applyWalletCommand(state, command));
+  return updateCrm((state) =>
+    applyWalletCommand(state, command, new Date(), "Amministratore demo"),
+  );
 }
 
 export async function updateOnlineCoaching(command: CoachingCommand) {
@@ -166,6 +169,28 @@ export async function updateStudentMaxes(
   }
   return updateCrm((state) =>
     applyMaxCommand(
+      state,
+      studentId,
+      command,
+      todayRome(),
+      new Date(),
+      "Amministratore demo",
+    ),
+  );
+}
+
+/** Staff add, edit or remove a student's races. */
+export async function updateStudentRaces(
+  studentId: string,
+  command: RaceCommand,
+) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.races(studentId, command);
+  }
+  return updateCrm((state) =>
+    applyRaceCommand(
       state,
       studentId,
       command,

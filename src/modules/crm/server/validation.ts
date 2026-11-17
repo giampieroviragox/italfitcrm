@@ -121,6 +121,8 @@ export function validateStaffUpdate(
         lessonWallet: old?.lessonWallet,
         onlineSubscriptions: old?.onlineSubscriptions,
         maxes: old?.maxes,
+        cycleFeedback: old?.cycleFeedback,
+        races: old?.races,
         // Logs of a removed assignment go with it.
         workoutEntries: (old?.workoutEntries ?? []).filter(
           (entry) => !removed.assignments?.includes(entry.assignmentId),

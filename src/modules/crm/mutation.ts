@@ -12,6 +12,8 @@ export function mutationState(current: CrmState, proposed: CrmState): CrmState {
         lessonWallet: undefined,
         onlineSubscriptions: undefined,
         maxes: undefined,
+        cycleFeedback: undefined,
+        races: undefined,
         notes:
           JSON.stringify(s.notes ?? []) === JSON.stringify(old?.notes ?? [])
             ? undefined

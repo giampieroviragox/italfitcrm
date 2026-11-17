@@ -3,6 +3,9 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  canUseLessonCredit,
+  lessonPrice,
+  type LessonVenue,
   emptyWallet,
   milanoPrivateCredit,
   lessonVenues,
@@ -12,14 +15,15 @@ import {
   type WalletCommand,
 } from "./lesson-wallet";
 import { updateLessonWallet } from "./store";
+import { ReceiptForm, ReceiptList } from "./receipts-view";
+import { outstandingAmount } from "./lesson-wallet";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
+import { SelectControl } from "@/components/ui/select-control";
+import { romeToIso, todayRome } from "./fitness-logic";
 import { Field, FormError, control } from "./ui";
 
-export const euro = (cents: number) =>
-  new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-    useGrouping: "always",
-  }).format(cents / 100);
+export { euro } from "./money";
+import { euro } from "./money";
 const date = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -42,9 +46,12 @@ const units = (quantity: number, unit: "minutes" | "lessons") =>
 export function LessonWalletView({
   wallet = emptyWallet,
   staff,
+  onSubmitReceipt,
 }: {
   wallet?: LessonWallet;
   staff?: { studentId: string; archived: boolean };
+  /** Student mode: declares a payment with its receipt. */
+  onSubmitReceipt?: (form: FormData) => Promise<string>;
 }) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -136,6 +143,30 @@ export function LessonWalletView({
         ))}
       </dl>
       <FormError message={error} />
+      {(onSubmitReceipt || (wallet.receipts?.length ?? 0) > 0) && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">
+            {staff ? "Pagamenti dichiarati dallo studente" : "I tuoi pagamenti"}
+          </h3>
+          {onSubmitReceipt && (
+            <ReceiptForm
+              outstanding={outstandingAmount(wallet)}
+              onSubmit={onSubmitReceipt}
+            />
+          )}
+          <ReceiptList
+            receipts={wallet.receipts ?? []}
+            staff={
+              staff
+                ? {
+                    studentId: staff.studentId,
+                    outstanding: outstandingAmount(wallet),
+                  }
+                : undefined
+            }
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Pacchetti e abbonamenti</h3>
         {wallet.credits.length ? (
@@ -355,6 +386,14 @@ export function LessonWalletView({
           </p>
         )}
       </div>
+      {staff && !staff.archived && (
+        <RecordLessonForm
+          wallet={wallet}
+          studentId={staff.studentId}
+          pending={pending}
+          submit={asyncSubmit}
+        />
+      )}
       {staff && charges.length > 0 && (
         <form
           className="rounded-xl border bg-card p-3"
@@ -419,5 +458,203 @@ export function LessonWalletView({
         </form>
       )}
     </section>
+  );
+}
+
+/** Records a lesson already held and agreed directly with the student (e.g. 1:1). */
+function RecordLessonForm({
+  wallet,
+  studentId,
+  pending,
+  submit,
+}: {
+  wallet: LessonWallet;
+  studentId: string;
+  pending: boolean;
+  submit: (command: WalletCommand, onSuccess: () => void) => Promise<void>;
+}) {
+  const today = todayRome();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("Lezione individuale 1:1");
+  const [date, setDate] = useState(today);
+  const [time, setTime] = useState("");
+  const [minutes, setMinutes] = useState(60);
+  const [venue, setVenue] = useState<LessonVenue>("milano");
+  const [participants, setParticipants] = useState(1);
+  const [creditId, setCreditId] = useState("");
+  const [price, setPrice] = useState("");
+  const [error, setError] = useState("");
+  const listPrice = lessonPrice(venue, participants, minutes);
+  const usable = wallet.credits.filter((c) =>
+    canUseLessonCredit(wallet, c, venue, participants, minutes),
+  );
+  const credit = usable.find((c) => c.id === creditId);
+  const reset = () => {
+    setOpen(false);
+    setTime("");
+    setPrice("");
+    setCreditId("");
+    setError("");
+  };
+  if (!open)
+    return (
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        Registra una lezione svolta
+      </Button>
+    );
+  return (
+    <form
+      className="space-y-3 rounded-xl border bg-card p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setError("");
+        if (!time) return setError("Indica l’orario della lezione.");
+        let startsAt;
+        try {
+          startsAt = romeToIso(`${date}T${time}`);
+        } catch (e) {
+          return setError((e as Error).message);
+        }
+        const manual = price.trim()
+          ? Math.round(Number(price.replace(",", ".")) * 100)
+          : undefined;
+        if (manual !== undefined && (!Number.isFinite(manual) || manual < 0))
+          return setError("Prezzo non valido.");
+        if (!credit && manual === undefined && listPrice === undefined)
+          return setError(
+            "Per questa lezione il listino non ha un prezzo: inseriscilo.",
+          );
+        void submit(
+          {
+            action: "record",
+            studentId,
+            lesson: { title, startsAt, minutes, venue, participants },
+            ...(credit ? { creditId: credit.id } : {}),
+            ...(!credit && manual !== undefined ? { manualPrice: manual } : {}),
+          },
+          reset,
+        );
+      }}
+    >
+      <fieldset disabled={pending} className="space-y-3">
+        <legend className="mb-1 text-sm font-semibold">
+          Registra una lezione svolta
+        </legend>
+        <p className="text-sm text-muted-foreground">
+          Per le lezioni concordate direttamente con lo studente, ad esempio le
+          1:1. Entrano nello storico e nel saldo.
+        </p>
+        <Field label="Titolo">
+          <input
+            required
+            maxLength={100}
+            className={control}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Data">
+            <DatePicker required max={today} value={date} onChange={setDate} />
+          </Field>
+          <Field label="Ora">
+            <TimePicker required value={time} onChange={setTime} />
+          </Field>
+          <Field label="Durata">
+            <SelectControl
+              className={control}
+              value={String(minutes)}
+              onChange={(e) => setMinutes(Number(e.target.value))}
+            >
+              {[30, 45, 60, 90, 120].map((m) => (
+                <option key={m} value={m}>
+                  {hours(m)}
+                </option>
+              ))}
+            </SelectControl>
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Sede">
+            <SelectControl
+              className={control}
+              value={venue}
+              onChange={(e) =>
+                setVenue(e.target.value === "monza" ? "monza" : "milano")
+              }
+            >
+              {Object.entries(lessonVenues).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </SelectControl>
+          </Field>
+          <Field label="Partecipanti">
+            <input
+              required
+              type="number"
+              min={1}
+              max={200}
+              className={control}
+              value={participants}
+              onChange={(e) =>
+                setParticipants(Math.max(1, Number(e.target.value) || 1))
+              }
+            />
+          </Field>
+        </div>
+        <Field
+          label="Scala da un credito"
+          hint={
+            usable.length
+              ? "Lascia vuoto per addebitarla a lezione."
+              : "Nessun pacchetto utilizzabile per questa sede, durata e partecipanti."
+          }
+        >
+          <SelectControl
+            className={control}
+            value={creditId}
+            onChange={(e) => setCreditId(e.target.value)}
+          >
+            <option value="">Nessuno: addebito a lezione</option>
+            {usable.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} · residuo {units(remainingCredit(wallet, c), c.unit)}
+              </option>
+            ))}
+          </SelectControl>
+        </Field>
+        {!credit && (
+          <Field
+            label="Prezzo a persona (€)"
+            hint={
+              listPrice !== undefined
+                ? `Listino ${lessonVenues[venue]}, ${participants} ${participants === 1 ? "partecipante" : "partecipanti"}: ${euro(listPrice)}. Inserisci un importo solo se diverso.`
+                : "Il listino non copre questa durata o questo numero di partecipanti: inserisci il prezzo."
+            }
+          >
+            <input
+              inputMode="decimal"
+              className={control}
+              placeholder={
+                listPrice !== undefined ? String(listPrice / 100) : ""
+              }
+              value={price}
+              onChange={(e) => setPrice(e.target.value.replace(/[^\d.,]/g, ""))}
+            />
+          </Field>
+        )}
+        <FormError message={error} />
+        <div className="flex gap-2">
+          <Button type="submit" size="sm">
+            {pending ? "Salvataggio…" : "Registra lezione"}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={reset}>
+            Annulla
+          </Button>
+        </div>
+      </fieldset>
+    </form>
   );
 }

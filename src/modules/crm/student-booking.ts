@@ -2,11 +2,20 @@ import type { CrmState } from "./model.ts";
 import { availabilityLessons } from "./availability-lessons.ts";
 import { prepareTransition } from "./transition.ts";
 
+/** Students book and cancel up to this many hours before the start. */
+export const bookingCutoffHours = 12;
+export function bookingWindowClosed(startsAt: string, now = Date.now()) {
+  return Date.parse(startsAt) - bookingCutoffHours * 3_600_000 <= now;
+}
+export const bookingClosedMessage = `Le prenotazioni si chiudono ${bookingCutoffHours} ore prima della lezione.`;
+export const cancelClosedMessage = `Puoi disdire fino a ${bookingCutoffHours} ore prima della lezione. Per imprevisti contatta il team.`;
+
 export function prepareStudentBooking(
   state: CrmState,
   studentId: string,
   lessonId: string,
   cancelled: boolean,
+  now = Date.now(),
 ): CrmState {
   const student = state.students.find(
     (item) => item.id === studentId && !item.archived,
@@ -28,6 +37,9 @@ export function prepareStudentBooking(
       booking.studentId === studentId && booking.lessonId === lessonId,
   );
   if (cancelled && !old) throw new Error("Prenotazione non trovata.");
+  const changing = cancelled ? old && !old.cancelled : !old || old.cancelled;
+  if (changing && bookingWindowClosed(lesson.startsAt, now))
+    throw new Error(cancelled ? cancelClosedMessage : bookingClosedMessage);
   const booking = {
     id: old?.id ?? crypto.randomUUID(),
     studentId,

@@ -20,17 +20,18 @@ export async function POST(request: Request) {
     const current = await readCrm(user.id);
     if (input.revision !== current.revision)
       throw new HttpError(409, "Il CRM è cambiato. Verifica i dati e riprova.");
+    const actor = {
+      id: access.record_id,
+      name:
+        current.state.admins.find((admin) => admin.id === access.record_id)
+          ?.name ?? "Amministratore",
+    };
     let next;
     try {
       next = prepareTransition(
         current.state,
-        applyWalletCommand(current.state, command.data),
-        {
-          id: access.record_id,
-          name:
-            current.state.admins.find((admin) => admin.id === access.record_id)
-              ?.name ?? "Amministratore",
-        },
+        applyWalletCommand(current.state, command.data, new Date(), actor.name),
+        actor,
       );
     } catch (error) {
       throw new HttpError(400, (error as Error).message);
