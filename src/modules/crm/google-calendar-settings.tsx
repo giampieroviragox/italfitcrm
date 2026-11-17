@@ -141,7 +141,7 @@ export function GoogleCalendarSettings() {
               title={`Collegato come ${connection.googleEmail}`}
               description={
                 connection.lastSyncAt
-                  ? `Ultima sincronizzazione: ${dateTime(connection.lastSyncAt)}. “Risincronizza tutto” rimette nel calendario ogni evento del CRM, anche se l’hai modificato o cancellato su Google.`
+                  ? `Ultima sincronizzazione: ${dateTime(connection.lastSyncAt)}. “Risincronizza tutto” rimette nel calendario gli eventi del CRM da oggi in poi, anche se li hai modificati o cancellati su Google.`
                   : "Sincronizzazione in corso…"
               }
             >

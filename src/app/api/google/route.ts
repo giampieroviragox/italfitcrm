@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       });
       return Response.json(await syncCalendar(access.record_id), noStore);
     }
-    // Always a full rewrite: what was changed or deleted on Google comes back.
+    // A full rewrite from today: what was changed or deleted on Google comes back.
     if (input.action === "sync")
       return Response.json(
         await syncCalendar(access.record_id, undefined, undefined, true),

@@ -10,6 +10,7 @@ import {
   type CalendarLink,
 } from "../calendar-sync";
 import type { CrmState } from "../model";
+import { romeToIso, todayRome } from "../fitness-logic";
 import {
   deleteLinks,
   getConnection,
@@ -32,10 +33,13 @@ import { readCrm } from "./repository";
 /** Background reads do not belong to a user: no preferences are needed. */
 const systemActor = "00000000-0000-0000-0000-000000000000";
 /** Past events are kept; up to a year ahead is written. */
-const syncWindow = () => {
+const syncWindow = (fromToday = false) => {
   const now = Date.now();
   return {
-    from: new Date(now - 30 * 86_400_000).toISOString(),
+    // A full resync never touches the past: from the start of today (Rome).
+    from: fromToday
+      ? romeToIso(`${todayRome()}T00:00`)
+      : new Date(now - 30 * 86_400_000).toISOString(),
     to: new Date(now + 365 * 86_400_000).toISOString(),
   };
 };
@@ -57,7 +61,7 @@ export async function syncCalendar(
   adminId: string,
   state?: CrmState,
   events?: TeamEvent[],
-  /** Rewrites every event in the window, restoring edits made on Google. */
+  /** Rewrites every event from today on, restoring edits made on Google. */
   force = false,
 ) {
   const connection = await getConnection(adminId);
@@ -69,7 +73,7 @@ export async function syncCalendar(
     const plan = planSync(
       desiredItems(crm, agenda, adminId, appUrl().replace(/\/$/, "")),
       await listLinks(adminId),
-      syncWindow(),
+      syncWindow(force),
       force,
     );
     const now = new Date().toISOString();
