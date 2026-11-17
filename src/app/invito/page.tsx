@@ -7,7 +7,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Attiva il tuo accesso",
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  // "no-referrer" makes browsers send `Origin: null` on the form POST below,
+  // which the origin check rightly rejects. Same-origin never leaks the token.
+  referrer: "same-origin",
 };
 export default async function InvitePage({
   searchParams,
