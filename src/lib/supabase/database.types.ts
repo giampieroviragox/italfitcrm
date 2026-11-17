@@ -157,6 +157,91 @@ export type Database = {
           },
         ];
       };
+      crm_events: {
+        Row: {
+          id: string;
+          payload: Json;
+        };
+        Insert: {
+          id: string;
+          payload: Json;
+        };
+        Update: {
+          id?: string;
+          payload?: Json;
+        };
+        Relationships: [];
+      };
+      crm_google_connections: {
+        Row: {
+          admin_id: string;
+          calendar_id: string;
+          calendar_name: string | null;
+          connected_at: string;
+          google_email: string;
+          last_error: string | null;
+          last_sync_at: string | null;
+          refresh_token: string;
+        };
+        Insert: {
+          admin_id: string;
+          calendar_id?: string;
+          calendar_name?: string | null;
+          connected_at?: string;
+          google_email: string;
+          last_error?: string | null;
+          last_sync_at?: string | null;
+          refresh_token: string;
+        };
+        Update: {
+          admin_id?: string;
+          calendar_id?: string;
+          calendar_name?: string | null;
+          connected_at?: string;
+          google_email?: string;
+          last_error?: string | null;
+          last_sync_at?: string | null;
+          refresh_token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "crm_google_connections_admin_id_fkey";
+            columns: ["admin_id"];
+            isOneToOne: true;
+            referencedRelation: "crm_admins";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      crm_google_links: {
+        Row: {
+          admin_id: string;
+          google_event_id: string;
+          hash: string;
+          ref: string;
+        };
+        Insert: {
+          admin_id: string;
+          google_event_id: string;
+          hash: string;
+          ref: string;
+        };
+        Update: {
+          admin_id?: string;
+          google_event_id?: string;
+          hash?: string;
+          ref?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "crm_google_links_admin_id_fkey";
+            columns: ["admin_id"];
+            isOneToOne: false;
+            referencedRelation: "crm_google_connections";
+            referencedColumns: ["admin_id"];
+          },
+        ];
+      };
       crm_lessons: {
         Row: {
           id: string;
@@ -358,10 +443,10 @@ export type Database = {
       crm_remove: {
         Args: {
           p_actor: string;
-          p_expected: number;
-          p_state: Json;
           p_assignments: string[];
+          p_expected: number;
           p_plans: string[];
+          p_state: Json;
         };
         Returns: Json;
       };

@@ -21,6 +21,10 @@ export const permissionCatalog = {
     label: "Piani di allenamento",
     hint: "Libreria piani e assegnazione dei piani mensili.",
   },
+  agenda: {
+    label: "Agenda del team",
+    hint: "Vede l’agenda condivisa, fissa call e appuntamenti, vede gli orari occupati.",
+  },
   lessons: {
     label: "Calendario lezioni",
     hint: "Lezioni, disponibilità, iscrizioni e consuntivi.",
@@ -63,6 +67,7 @@ export const teamRoles = {
       "students.all",
       "students.edit",
       "plans",
+      "agenda",
       "lessons",
       "coaching",
       "accounting.online",
@@ -73,7 +78,7 @@ export const teamRoles = {
   coach: {
     label: "Coach",
     hint: "Vede solo i propri studenti, gestisce i loro piani e consulta il proprio compenso.",
-    permissions: ["plans"] as Permission[],
+    permissions: ["plans", "agenda"] as Permission[],
   },
 } as const;
 export type TeamRole = keyof typeof teamRoles;

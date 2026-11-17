@@ -11,6 +11,11 @@ const sections = [
     label: "Proprietà",
     href: "/admin/impostazioni/proprieta",
   },
+  {
+    value: "/admin/impostazioni/google",
+    label: "Google Calendar",
+    href: "/admin/impostazioni/google",
+  },
 ];
 
 export function SettingsNavigation() {
@@ -19,7 +24,7 @@ export function SettingsNavigation() {
     <>
       <PageHeading
         title="Impostazioni"
-        description="Gestisci il team e i campi delle schede studente."
+        description="Gestisci il team, i campi delle schede studente e il collegamento con Google Calendar."
       />
       <PageTabs
         label="Sezioni impostazioni"

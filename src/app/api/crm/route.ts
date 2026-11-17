@@ -9,6 +9,7 @@ import { validateStaffUpdate } from "@/modules/crm/server/validation";
 import { isCrmState } from "@/modules/crm/schema";
 import { restrictUpdate, staffScope } from "@/modules/crm/permissions";
 import { visibleEnvelope } from "@/modules/crm/server/commands";
+import { scheduleCalendarSync } from "@/modules/crm/server/calendar-sync";
 export async function GET() {
   try {
     const { user, access } = await requireAccess(true);
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     }
     const state = validateStaffUpdate(current.state, allowed, access);
     const saved = await writeCrm(user.id, current.revision, state);
+    scheduleCalendarSync();
     return Response.json(visibleEnvelope(saved, scope), {
       headers: { "Cache-Control": "no-store" },
     });

@@ -19,6 +19,7 @@ import {
   requireAccess,
 } from "./auth";
 import { readCrm, writeCrm } from "./repository";
+import { scheduleCalendarSync } from "./calendar-sync";
 
 type Input = Record<string, unknown>;
 
@@ -59,6 +60,7 @@ export async function studentCommand(
       }
       try {
         const saved = await writeCrm(user.id, current.revision, next);
+        scheduleCalendarSync();
         return Response.json(studentProjection(saved.state, access.record_id), {
           headers: { "Cache-Control": "no-store" },
         });
@@ -127,6 +129,7 @@ export async function staffCommand(
         : new HttpError(400, (e as Error).message);
     }
     const saved = await writeCrm(user.id, current.revision, next);
+    scheduleCalendarSync();
     return Response.json(visibleEnvelope(saved, scope), {
       headers: { "Cache-Control": "no-store" },
     });

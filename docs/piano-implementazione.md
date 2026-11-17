@@ -55,8 +55,8 @@ Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunt
 
 ## 7. Google Calendar
 
-- [ ] Collegare il Google Calendar dell’admin e scegliere il calendario di destinazione.
-- [ ] Sincronizzare dal CRM creazione, modifica e annullamento degli eventi scelti.
+- [x] Collegare il Google Calendar dell’admin e scegliere il calendario di destinazione.
+- [x] Sincronizzare dal CRM creazione, modifica e annullamento degli eventi scelti.
 - [ ] Definire visibilità e permessi dell’agenda condivisa. Provare una call del team e il recupero da un errore di sincronizzazione.
 
 La sequenza di rilascio parte da template, wallet e ricevute. Seguono abbonamenti e registro del coaching online, feedback e gare, contabilità e Google Calendar.

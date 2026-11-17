@@ -16,6 +16,7 @@ import {
   LogOut,
   PanelLeft,
   Calculator,
+  CalendarClock,
   Receipt,
   Settings2,
   Users,
@@ -51,6 +52,7 @@ const icons = {
   calendar: CalendarDays,
   payments: Receipt,
   accounting: Calculator,
+  agenda: CalendarClock,
 };
 const footerLinks = [
   { href: "/admin/impostazioni", label: "Impostazioni", icon: Settings2 },
@@ -143,6 +145,7 @@ function SidebarContent({
 const settingsSections: Record<string, string> = {
   "/admin/impostazioni": "Team",
   "/admin/impostazioni/proprieta": "Proprietà",
+  "/admin/impostazioni/google": "Google Calendar",
 };
 /** Section plus, on nested pages, the record the page is about. */
 function breadcrumbs(pathname: string, state: CrmState) {

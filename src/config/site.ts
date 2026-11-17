@@ -25,6 +25,12 @@ export const navigation = [
     permission: "lessons",
   },
   {
+    href: "/admin/agenda",
+    label: "Agenda",
+    icon: "agenda",
+    permission: "agenda",
+  },
+  {
     href: "/admin/pagamenti",
     label: "Pagamenti",
     icon: "payments",

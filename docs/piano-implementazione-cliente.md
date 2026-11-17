@@ -129,10 +129,10 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 14:27–15:20. Fisic Center, 00:00
 
 ## 9. Calendario del CRM e Google Calendar
 
-- [ ] Consentire all’admin di collegare il proprio Google Calendar al CRM e definire il calendario di destinazione.
-- [ ] Consentire al team di inserire nel calendario del CRM eventi e lezioni. Gli eventi sincronizzati devono comparire anche nel calendario Google collegato.
-- [ ] Allineare le modifiche degli eventi sincronizzati e decidere il comportamento in caso di annullamento o rimozione. Il flusso concordato parte dal CRM verso Google Calendar. Le disponibilità con capienza si gestiscono nel CRM.
-- [ ] Consentire a Marta e Annalisa di consultare l’agenda condivisa. Marta deve poter trovare un orario libero e fissare una call visibile anche a Giorgio.
+- [x] Consentire all’admin di collegare il proprio Google Calendar al CRM e definire il calendario di destinazione.
+- [x] Consentire al team di inserire nel calendario del CRM eventi e lezioni. Gli eventi sincronizzati devono comparire anche nel calendario Google collegato.
+- [x] Allineare le modifiche degli eventi sincronizzati e decidere il comportamento in caso di annullamento o rimozione. Il flusso concordato parte dal CRM verso Google Calendar. Le disponibilità con capienza si gestiscono nel CRM.
+- [x] Consentire a Marta e Annalisa di consultare l’agenda condivisa. Marta deve poter trovare un orario libero e fissare una call visibile anche a Giorgio.
 - [ ] Definire quali calendari e impegni sono condivisi, i permessi del team e se gli eventi vengono sincronizzati tutti o su scelta dell’admin.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 02:21–07:06.

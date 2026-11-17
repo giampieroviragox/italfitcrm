@@ -8,6 +8,7 @@ import {
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
 import { prepareStudentBooking } from "@/modules/crm/student-booking";
+import { scheduleCalendarSync } from "@/modules/crm/server/calendar-sync";
 export async function GET() {
   try {
     const { user, access } = await requireAccess();
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       }
       try {
         const saved = await writeCrm(user.id, current.revision, next);
+        scheduleCalendarSync();
         return Response.json(studentProjection(saved.state, access.record_id), {
           headers: { "Cache-Control": "no-store" },
         });

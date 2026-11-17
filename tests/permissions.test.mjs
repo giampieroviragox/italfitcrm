@@ -169,14 +169,14 @@ const state = () => ({
 
 test("ruoli: super admin tutto, admin e coach dai preset, permessi personalizzati", () => {
   const s = state();
-  assert.equal(memberPermissions(s.admins[0]).size, 10);
+  assert.equal(memberPermissions(s.admins[0]).size, 11);
   const admin = memberPermissions(s.admins[1]);
   assert.ok(
     admin.has("accounting.online") &&
       !admin.has("payments") &&
       !admin.has("accounting.lessons"),
   );
-  assert.deepEqual([...memberPermissions(s.admins[2])], ["plans"]);
+  assert.deepEqual([...memberPermissions(s.admins[2])], ["plans", "agenda"]);
   // I membri salvati prima dei ruoli restano admin.
   assert.ok(
     memberPermissions({ ...s.admins[1], teamRole: undefined }).has(
