@@ -151,4 +151,4 @@ Fonte. Fisic Center, 15:21–15:53.
 
 La finestra delle 12 ore e il numero di partecipanti su cui calcolare la tariffa servono prima di rilasciare il listino. La formula di Marta serve prima del rendiconto dei compensi.
 
-[Via Pantigliate](trascrizioni/via-pantigliate.txt) inizia a conversazione già avviata. Gli appunti aggiungono tariffe, pacchetti e abbonamenti che mancavano nella registrazione. [Fisic Center](trascrizioni/fisic-center.txt) riprende il tema delle immagini dopo l’interruzione del computer.
+La [trascrizione 1 del 16 novembre 2026](trascrizioni/trascrizione-1-2026-11-16.txt), Via Pantigliate, inizia a conversazione già avviata. Gli appunti aggiungono tariffe, pacchetti e abbonamenti che mancavano nella registrazione. La [trascrizione 2 del 16 novembre 2026](trascrizioni/trascrizione-2-2026-11-16.txt), Fisic Center, riprende il tema delle immagini dopo l’interruzione del computer.
