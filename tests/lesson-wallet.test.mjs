@@ -194,3 +194,102 @@ test("il wallet è privato e scrivere la scheda attraverso il CRM non lo modific
   payload.lessons[0].durationMinutes = 90;
   assert.throws(() => validateStaffUpdate(saved, payload, owner), /già chiusa/);
 });
+
+test("il pacchetto scade di default dopo un anno, modificabile alla vendita e dopo", async () => {
+  const {
+    applyWalletCommand,
+    defaultExpiry,
+    creditExpired,
+    milanoPrivateCredit,
+  } = await import("../src/modules/crm/lesson-wallet.ts");
+  assert.equal(defaultExpiry("2026-11-18T10:00:00.000Z"), "2027-11-18");
+  assert.equal(defaultExpiry("2028-02-29T10:00:00.000Z"), "2029-02-28");
+  // Mezzanotte italiana: vale il giorno di Roma, non quello UTC.
+  assert.equal(defaultExpiry("2026-12-31T23:30:00.000Z"), "2028-01-01");
+  const base = {
+    version: 1,
+    tiers: [],
+    properties: [],
+    admins: [],
+    students: [
+      {
+        id: "s1",
+        firstName: "TEST",
+        lastName: "Scadenza",
+        email: "s1@example.com",
+        status: "active",
+        tierId: "t",
+        joinedAt: "2026-11-01",
+        coach: "",
+        properties: {},
+      },
+    ],
+  };
+  const now = new Date("2026-11-18T10:00:00.000Z");
+  const sold = applyWalletCommand(
+    base,
+    { action: "credit", studentId: "s1", credit: milanoPrivateCredit },
+    now,
+  );
+  const credit = sold.students[0].lessonWallet.credits[0];
+  assert.equal(credit.expiresAt, "2027-11-18");
+  // Scelta a mano alla vendita, mai nel passato.
+  const custom = applyWalletCommand(
+    base,
+    {
+      action: "credit",
+      studentId: "s1",
+      credit: { ...milanoPrivateCredit, expiresAt: "2027-06-30" },
+    },
+    now,
+  );
+  assert.equal(
+    custom.students[0].lessonWallet.credits[0].expiresAt,
+    "2027-06-30",
+  );
+  assert.throws(
+    () =>
+      applyWalletCommand(
+        base,
+        {
+          action: "credit",
+          studentId: "s1",
+          credit: { ...milanoPrivateCredit, expiresAt: "2026-11-17" },
+        },
+        now,
+      ),
+    /passato/,
+  );
+  // Si cambia dopo; il pacchetto scaduto resta usabile ma risulta scaduto.
+  const moved = applyWalletCommand(
+    sold,
+    {
+      action: "expiry",
+      studentId: "s1",
+      creditId: credit.id,
+      expiresAt: "2028-01-31",
+    },
+    now,
+  );
+  assert.equal(
+    moved.students[0].lessonWallet.credits[0].expiresAt,
+    "2028-01-31",
+  );
+  assert.throws(
+    () =>
+      applyWalletCommand(
+        sold,
+        {
+          action: "expiry",
+          studentId: "s1",
+          creditId: "nope",
+          expiresAt: "2028-01-31",
+        },
+        now,
+      ),
+    /non trovato/,
+  );
+  assert.equal(creditExpired({ expiresAt: "2027-11-18" }, "2027-11-18"), false);
+  assert.equal(creditExpired({ expiresAt: "2027-11-18" }, "2027-11-19"), true);
+  assert.equal(creditExpired({}, "2090-01-01"), false);
+});

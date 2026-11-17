@@ -4,6 +4,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   canUseLessonCredit,
+  creditExpired,
+  defaultExpiry,
   lessonPrice,
   type LessonVenue,
   emptyWallet,
@@ -20,6 +22,7 @@ import { outstandingAmount } from "./lesson-wallet";
 import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
 import { SelectControl } from "@/components/ui/select-control";
 import { romeToIso, todayRome } from "./fitness-logic";
+import { formatDate } from "@/lib/format";
 import { Field, FormError, control } from "./ui";
 
 export { euro } from "./money";
@@ -61,6 +64,7 @@ export function LessonWalletView({
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [purchase, setPurchase] = useState("");
+  const [expiry, setExpiry] = useState(() => defaultExpiry(new Date()));
   const [unit, setUnit] = useState<"minutes" | "lessons">("minutes");
   const lock = useRef(false);
   const entries = [...wallet.credits, ...wallet.lessons];
@@ -117,8 +121,15 @@ export function LessonWalletView({
             individual: true,
           };
     void asyncSubmit(
-      { action: "credit", studentId: staff.studentId, credit },
-      () => setPurchase(""),
+      {
+        action: "credit",
+        studentId: staff.studentId,
+        credit: { ...credit, expiresAt: expiry },
+      },
+      () => {
+        setPurchase("");
+        setExpiry(defaultExpiry(new Date()));
+      },
     );
   };
   return (
@@ -239,6 +250,41 @@ export function LessonWalletView({
                           usate · {units(remaining, credit.unit)} residue su{" "}
                           {units(credit.quantity, credit.unit)}
                         </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
+                          <span
+                            className={
+                              creditExpired(credit)
+                                ? "font-medium text-destructive"
+                                : undefined
+                            }
+                          >
+                            {credit.expiresAt
+                              ? `${creditExpired(credit) ? "Scaduto il" : "Scade il"} ${formatDate(credit.expiresAt)}`
+                              : "Senza scadenza"}
+                          </span>
+                          {staff && !staff.archived && (
+                            <div className="w-40">
+                              <DatePicker
+                                aria-label={`Scadenza di ${credit.name}`}
+                                value={credit.expiresAt ?? ""}
+                                disabled={pending}
+                                onChange={(next) =>
+                                  next &&
+                                  next !== credit.expiresAt &&
+                                  void asyncSubmit(
+                                    {
+                                      action: "expiry",
+                                      studentId: staff.studentId,
+                                      creditId: credit.id,
+                                      expiresAt: next,
+                                    },
+                                    () => {},
+                                  )
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <p className="tabular-nums">
                         {euro(paidAmount(credit))} / {euro(credit.price)} pagati
@@ -333,6 +379,19 @@ export function LessonWalletView({
                       </Field>
                     </div>
                   </>
+                )}
+                {purchase && (
+                  <Field
+                    label="Scade il"
+                    hint="Di default un anno dall’acquisto: puoi cambiarla. Il pacchetto resta usabile, la data serve a ricordare la scadenza."
+                  >
+                    <DatePicker
+                      required
+                      value={expiry}
+                      min={todayRome()}
+                      onChange={setExpiry}
+                    />
+                  </Field>
                 )}
                 {purchase && (
                   <Button type="submit" size="sm">
@@ -614,6 +673,7 @@ function RecordLessonForm({
             {usable.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} · residuo {units(remainingCredit(wallet, c), c.unit)}
+                {creditExpired(c, date) ? " · scaduto" : ""}
               </option>
             ))}
           </SelectControl>

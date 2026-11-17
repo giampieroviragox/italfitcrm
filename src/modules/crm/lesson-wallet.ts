@@ -75,6 +75,8 @@ const lessonCredit = z.object({
   ...planFields,
   id: identifier,
   purchasedAt: timestamp,
+  /** Last day of validity (Rome). Informational: older packs have none. */
+  expiresAt: day.optional(),
   payments: z.array(payment),
 });
 const lessonCharge = z.object({
@@ -128,6 +130,24 @@ export function lessonPrice(
 }
 
 export const emptyWallet: LessonWallet = { credits: [], lessons: [] };
+
+const romeDay = (when: Date | string) =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(
+    new Date(when),
+  );
+/** A year after the purchase, in Rome (29 February becomes 28 February). */
+export function defaultExpiry(purchasedAt: Date | string) {
+  const [year, month, dayOfMonth] = romeDay(purchasedAt).split("-");
+  const leap = month === "02" && dayOfMonth === "29";
+  return `${Number(year) + 1}-${month}-${leap ? "28" : dayOfMonth}`;
+}
+/** True once the pack's last valid day has passed on the given day. */
+export function creditExpired(
+  credit: Pick<LessonCredit, "expiresAt">,
+  on: Date | string = new Date(),
+) {
+  return Boolean(credit.expiresAt && romeDay(on) > credit.expiresAt);
+}
 export function paidAmount(item: LessonCredit | LessonCharge) {
   return item.payments.reduce((total, p) => total + p.amount, 0);
 }
@@ -160,7 +180,17 @@ export const walletCommand = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("credit"),
     studentId: identifier,
-    credit: z.object(planFields),
+    credit: z.object({
+      ...planFields,
+      /** Defaults to one year after the purchase. */
+      expiresAt: day.optional(),
+    }),
+  }),
+  z.object({
+    action: z.literal("expiry"),
+    studentId: identifier,
+    creditId: identifier,
+    expiresAt: day,
   }),
   z.object({
     action: z.literal("payment"),
@@ -380,7 +410,18 @@ export function applyWalletCommand(
     throw new Error("Studente non disponibile.");
   const wallet = student.lessonWallet ?? emptyWallet;
   let next: LessonWallet;
-  if (command.action === "credit") {
+  if (command.action === "expiry") {
+    if (!wallet.credits.some((c) => c.id === command.creditId))
+      throw new Error("Pacchetto non trovato.");
+    next = {
+      ...wallet,
+      credits: wallet.credits.map((c) =>
+        c.id === command.creditId ? { ...c, expiresAt: command.expiresAt } : c,
+      ),
+    };
+  } else if (command.action === "credit") {
+    if (command.credit.expiresAt && command.credit.expiresAt < romeDay(now))
+      throw new Error("La scadenza non può essere nel passato.");
     next = {
       ...wallet,
       credits: [
@@ -392,6 +433,7 @@ export function applyWalletCommand(
           individual: true,
           id: crypto.randomUUID(),
           purchasedAt: now.toISOString(),
+          expiresAt: command.credit.expiresAt ?? defaultExpiry(now),
           payments: [],
         },
       ],
