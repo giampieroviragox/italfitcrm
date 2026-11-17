@@ -2,6 +2,8 @@
 
 Il piano raccoglie le attività di prodotto e i criteri di collaudo per il CRM e l’area studente. Lo stato di ciascuna fase distingue il lavoro verificato in locale dal rilascio in produzione.
 
+Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunti e i riferimenti alle due trascrizioni.
+
 ## 1. Inviti e recupero password
 
 - [x] Configurare il mittente verificato in Resend e l’invio di recupero tramite Supabase Auth.

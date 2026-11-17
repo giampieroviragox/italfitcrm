@@ -1,0 +1,339 @@
+[00:00] tiro fuori il totale poi manualmente vado su splitwise ad aggiornargli il totale di ciascuno
+[00:06] poi ogni cliente o quasi tutti, no quasi tutti no non è vero dai, il 20% dei clienti mi dicono
+[00:13] Gio scusami non mi tornano di 10 euro mi puoi dire che le lezioni ho fatto?
+[00:18] e invece così facendo io annullo questa cosa qua loro hanno reso conto delle lezioni che hanno fatto in automatico
+[00:24] e profilo, certo, come mi pagano? Mi pagano o di persona o paypal
+[00:29] o bonifico amico
+[00:31] certo
+[00:33] chiaramente questa conversazione
+[00:34] resta fra noi
+[00:38] anche perché è quello che farò io con te
+[00:42] ora
+[00:43] vorrei che ci fosse
+[00:45] ci sia la possibilità per le persone
+[00:47] di pagarmi quando vogliono
+[00:49] loro se vogliono farlo con Paypal
+[00:50] tipo un mio cliente che mi ha pagato due tranche
+[00:54] settimana scorsa
+[00:55] e stamattina
+[00:56] però vorrei che loro potessero in autonomia caricarlo sulla piattaforma quindi dirmi ti
+[01:02] ho dato 450 sparo però vorrei che per farlo dovessero allegare lo screen del pagamento
+[01:09] certo e che io debba dare l'ok lì ti metterei una mini ai che lo controlla e in più fai il
+[01:16] tuo check così cioè una mini ai collegata a people no no una mini ai che loro caricano la
+[01:23] ricevuta lo screenshot quello che vogliono e già fa un check se è reale o meno esatto ok io vorrei
+[01:32] comunque poi dargli il cioè io a fine giornata guardo ai questi pagamenti da revisionare se io
+[01:38] so che me l'ha fatto in giornata devo solo spuntare ok e lui in automatico il sistema mi va a scalare
+[01:43] da il suo debito quello che lui mi ha dato ok questa è una funzione che vorrei creare e l'atto
+[01:52] prenotazioni
+[01:52] direi che
+[01:54] direi che siamo assolutamente a posto
+[01:56] altro tema che mi è venuto in mente
+[01:58] queste cose dovevo ditele prima in modo che tu potessi
+[02:00] lavorarci già entro oggi però
+[02:03] piano piano sto
+[02:05] migliorando
+[02:08] allora
+[02:10] anche perché eravamo in via questo weekend per l'anniversario
+[02:12] quindi è andata molto bene
+[02:13] ho staccato il cervello
+[02:17] allora
+[02:18] altra cosa
+[02:21] ah sì
+[02:22] è possibile attaccare il nostro calendario del CRM
+[02:25] al calendar
+[02:26] premesso che io per le prenotazioni
+[02:28] per i miei appuntamenti della settimana
+[02:32] io uso calendario di iPhone
+[02:36] ok
+[02:38] ok
+[02:41] non mi piace l'idea di passare a Google Calendar
+[02:44] però so che è giusto farlo
+[02:46] quindi passerei a calendar
+[02:48] mi piacerebbe che
+[02:52] intanto ti chiedo
+[02:53] ha senso avere due calendari?
+[02:56] quali sarebbero i due?
+[02:58] calendar e il riflesso sul CRM
+[03:03] nel senso dovresti dirmi
+[03:05] dove ti preferisci avere le cose
+[03:08] nel senso
+[03:11] se le metto sul CRM
+[03:13] me le mette su calendar
+[03:14] cosa? le lezioni?
+[03:17] le lezioni
+[03:18] se io aggiungo una lezione
+[03:20] sul CRM
+[03:21] me lo aggiunge anche su calendar?
+[03:27] per me non c'è problema
+[03:28] no no no
+[03:29] sto ragionando
+[03:31] cioè
+[03:31] è possibile farlo
+[03:33] però ha più senso fare il contrario
+[03:35] che io aggiorno calendar
+[03:36] e di riflesso il CRM
+[03:38] va per scartacalendar
+[03:44] o puoi anche dirmi
+[03:45] che non ha alcun senso
+[03:46] no no sto ragionando
+[03:48] sto ragionando nel senso in questo momento il calendar che c'è nel CRM è pensato per mettere
+[03:53] le disponibilità più che gli eventi ok vero non che c'è nel senso possiamo modificare quello che
+[04:04] vogliamo è solo per riprendere la cosa cioè in questo momento il calendario che c'è nel CRM
+[04:07] permette disponibilità non eventi quindi cioè possiamo decidere ti direi quello che più ti
+[04:14] cioè le disponibilità beh sì le mettiamo dal CRM ti direi perché non ha senso che tu ti metta
+[04:23] e no si ha senso metterlo nel CRM secondo me perché perché perché nel CRM quando metti la
+[04:31] tua disponibilità dalle 8 alle 9 se ti fa selezionare gli slot cioè quante persone accetti
+[04:41] nel tuo calendar invece non potresti metterlo
+[04:43] metteresti solamente
+[04:46] lo slot dalle 8-9
+[04:47] quindi la disponibilità
+[04:49] ha senso che rimanga nel
+[04:51] nel CRM
+[04:53] quindi unicamente le lezioni della mattina
+[04:55] e quelle della sera di Monza
+[04:58] esatto
+[04:58] il resto me lo puoi dire te quello che preferisci
+[05:01] cioè puoi
+[05:03] ma a quel punto ti dico
+[05:04] che cosa te ne frega di avere il calendario nel CRM
+[05:08] cioè dimmi tu eh
+[05:09] per i conteggi dei privati
+[05:11] per i conteggi dei privati
+[05:13] però i privati
+[05:15] però si mettono
+[05:17] loro
+[05:19] le elezioni
+[05:21] no?
+[05:24] ci concordiamo
+[05:26] loro se lo segnano ad ora sul loro calendario
+[05:28] io sul mio
+[05:29] però se da CRM
+[05:31] derivano i conti di tutti
+[05:33] è giusto che siano tutti su CRM
+[05:35] e allora farei che
+[05:36] farei forse che
+[05:38] le metti
+[05:40] nel CRM
+[05:41] e te le ritrovi anche nel calendar
+[05:46] per me ok
+[05:48] ok
+[05:50] cioè non so
+[05:51] Natalie ha un pacchetto da 10
+[05:53] attivo, sparo
+[05:57] vorrei che il CRM
+[05:59] avesse in memoria
+[06:01] che Natalie ha un pacchetto da 10
+[06:02] attivo
+[06:03] e io vorrei poter
+[06:06] cioè vorrei che in automatico
+[06:08] man mano che lei fa le lezioni
+[06:10] sia io che lei
+[06:12] vediamo scalare le lezioni
+[06:15] e che mi compaia
+[06:17] anche nel mio calendar
+[06:18] perché
+[06:20] sia il calendar che il CRM in realtà
+[06:24] saranno a disposizione
+[06:25] sia di Marta
+[06:26] la ragazza che hai conosciuto
+[06:27] sia di Anna Lisa che è la mia assistente
+[06:29] che fa le fatture e la contabilità
+[06:34] e quindi vorrei che
+[06:36] insomma se Marta
+[06:38] mi vuole chiedere di parlare
+[06:39] fissarci una call non mi debba chiedere
+[06:41] quando io sono disponibile
+[06:43] ma posso in automatico guardare
+[06:45] o il calendario o il CRM che sono la stessa cosa
+[06:48] e bloccare
+[06:49] lei un momento per
+[06:51] parlarci io e lei
+[06:55] e io lo vedo capito
+[06:57] ok
+[06:59] di base come calendar
+[07:01] l'unica differenza è che il calendar non mi può fare i conteggi
+[07:03] il CRM a quanto pare si
+[07:05] esatto
+[07:05] sì sì
+[07:06] no mi è chiara questa cosa
+[07:08] tutto qua
+[07:09] mi è chiara
+[07:10] mi è chiara
+[07:12] poi
+[07:12] sempre discorso contabilità
+[07:17] sempre discorso contabilità
+[07:19] sì
+[07:20] io vorrei che sul CRM
+[07:22] ci sia proprio un tasto contabilità
+[07:24] sì
+[07:25] o comunque totali
+[07:27] non lo so
+[07:28] sì sì
+[07:28] scegliamo
+[07:29] però con
+[07:31] diviso in
+[07:33] coaching online
+[07:39] che al quale avrà accesso unicamente avrò accesso io e analisa con possibilmente con
+[07:50] dei codici personali che vuol dire oppure attiviamo un account attiviamo un account
+[07:58] cosa si esatta ti diamo il login di analisa che ha già la regola per la quale le facci
+[08:03] la contabilità
+[08:05] punto
+[08:08] Marta non è tenuta a vedere
+[08:09] la contabilità del coaching online
+[08:13] per quanto in realtà
+[08:20] Marta farà i programmi
+[08:21] insieme a me
+[08:23] quindi ti faccio un esempio pratico
+[08:25] arriva un cliente nuovo
+[08:27] che attiva un pacchetto da
+[08:28] tre mesi
+[08:31] questo cliente viene associato a Marta
+[08:33] quindi decidiamo io e Marta che lo può gestire lei
+[08:36] quindi farà lei primo, secondo e terzo programma
+[08:40] io Marta dopo un periodo di prova
+[08:42] ho deciso di confermarla
+[08:45] quindi le ho fatte un accordo di un anno
+[08:47] e ho stipulato una percentuale di guadagno
+[08:55] per ogni programma che lei fa
+[08:57] vorrei che nel CRM
+[09:02] ogni cliente
+[09:04] intanto vorrei avere tutti i clienti online
+[09:05] nel CRM in modo che io lì
+[09:07] abbia il gestionare dell'online
+[09:09] quindi forse ha senso che
+[09:11] a lato insieme
+[09:13] tra i tasti disponibili a lato
+[09:15] ci sia online, cioè coaching online
+[09:18] in modo che io lì poi abbia
+[09:20] una lista
+[09:21] dei miei clienti che in realtà
+[09:24] potrebbe tranquillamente
+[09:26] essere pescato dal drive
+[09:29] perché io sul drive come ti ho fatto vedere ho tutti i clienti eccetera eccetera poi questo lo
+[09:33] capiamo insieme però vorrei che in automatico il CRM vada a calcolare il guadagno di Marta sulla
+[09:42] base di quelli che saranno i clienti che verranno gestiti da lei quindi mi piacerebbe che nella
+[09:48] lista poi di clienti online e con le varie scadenze ci sia poi che vi so giampiero virago
+[09:58] coach marta ok e poi in base a io poi ogni mese vedo quali programmi ha fatto marta se sono stati
+[10:07] deliberati se sono stati consegnati e quanto quindi devo pagare a marta e quanto deve mettermi in
+[10:12] ok ok e poi mi piacerebbe avere una sezione contabilità generale unicamente visibile a me
+[10:29] quindi paradossalmente a cose fatte né a te né ad anna né a marta c'è un codice che decido io
+[10:39] una volta che ho solo io non so come e al quale perché ho parlato con mia madre mia madre mi fa
+[10:46] qualunque cosa accada è bene che certi dati sensibili siano solo a tua disposizione a me
+[10:54] questa cosa servirebbe perché ti dico la verità io da nove anni questa parte non so quanto guadagno
+[11:01] io non so quanto guarda a parte le fatture che io faccio per berries e i miei sponsor che in
+[11:06] realtà non è niente di che. Il resto non è conteggio, cioè io non ho un conteggio di quante
+[11:13] lezioni ho fatto questo mese. So quante lezioni ho fatto perché le conta la palestra paradossalmente
+[11:19] per quello che devo pagare a loro. Ok, ok. Però io non ho la contabilità mia delle entrate. Ok,
+[11:26] dimmi in cosa differisce la contabilità tua privata, che mi amora, rispetto a quella del
+[11:32] coaching online cioè le azioni che faccio le lezioni lezioni milano monza quelle cose
+[11:41] le mi piacerebbe cioè vorrei poter vedere o la c'è suggerimento mese ho guadagnato x dalle
+[11:48] lezioni y dal coaching online e di cui z dovuto a marta eccetera eccetera eccetera perché mia
+[11:55] madre sto voltando con la commercialista sto cercando di capire con la commercialista se ha
+[12:01] senso rientrare in forfettario.
+[12:04] Ok, beh, adesso sei anche
+[12:05] fino al 100k l'hanno aumentato, no?
+[12:08] Sì, tra l'altro.
+[12:10] Però qui quest'anno ho avuto un anno pessimo
+[12:11] in termini di guadagni
+[12:13] per il discorso che ti ho fatto di quest'inverno.
+[12:16] Quindi
+[12:18] la commerciale...
+[12:19] Pessimo in termini di
+[12:22] fatturato, che però paradossalmente
+[12:23] mi ha spiegato la commercialista. Io sono una capra
+[12:25] su stella becua, mi ha spiegato la commercialista che
+[12:27] avendo invece comunque avuto dei costi
+[12:29] alti
+[12:32] esatto
+[12:33] e quindi mi ha detto
+[12:35] tutto sommato in realtà
+[12:36] non è così male
+[12:38] anche perché se ci sono gli anni
+[12:41] dove hai tanti costi
+[12:44] nel senso
+[12:44] esatto però la mia commercialista mi ha detto
+[12:47] mi sai dire più o meno
+[12:50] quanti programmi
+[12:51] fai al mese e io
+[12:54] mi sai dire
+[12:55] quante costi, quante
+[12:57] lezioni, se fatturassi
+[13:01] cioè capito
+[13:02] oppure mia madre mi fa
+[13:04] ma come mai hai fatto così poche fatture?
+[13:06] e io ho risposto
+[13:06] un po' perché di fatto ho lavorato meno
+[13:09] un po' perché alcuni paypal non li ho fatturati
+[13:11] questa conversazione rimane fra me e te
+[13:13] e mia madre mi fa
+[13:14] quanti paypal hai fatto che non hai fatturato?
+[13:17] e io capito
+[13:19] cioè non caccia come mi pagano
+[13:21] non ho un sistema
+[13:23] e mi serve un sistema
+[13:24] perché ormai insomma sono grandicello
+[13:27] se penso a fare dei bilanci
+[13:30] e a diventare ricco insieme a te
+[13:34] ovvio ovvio
+[13:37] conquisteremo il mondo
+[13:38] Gian Piero
+[13:40] no scherzo a parte
+[13:41] è ora di crescere
+[13:43] e avere sotto mano dei numeri
+[13:45] quindi mi servirebbe
+[13:47] questo gestionale
+[13:49] ok
+[13:51] lato coaching
+[13:53] lato coaching ho pensato varie cose
+[13:56] mi trovi preparato?
+[13:58] sei contento che ho le dichiare?
+[14:02] lato coaching
+[14:03] ho pensato varie cose
+[14:05] intanto sono super contento
+[14:07] del fatto che io possa creare il documento
+[14:09] con Claude e buttandolo su
+[14:11] Claude io faccia
+[14:15] caricalo
+[14:16] a Giampiero Vilago
+[14:17] questi cazzi
+[14:18] allora
+[14:19] mi piacerebbe che Giampiero Vilago
+[14:22] nel suo programma possa
+[14:27] intanto segnare
+[14:28] intanto scusami
+[14:29] vorrei che per ogni esercizio Claude
+[14:32] quantomeno dia la possibilità
+[14:35] a Gian Piero di vedere
+[14:36] la foto dell'esercizio
+[14:40] ok
+[14:40] che sia Claude a fare una sua ricerca
+[14:44] e ad associare una foto
+[14:45] non è neanche un video
+[14:47] almeno la foto
+[14:48] all'esercizio
+[14:55] ok
+[14:56] allora
+[14:56] ci sta
+[14:57] assolutamente
+[14:58] quello che secondo me
+[14:59] andrebbe a migliorare
+[15:01] cioè
+[15:01] che mi aiuterebbe
+[15:02] è
+[15:04] quanti esercizi ci saranno
+[15:05] dentro i piani
+[15:06] secondo te
+[15:07] 100
+[15:08] tutti quelli che
+[15:09] Claude
+[15:09] no di più
+[15:10] tutti quelli che Claude genererà
+[15:12] no lo so
+[15:13] però nel senso
+[15:14] sono riconducibili a
+[15:16] 400
+[15:17] ah minchia
+[15:18] ok
+[15:19] ok
+[15:49] Sottotitoli a la partengete
+[16:04] Grazie a tutti.
