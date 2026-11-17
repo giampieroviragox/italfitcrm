@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Check, KeyRound, LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { getInitials } from "@/lib/format";
+import { signOut } from "@/modules/auth/actions";
 import { StudentShell, studentNavItems } from "./student-shell";
 import { requestJson, RequestError } from "@/lib/request-json";
 import { StudentCalendar } from "./student-calendar";
@@ -395,6 +396,7 @@ function StudentAccountMenu({
 }: {
   student: StudentPortalData["student"];
 }) {
+  const [leaving, setLeaving] = useState(false);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -428,17 +430,20 @@ function StudentAccountMenu({
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
-          <form method="POST" action="/auth/signout">
-            <DropdownMenu.Item asChild>
-              <button
-                type="submit"
-                className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 outline-none focus:bg-muted"
-              >
-                <LogOut className="size-4 text-muted-foreground" />
-                Esci
-              </button>
-            </DropdownMenu.Item>
-          </form>
+          {/* A form inside the menu is removed when it closes, before it submits:
+              the server action runs from the item itself instead. */}
+          <DropdownMenu.Item
+            disabled={leaving}
+            className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 outline-none focus:bg-muted data-[disabled]:opacity-60"
+            onSelect={(event) => {
+              event.preventDefault();
+              setLeaving(true);
+              void signOut().catch(() => setLeaving(false));
+            }}
+          >
+            <LogOut className="size-4 text-muted-foreground" />
+            {leaving ? "Uscita…" : "Esci"}
+          </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
