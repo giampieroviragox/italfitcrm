@@ -147,11 +147,13 @@ export function projectState(state: CrmState, scope: StaffScope): CrmState {
     if (!scope.can("payments")) delete next.lessonWallet;
     // Plan values stay visible (they are the basis of the coach's
     // compensation); collected payments do not.
-    if (!scope.can("coaching") && !scope.can("accounting.online"))
+    if (!scope.can("coaching") && !scope.can("accounting.online")) {
       next.onlineSubscriptions = s.onlineSubscriptions?.map((sub) => ({
         ...sub,
         payments: [],
       }));
+      delete next.onlineReceipts;
+    }
     return next;
   });
   const ids = new Set(students.map((s) => s.id));

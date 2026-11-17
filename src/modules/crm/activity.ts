@@ -179,6 +179,13 @@ export function studentChanges(
     changes.push(...feedbackChanges(old, student, next));
     changes.push(...raceChanges(old, student));
     changes.push(...walletChanges(old, student));
+    changes.push(
+      ...receiptChanges(
+        old.onlineReceipts,
+        student.onlineReceipts,
+        " · Coaching online",
+      ),
+    );
     for (const p of next.properties) {
       const before = current.properties.find((x) => x.id === p.id);
       if (!before || !different(before, p) || !(p.id in student.properties))
@@ -385,13 +392,16 @@ function subscriptionChanges(
           { ...s, payments: undefined },
         )
       )
-        return newPayments.map((p) => ({
-          text: "Pagamento abbonamento registrato",
-          details: [
-            `${euros(p.amount)} · Coaching online ${s.durationMonths} mesi`,
-            ...(p.by ? [`Registrato da ${p.by}`] : []),
-          ],
-        }));
+        // Payments from an approved receipt are logged with the receipt.
+        return newPayments
+          .filter((p) => !p.receiptId)
+          .map((p) => ({
+            text: "Pagamento abbonamento registrato",
+            details: [
+              `${euros(p.amount)} · Coaching online ${s.durationMonths} mesi`,
+              ...(p.by ? [`Registrato da ${p.by}`] : []),
+            ],
+          }));
       const was = subscriptionDetails(previous, next),
         now = subscriptionDetails(s, next);
       return [
@@ -497,29 +507,7 @@ function walletChanges(old: CrmStudent, student: CrmStudent): Change[] {
     after = student.lessonWallet;
   if (!after || !different(before, after)) return [];
   const changes: Change[] = [];
-  for (const r of after.receipts ?? []) {
-    const prev = before?.receipts?.find((x) => x.id === r.id);
-    const line = `${euros(r.amount)} · ${methodLabels[r.method]} · pagato il ${day(r.paidOn)}`;
-    if (!prev)
-      changes.push({
-        text: "Pagamento dichiarato dallo studente",
-        details: [line, ...(r.note ? [r.note] : [])],
-      });
-    else if (prev.status !== r.status)
-      changes.push({
-        text:
-          r.status === "approved"
-            ? "Pagamento approvato"
-            : "Pagamento rifiutato",
-        details: [
-          line,
-          ...(r.status === "approved" && r.approvedAmount !== r.amount
-            ? [`Importo approvato: ${euros(r.approvedAmount ?? 0)}`]
-            : []),
-          ...(r.rejectionReason ? [`Motivo: ${r.rejectionReason}`] : []),
-        ],
-      });
-  }
+  changes.push(...receiptChanges(before?.receipts, after.receipts, ""));
   for (const l of after.lessons)
     if (
       l.id.startsWith("manual-") &&
@@ -532,5 +520,35 @@ function walletChanges(old: CrmStudent, student: CrmStudent): Change[] {
           l.creditId ? "Scalata da un pacchetto" : `Prezzo ${euros(l.price)}`,
         ],
       });
+  return changes;
+}
+
+type ReceiptLike = NonNullable<CrmStudent["onlineReceipts"]>[number];
+function receiptChanges(
+  before: ReceiptLike[] | undefined,
+  after: ReceiptLike[] | undefined,
+  suffix: string,
+): Change[] {
+  const changes: Change[] = [];
+  for (const r of after ?? []) {
+    const prev = before?.find((x) => x.id === r.id);
+    const line = `${euros(r.amount)} · ${methodLabels[r.method]} · pagato il ${day(r.paidOn)}`;
+    if (!prev)
+      changes.push({
+        text: `Pagamento dichiarato dallo studente${suffix}`,
+        details: [line, ...(r.note ? [r.note] : [])],
+      });
+    else if (prev.status !== r.status)
+      changes.push({
+        text: `${r.status === "approved" ? "Pagamento approvato" : "Pagamento rifiutato"}${suffix}`,
+        details: [
+          line,
+          ...(r.status === "approved" && r.approvedAmount !== r.amount
+            ? [`Importo approvato: ${euros(r.approvedAmount ?? 0)}`]
+            : []),
+          ...(r.rejectionReason ? [`Motivo: ${r.rejectionReason}`] : []),
+        ],
+      });
+  }
   return changes;
 }

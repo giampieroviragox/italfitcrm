@@ -13,6 +13,7 @@ import {
 import { studentProjection } from "@/modules/crm/student-portal-model";
 import { todayRome } from "@/modules/crm/fitness-logic";
 import { prepareTransition } from "@/modules/crm/transition";
+import { submitOnlineReceipt } from "@/modules/crm/online-coaching";
 import {
   receiptFileTypes,
   receiptInput,
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
         400,
         "Controlla importo, metodo e data del pagamento.",
       );
+    // "coaching" for online coaching subscriptions, otherwise lessons.
+    const coaching = form.get("scope") === "coaching";
     const upload = form.get("file");
     const file = upload instanceof File && upload.size > 0 ? upload : undefined;
     const id = crypto.randomUUID();
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
       if (!student) throw new Error("Studente non disponibile.");
       return prepareTransition(
         state,
-        submitReceipt(
+        (coaching ? submitOnlineReceipt : submitReceipt)(
           state,
           student.id,
           input.data,

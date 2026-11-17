@@ -334,3 +334,97 @@ test("contabilità: valore piani, compensi, online e lezioni del mese", () => {
   assert.equal(lessons.collected, 7000);
   assert.equal(lessons.open, 2000);
 });
+
+test("ricevute del Coaching online: invio, approvazione sugli abbonamenti più vecchi, visibilità", async () => {
+  const { submitOnlineReceipt, coachingOutstanding } =
+    await import("../src/modules/crm/online-coaching.ts");
+  const s = state();
+  // Anna: un abbonamento con 190 € aperti; ne aggiungo un secondo successivo.
+  s.students[0].onlineSubscriptions.push(
+    sub("sa2", "giorgio", { startsOn: "2027-02-01", endsOn: "2027-04-30" }),
+  );
+  assert.equal(coachingOutstanding(s.students[0]), 19000 + 39000);
+  const input = {
+    amount: 30000,
+    method: "paypal",
+    paidOn: "2026-11-16",
+    note: "",
+  };
+  const file = {
+    path: "anna/r.jpg",
+    name: "r.jpg",
+    type: "image/jpeg",
+    size: 100,
+  };
+  assert.throws(
+    () => submitOnlineReceipt(s, "anna", input, undefined, "2026-11-17"),
+    /Allega/,
+  );
+  assert.throws(
+    () =>
+      submitOnlineReceipt(
+        s,
+        "anna",
+        { ...input, amount: 60000 },
+        file,
+        "2026-11-17",
+      ),
+    /supera/,
+  );
+  assert.throws(
+    () => submitOnlineReceipt(s, "sara", input, file, "2026-11-17"),
+    /Non hai importi/,
+  );
+  const sent = submitOnlineReceipt(
+    s,
+    "anna",
+    input,
+    file,
+    "2026-11-17",
+    new Date(),
+    "r1",
+  );
+  assert.ok(isCrmState(sent));
+  const approved = applyCoachingCommand(
+    sent,
+    {
+      action: "review",
+      studentId: "anna",
+      receiptId: "r1",
+      decision: "approve",
+    },
+    new Date("2026-11-18T10:00:00Z"),
+    "Annalisa",
+  );
+  const [first, second] = approved.students[0].onlineSubscriptions;
+  assert.deepEqual(first.payments.at(-1), {
+    amount: 19000,
+    date: "2026-11-18T10:00:00.000Z",
+    by: "Annalisa",
+    receiptId: "r1",
+  });
+  assert.equal(second.payments[0].amount, 11000);
+  assert.equal(approved.students[0].onlineReceipts[0].status, "approved");
+  assert.throws(
+    () =>
+      applyCoachingCommand(approved, {
+        action: "review",
+        studentId: "anna",
+        receiptId: "r1",
+        decision: "approve",
+      }),
+    /già stato verificato/,
+  );
+  // Il coach non vede le ricevute; lo staff non le riscrive dal salvataggio generico.
+  assert.equal(
+    projectState(sent, staffScope(sent, "marta")).students[0].onlineReceipts,
+    undefined,
+  );
+  const payload = structuredClone(sent);
+  payload.students[0].onlineReceipts = [];
+  assert.equal(
+    validateStaffUpdate(sent, payload, { role: "owner", record_id: "giorgio" })
+      .students[0].onlineReceipts.length,
+    1,
+  );
+});

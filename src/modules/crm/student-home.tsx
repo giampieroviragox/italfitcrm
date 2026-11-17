@@ -8,6 +8,9 @@ import {
   subscriptionStatusLabels,
 } from "./online-coaching";
 import type { StudentCoaching } from "./student-portal-model";
+import type { Receipt } from "./lesson-wallet";
+import { euro } from "./money";
+import { ReceiptForm, ReceiptList } from "./receipts-view";
 
 export type StudentView = "home" | "piano" | "progressi" | "prenotazioni";
 
@@ -82,9 +85,16 @@ export function StudentHome({
 export function StudentCoachingCard({
   coaching,
   today,
+  outstanding = 0,
+  receipts = [],
+  onSubmitReceipt,
 }: {
   coaching: StudentCoaching;
   today: string;
+  /** Still to pay for online coaching, in cents. */
+  outstanding?: number;
+  receipts?: Receipt[];
+  onSubmitReceipt?: (form: FormData) => Promise<string>;
 }) {
   const status = subscriptionStatus(coaching, today);
   const left = daysBetween(today, coaching.endsOn);
@@ -135,6 +145,20 @@ export function StudentCoachingCard({
             : `L’abbonamento scade tra ${left} ${left === 1 ? "giorno" : "giorni"}.`}{" "}
           Contatta il team per il rinnovo.
         </p>
+      )}
+      {(outstanding > 0 || receipts.length > 0) && (
+        <div className="mt-5 space-y-3 border-t pt-4">
+          <p className="text-sm">
+            <span className="text-muted-foreground">Da saldare: </span>
+            <span className="font-semibold tabular-nums">
+              {euro(outstanding)}
+            </span>
+          </p>
+          {onSubmitReceipt && outstanding > 0 && (
+            <ReceiptForm outstanding={outstanding} onSubmit={onSubmitReceipt} />
+          )}
+          <ReceiptList receipts={receipts} />
+        </div>
       )}
     </section>
   );

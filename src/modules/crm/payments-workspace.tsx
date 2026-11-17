@@ -28,13 +28,25 @@ import {
   type PaymentFilters,
   type PaymentRow,
 } from "./payment-history";
-import { ReceiptList, ReceiptStatus } from "./receipts-view";
-import { useCrm, useHydrated } from "./store";
+import {
+  OnlineReceiptsQueue,
+  ReceiptList,
+  ReceiptStatus,
+} from "./receipts-view";
+import { useCan, useCrm, useHydrated } from "./store";
 import { LocalNotice, control } from "./ui";
 
 export function pendingReceipts(students: CrmStudent[]) {
   return students.flatMap((s) =>
     (s.lessonWallet?.receipts ?? [])
+      .filter((r) => r.status === "pending")
+      .map((receipt) => ({ student: s, receipt })),
+  );
+}
+
+export function pendingOnlineReceipts(students: CrmStudent[]) {
+  return students.flatMap((s) =>
+    (s.onlineReceipts ?? [])
       .filter((r) => r.status === "pending")
       .map((receipt) => ({ student: s, receipt })),
   );
@@ -132,6 +144,7 @@ export function PaymentHistoryList({
 export function PaymentsWorkspace() {
   const state = useCrm();
   const hydrated = useHydrated();
+  const can = useCan();
   const [tab, setTab] = useState("pending");
   const [studentId, setStudentId] = useState("");
   const [kind, setKind] = useState("");
@@ -156,7 +169,11 @@ export function PaymentsWorkspace() {
     (s) => !studentId || s.id === studentId,
   );
   const pending = pendingReceipts(selected);
-  const allPending = pendingReceipts(state.students).length;
+  const allPending =
+    pendingReceipts(state.students).length +
+    (can("coaching") || can("accounting.online")
+      ? pendingOnlineReceipts(state.students).length
+      : 0);
   const history = paymentHistory(state.students);
   const filters: PaymentFilters = {
     ...(studentId ? { studentId } : {}),
@@ -222,6 +239,11 @@ export function PaymentsWorkspace() {
         </div>
       </div>
 
+      {tab === "pending" && (can("coaching") || can("accounting.online")) && (
+        <div className="mb-6">
+          <OnlineReceiptsQueue students={selected} />
+        </div>
+      )}
       {tab === "pending" && (
         <section aria-label="Pagamenti da verificare" className="space-y-4">
           {pending.length ? (

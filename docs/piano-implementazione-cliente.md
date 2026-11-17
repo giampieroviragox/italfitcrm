@@ -13,7 +13,8 @@ Requisiti raccolti dalle registrazioni **Via Pantigliate** e **Fisic Center** e 
 - [x] Verificare con una scheda tecnica studente invito, reinvito, reset e accesso con la nuova password. Rimuovere scheda e account tecnici.
 - [x] Attivare `AUTH_EMAIL_ENABLED=true` in produzione. Verificare nel browser il campo email e il pulsante **Invia link di recupero** sul CRM pubblico.
 - [x] Preparare i template Team Italfit per invito, reinvito e recupero.
-- [ ] Pubblicare i template aggiornati e ripetere l’invio di prova.
+- [x] Pubblicare i template aggiornati: verificato il 18 novembre 2026, il template di recupero su Supabase coincide con quello del repository.
+- [ ] Ripetere l’invio di prova con l’account studente di prova di Giorgio.
 
 [Guida Resend Forge](https://resend.com/docs/forge) · [Resend SMTP per Supabase](https://resend.com/docs/send-with-supabase-smtp)
 

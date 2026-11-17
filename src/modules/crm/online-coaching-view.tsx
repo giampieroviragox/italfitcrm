@@ -13,6 +13,7 @@ import { normalize, type CrmState, type CrmStudent } from "./model";
 import {
   assignmentCoachId,
   assignmentsInPeriod,
+  coachingOutstanding,
   coachingDurations,
   coachingPrices,
   defaultEndDate,
@@ -27,6 +28,7 @@ import {
   type SubscriptionStatus,
 } from "./online-coaching";
 import { updateCrm, updateOnlineCoaching, useCan, useCrm } from "./store";
+import { ReceiptList } from "./receipts-view";
 import type { PlanAssignment } from "./fitness-model";
 import { coachName } from "./student-coach";
 import { Field, FormError, control } from "./ui";
@@ -416,6 +418,21 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
             Nessun abbonamento Coaching online.
           </p>
         )
+      )}
+      {money && (student.onlineReceipts?.length ?? 0) > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">
+            Pagamenti dichiarati dallo studente
+          </h3>
+          <ReceiptList
+            receipts={student.onlineReceipts ?? []}
+            staff={{
+              studentId: student.id,
+              outstanding: coachingOutstanding(student),
+              kind: "coaching",
+            }}
+          />
+        </div>
       )}
       <ConfirmDialog
         open={removing !== null}

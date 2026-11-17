@@ -30,7 +30,7 @@ Il proprietario è il super admin: vede tutto ed è l’unico che gestisce team,
 - Admin: studenti, piani, calendario, abbonamenti online, contabilità online, compensi, impostazioni. Non vede pagamenti e contabilità delle lezioni.
 - Coach: solo i propri studenti (coach di riferimento, dell’abbonamento o di un piano mensile) e la libreria piani; vede solo il proprio compenso.
 
-I permessi sono applicati dal server: lo stato inviato al browser è filtrato per membro, le scritture rimettono i dati nascosti e rifiutano le modifiche fuori ruolo, e ogni rotta controlla il permesso necessario. La migrazione `20261117180000_italfit_server_only_reads` rimuove la lettura diretta delle tabelle CRM da parte degli utenti autenticati: tutte le letture passano dal server. Applicata in produzione il 17 novembre 2026 tramite la Management API di Supabase e registrata in `supabase_migrations.schema_migrations`.
+I permessi sono applicati dal server: lo stato inviato al browser è filtrato per membro, le scritture rimettono i dati nascosti e rifiutano le modifiche fuori ruolo, e ogni rotta controlla il permesso necessario. La migrazione `20261117180000_italfit_server_only_reads` rimuove la lettura diretta delle tabelle CRM da parte degli utenti autenticati: tutte le letture passano dal server. Applicata in produzione il 17 novembre 2026 tramite la Management API di Supabase e registrata in `supabase_migrations.schema_migrations`. La migrazione `20261118090000_italfit_tighten_self_grants` lascia agli utenti autenticati la sola lettura della propria riga in `crm_access` e `crm_preferences`; applicata il 18 novembre 2026.
 
 ## Inviti e recupero password con Resend
 

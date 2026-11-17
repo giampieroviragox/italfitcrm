@@ -16,7 +16,8 @@ export function POST(request: Request) {
     try {
       requirePermission(
         scope,
-        command.action === "payment" && !scope.can("coaching")
+        (command.action === "payment" || command.action === "review") &&
+          !scope.can("coaching")
           ? "accounting.online"
           : "coaching",
       );

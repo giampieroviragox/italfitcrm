@@ -11,6 +11,7 @@ export function mutationState(current: CrmState, proposed: CrmState): CrmState {
         history: undefined,
         lessonWallet: undefined,
         onlineSubscriptions: undefined,
+        onlineReceipts: undefined,
         maxes: undefined,
         cycleFeedback: undefined,
         races: undefined,

@@ -268,7 +268,16 @@ export function StudentPortal({
         />
       )}
       {view === "home" && data.coaching && (
-        <StudentCoachingCard coaching={data.coaching} today={todayRome()} />
+        <StudentCoachingCard
+          coaching={data.coaching}
+          today={todayRome()}
+          outstanding={data.coachingOutstanding ?? 0}
+          receipts={data.onlineReceipts ?? []}
+          onSubmitReceipt={(form) => {
+            form.set("scope", "coaching");
+            return sendReceipt(form);
+          }}
+        />
       )}
       {message && (
         <p

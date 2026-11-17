@@ -46,6 +46,8 @@ export interface AccountAccess {
 export interface CrmStudent extends Omit<Student, "tierId"> {
   lessonWallet?: import("./lesson-wallet.ts").LessonWallet;
   onlineSubscriptions?: import("./online-coaching.ts").OnlineSubscription[];
+  /** Receipts uploaded by the student for online coaching payments. */
+  onlineReceipts?: import("./lesson-wallet.ts").Receipt[];
   maxes?: import("./workout-log.ts").MaxRecord[];
   cycleFeedback?: import("./cycle-feedback.ts").CycleFeedback[];
   races?: import("./cycle-feedback.ts").Race[];

@@ -26,7 +26,12 @@ import {
   type CycleFeedback,
   type Race,
 } from "./cycle-feedback.ts";
-import { assignmentCoachId, currentSubscription } from "./online-coaching.ts";
+import {
+  assignmentCoachId,
+  coachingOutstanding,
+  currentSubscription,
+  onlineReceipts as onlineReceiptList,
+} from "./online-coaching.ts";
 import {
   studentAccess,
   bookingRestriction,
@@ -45,6 +50,9 @@ export interface StudentPortalData {
   assignments: PlanAssignment[];
   lessonWallet?: LessonWallet;
   coaching?: StudentCoaching;
+  /** Still to pay for online coaching and the receipts sent for it. */
+  coachingOutstanding?: number;
+  onlineReceipts?: import("./lesson-wallet.ts").Receipt[];
   lessons: (Lesson & {
     enrolled: boolean;
     occupied: number;
@@ -111,6 +119,15 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
       (!value.planCoaches ||
         typeof value.planCoaches !== "object" ||
         !Object.values(value.planCoaches).every(isStudentCoach))) ||
+    ("onlineReceipts" in value &&
+      value.onlineReceipts !== undefined &&
+      !onlineReceiptList.safeParse(value.onlineReceipts).success) ||
+    ("coachingOutstanding" in value &&
+      value.coachingOutstanding !== undefined &&
+      !(
+        Number.isInteger(value.coachingOutstanding) &&
+        Number(value.coachingOutstanding) >= 0
+      )) ||
     ("coaching" in value &&
       value.coaching !== undefined &&
       !isStudentCoaching(value.coaching)) ||
@@ -164,6 +181,8 @@ export function studentProjection(
   return {
     services,
     lessonWallet: student.lessonWallet,
+    coachingOutstanding: coachingOutstanding(student),
+    onlineReceipts: student.onlineReceipts ?? [],
     ...(subscription
       ? {
           coaching: {

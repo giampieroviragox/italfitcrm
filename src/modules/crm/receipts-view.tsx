@@ -15,7 +15,11 @@ import {
   type Receipt,
 } from "./lesson-wallet";
 import { euro } from "./money";
-import { updateLessonWallet } from "./store";
+import type { CrmStudent } from "./model";
+import { coachingOutstanding } from "./online-coaching";
+import { StudentIdentity } from "@/modules/students/components/student-identity";
+import Link from "next/link";
+import { updateLessonWallet, updateOnlineCoaching } from "./store";
 import { Field, FormError, control } from "./ui";
 
 const statusTone: Record<Receipt["status"], string> = {
@@ -269,10 +273,12 @@ function ReviewActions({
   studentId,
   receipt,
   outstanding,
+  kind,
 }: {
   studentId: string;
   receipt: Receipt;
   outstanding: number;
+  kind: "lessons" | "coaching";
 }) {
   const [mode, setMode] = useState<"approve" | "reject" | null>(null);
   const [amount, setAmount] = useState(
@@ -288,16 +294,20 @@ function ReviewActions({
     setPending(true);
     setError("");
     try {
-      await updateLessonWallet({
-        action: "review",
+      const review = {
+        action: "review" as const,
         studentId,
         receiptId: receipt.id,
-        decision: mode === "approve" ? "approve" : "reject",
+        decision:
+          mode === "approve" ? ("approve" as const) : ("reject" as const),
         ...(mode === "approve" ? { amount: cents } : {}),
         ...(mode === "reject" && reason.trim()
           ? { reason: reason.trim() }
           : {}),
-      });
+      };
+      await (kind === "coaching"
+        ? updateOnlineCoaching(review)
+        : updateLessonWallet(review));
       setMode(null);
     } catch (e) {
       setError((e as Error).message);
@@ -369,7 +379,12 @@ export function ReceiptList({
   staff,
 }: {
   receipts: Receipt[];
-  staff?: { studentId: string; outstanding: number };
+  staff?: {
+    studentId: string;
+    outstanding: number;
+    /** Lesson wallet receipts (default) or online coaching ones. */
+    kind?: "lessons" | "coaching";
+  };
 }) {
   const sorted = receipts.toSorted(
     (a, b) =>
@@ -426,10 +441,56 @@ export function ReceiptList({
               studentId={staff.studentId}
               receipt={r}
               outstanding={staff.outstanding}
+              kind={staff.kind ?? "lessons"}
             />
           )}
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Online coaching receipts waiting for review, grouped by student. */
+export function OnlineReceiptsQueue({
+  students,
+  title = "Coaching online · da verificare",
+}: {
+  students: CrmStudent[];
+  title?: string;
+}) {
+  const waiting = students.filter((s) =>
+    s.onlineReceipts?.some((r) => r.status === "pending"),
+  );
+  if (!waiting.length) return null;
+  return (
+    <section className="space-y-3" aria-label={title}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {waiting.map((student) => (
+        <div
+          key={student.id}
+          className="space-y-2 rounded-2xl border bg-card p-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <StudentIdentity student={student} />
+            <Link
+              href={`/admin/studenti/${encodeURIComponent(student.id)}?tab=coaching`}
+              className="text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              Da saldare {euro(coachingOutstanding(student))} · apri la scheda
+            </Link>
+          </div>
+          <ReceiptList
+            receipts={(student.onlineReceipts ?? []).filter(
+              (r) => r.status === "pending",
+            )}
+            staff={{
+              studentId: student.id,
+              outstanding: coachingOutstanding(student),
+              kind: "coaching",
+            }}
+          />
+        </div>
+      ))}
+    </section>
   );
 }

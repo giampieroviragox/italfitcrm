@@ -16,18 +16,25 @@ export async function GET(
     const { id } = await ctx.params;
     const { user, access } = await requireAccess();
     const { state } = await readCrm(user.id);
-    if (
-      access.role !== "student" &&
-      !staffScope(state, access.record_id).can("payments")
-    )
-      throw new HttpError(403, "Il tuo ruolo non include i pagamenti.");
     const students =
       access.role === "student"
         ? state.students.filter((s) => s.id === access.record_id)
         : state.students;
-    const receipt = students
+    const lesson = students
       .flatMap((s) => s.lessonWallet?.receipts ?? [])
       .find((r) => r.id === id);
+    const online = students
+      .flatMap((s) => s.onlineReceipts ?? [])
+      .find((r) => r.id === id);
+    const receipt = lesson ?? online;
+    if (access.role !== "student") {
+      const scope = staffScope(state, access.record_id);
+      const allowed = lesson
+        ? scope.can("payments")
+        : scope.can("coaching") || scope.can("accounting.online");
+      if (receipt && !allowed)
+        throw new HttpError(403, "Il tuo ruolo non include questi pagamenti.");
+    }
     if (!receipt?.file) throw new HttpError(404, "Ricevuta non disponibile.");
     const data = await downloadReceipt(receipt.file.path);
     return new Response(data, {

@@ -7,6 +7,7 @@ import {
 } from "./model.ts";
 import type { PlanAssignment } from "./fitness-model.ts";
 import { coachName } from "./student-coach.ts";
+import { receipt, type Receipt, type ReceiptInput } from "./lesson-wallet.ts";
 
 /** Online coaching subscriptions: each month of the period includes one four-week plan. */
 const cents = z.number().int().min(0).max(10_000_000);
@@ -35,7 +36,11 @@ const subscriptionPayment = z.object({
   date: timestamp,
   /** Team member who registered it. */
   by: z.string().max(120).optional(),
+  /** Set when the payment comes from an approved student receipt. */
+  receiptId: identifier.optional(),
 });
+/** Receipts a student uploads for online coaching payments. */
+export const onlineReceipts = z.array(receipt).max(500);
 export const onlineSubscription = z.object({
   ...subscriptionFields,
   id: identifier,
@@ -69,6 +74,15 @@ export const coachingCommand = z.discriminatedUnion("action", [
     studentId: identifier,
     subscriptionId: identifier,
     amount: cents.min(1),
+  }),
+  z.object({
+    action: z.literal("review"),
+    studentId: identifier,
+    receiptId: identifier,
+    decision: z.enum(["approve", "reject"]),
+    /** Amount actually received; defaults to the declared one. */
+    amount: cents.min(1).optional(),
+    reason: z.string().trim().max(500).optional(),
   }),
 ]);
 export const subscriptionPaid = (s: Pick<OnlineSubscription, "payments">) =>
@@ -231,6 +245,8 @@ export function applyCoachingCommand(
   if (!student) throw new Error("Studente non disponibile.");
   if (student.archived)
     throw new Error("Ripristina lo studente prima di gestire l’abbonamento.");
+  if (command.action === "review")
+    return reviewOnlineReceipt(state, student, command, now, actorName);
   const current = student.onlineSubscriptions ?? [];
   let next: OnlineSubscription[];
   if (command.action === "create") {
@@ -287,6 +303,144 @@ export function applyCoachingCommand(
     ...state,
     students: state.students.map((s) =>
       s.id === student.id ? { ...s, onlineSubscriptions: next } : s,
+    ),
+  };
+}
+
+/** Still to collect on all of a student's online coaching subscriptions. */
+export const coachingOutstanding = (
+  student: Pick<CrmStudent, "onlineSubscriptions">,
+) =>
+  (student.onlineSubscriptions ?? []).reduce(
+    (sum, s) => sum + subscriptionOpen(s),
+    0,
+  );
+
+const maxPendingOnlineReceipts = 20;
+/** A student declares a payment for online coaching, with its receipt. */
+export function submitOnlineReceipt(
+  state: CrmState,
+  studentId: string,
+  input: ReceiptInput,
+  file: Receipt["file"],
+  today: string,
+  now = new Date(),
+  id: string = crypto.randomUUID(),
+): CrmState {
+  const student = state.students.find(
+    (s) => s.id === studentId && !s.archived && !s.accessDisabled,
+  );
+  if (!student) throw new Error("Studente non disponibile.");
+  if (input.paidOn > today)
+    throw new Error("La data del pagamento non può essere nel futuro.");
+  if (input.method !== "contanti" && !file)
+    throw new Error("Allega la ricevuta o lo screenshot del pagamento.");
+  const outstanding = coachingOutstanding(student);
+  if (!outstanding)
+    throw new Error("Non hai importi da saldare per il Coaching online.");
+  if (input.amount > outstanding)
+    throw new Error(
+      `L’importo supera quanto da saldare (${(outstanding / 100).toFixed(2).replace(".", ",")} €).`,
+    );
+  const receipts = student.onlineReceipts ?? [];
+  if (
+    receipts.filter((r) => r.status === "pending").length >=
+    maxPendingOnlineReceipts
+  )
+    throw new Error("Hai già molti pagamenti in attesa di verifica.");
+  const entry: Receipt = {
+    ...input,
+    note: input.note.trim(),
+    id,
+    ...(file ? { file } : {}),
+    submittedAt: now.toISOString(),
+    status: "pending",
+  };
+  return {
+    ...state,
+    students: state.students.map((s) =>
+      s.id === studentId ? { ...s, onlineReceipts: [...receipts, entry] } : s,
+    ),
+  };
+}
+
+/** Approve once (spreading the amount over open subscriptions, oldest first) or reject. */
+function reviewOnlineReceipt(
+  state: CrmState,
+  student: CrmStudent,
+  command: Extract<CoachingCommand, { action: "review" }>,
+  now: Date,
+  reviewer?: string,
+): CrmState {
+  const receipt = student.onlineReceipts?.find(
+    (r) => r.id === command.receiptId,
+  );
+  if (!receipt)
+    throw new Error("Il pagamento non esiste più. Aggiorna la pagina.");
+  if (receipt.status !== "pending")
+    throw new Error("Questo pagamento è già stato verificato.");
+  const reviewed: Receipt = {
+    ...receipt,
+    status: command.decision === "approve" ? "approved" : "rejected",
+    reviewedAt: now.toISOString(),
+    ...(reviewer ? { reviewedBy: reviewer } : {}),
+    ...(command.decision === "approve"
+      ? { approvedAmount: command.amount ?? receipt.amount }
+      : command.reason
+        ? { rejectionReason: command.reason }
+        : {}),
+  };
+  let subscriptions = student.onlineSubscriptions ?? [];
+  if (command.decision === "approve") {
+    let left = reviewed.approvedAmount!;
+    if (left > coachingOutstanding(student))
+      throw new Error("L’importo supera quanto resta da incassare.");
+    const order = subscriptions
+      .filter((s) => subscriptionOpen(s) > 0)
+      .toSorted(
+        (a, b) =>
+          a.startsOn.localeCompare(b.startsOn) || a.id.localeCompare(b.id),
+      )
+      .map((s) => s.id);
+    const shares = new Map<string, number>();
+    for (const id of order) {
+      if (!left) break;
+      const share = Math.min(
+        left,
+        subscriptionOpen(subscriptions.find((s) => s.id === id)!),
+      );
+      shares.set(id, share);
+      left -= share;
+    }
+    subscriptions = subscriptions.map((s) =>
+      shares.has(s.id)
+        ? {
+            ...s,
+            payments: [
+              ...(s.payments ?? []),
+              {
+                amount: shares.get(s.id)!,
+                date: now.toISOString(),
+                ...(reviewer ? { by: reviewer } : {}),
+                receiptId: receipt.id,
+              },
+            ],
+          }
+        : s,
+    );
+  }
+  return {
+    ...state,
+    students: state.students.map((s) =>
+      s.id === student.id
+        ? {
+            ...s,
+            onlineSubscriptions: subscriptions,
+            onlineReceipts: (s.onlineReceipts ?? []).map((r) =>
+              r.id === receipt.id ? reviewed : r,
+            ),
+          }
+        : s,
     ),
   };
 }

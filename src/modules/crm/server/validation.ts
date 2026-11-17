@@ -123,6 +123,7 @@ export function validateStaffUpdate(
         access: old?.access ?? null,
         lessonWallet: old?.lessonWallet,
         onlineSubscriptions: old?.onlineSubscriptions,
+        onlineReceipts: old?.onlineReceipts,
         maxes: old?.maxes,
         cycleFeedback: old?.cycleFeedback,
         races: old?.races,

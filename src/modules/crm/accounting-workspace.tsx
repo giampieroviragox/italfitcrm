@@ -21,6 +21,7 @@ import { euro } from "./money";
 import { downloadCsv } from "./payments-workspace";
 import { useCan, useCrm, useHydrated, useViewer } from "./store";
 import { LocalNotice, control } from "./ui";
+import { OnlineReceiptsQueue } from "./receipts-view";
 
 function Stat({
   label,
@@ -242,6 +243,10 @@ export function AccountingWorkspace() {
 
       {active === "online" && (
         <section className="space-y-5" aria-label="Contabilità Coaching online">
+          <OnlineReceiptsQueue
+            students={state.students}
+            title="Pagamenti da verificare"
+          />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat
               label="Abbonamenti attivi"

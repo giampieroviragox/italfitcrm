@@ -22,7 +22,7 @@ import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
 import { formatDate, formatMonth } from "@/lib/format";
 import { daysUntil, racesSoon } from "./cycle-feedback";
-import { pendingReceipts } from "./payments-workspace";
+import { pendingOnlineReceipts, pendingReceipts } from "./payments-workspace";
 
 const fullDate = new Intl.DateTimeFormat("it-IT", {
   dateStyle: "full",
@@ -305,10 +305,17 @@ export default function OverviewPage() {
                 },
                 {
                   title: "Pagamenti da verificare",
-                  items: pendingReceipts(state.students),
+                  items: [
+                    ...(can("payments") ? pendingReceipts(state.students) : []),
+                    ...(can("coaching") || can("accounting.online")
+                      ? pendingOnlineReceipts(state.students)
+                      : []),
+                  ],
                   hint: "Ricevute caricate dagli studenti",
                   icon: Receipt,
-                  href: "/admin/pagamenti",
+                  href: can("payments")
+                    ? "/admin/pagamenti"
+                    : "/admin/contabilita",
                 },
               ].map(({ title, items, hint, icon: Icon, href }) => (
                 <li key={title}>
