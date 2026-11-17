@@ -209,6 +209,15 @@ const body = (item: CalendarItem, id?: string) =>
     summary: item.summary,
     description: item.description,
     ...(item.location ? { location: item.location } : {}),
+    ...(item.attendees?.length
+      ? {
+          attendees: item.attendees.map((email) => ({ email })),
+          // Students never see each other, nor can they add people.
+          guestsCanSeeOtherGuests: false,
+          guestsCanInviteOthers: false,
+          guestsCanModify: false,
+        }
+      : { attendees: [] }),
     start: {
       ...item.start,
       ...("dateTime" in item.start ? { timeZone: calendarTimeZone } : {}),
@@ -230,16 +239,19 @@ export async function putEvent(
   calendarId: string,
   eventId: string,
   item: CalendarItem,
+  /** Google emails the guests: only for events that have not happened yet. */
+  notify = false,
 ) {
+  const query = `?sendUpdates=${notify ? "all" : "none"}`;
   try {
-    await api(token, calendarPath(calendarId), {
+    await api(token, `${calendarPath(calendarId)}${query}`, {
       method: "POST",
       body: body(item, eventId),
     });
   } catch (error) {
     // Already there (maybe deleted earlier): update and restore it.
     if (!(error instanceof GoogleError) || error.status !== 409) throw error;
-    await api(token, `${calendarPath(calendarId)}/${eventId}`, {
+    await api(token, `${calendarPath(calendarId)}/${eventId}${query}`, {
       method: "PUT",
       body: body(item),
     });
@@ -249,11 +261,15 @@ export async function deleteEvent(
   token: string,
   calendarId: string,
   eventId: string,
+  /** Guests get a cancellation email: only when the event really goes away. */
+  notify = false,
 ) {
   try {
-    await api(token, `${calendarPath(calendarId)}/${eventId}`, {
-      method: "DELETE",
-    });
+    await api(
+      token,
+      `${calendarPath(calendarId)}/${eventId}?sendUpdates=${notify ? "all" : "none"}`,
+      { method: "DELETE" },
+    );
   } catch (error) {
     if (!(error instanceof GoogleError) || ![404, 410].includes(error.status))
       throw error;

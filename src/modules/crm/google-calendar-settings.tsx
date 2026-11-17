@@ -111,7 +111,7 @@ export function GoogleCalendarSettings() {
       <FormError message={error} />
       <SettingsSection
         title="Il tuo Google Calendar"
-        description="Il CRM scrive nel calendario che scegli le lezioni di cui sei coach, le call dell’agenda a cui partecipi e le gare dei tuoi studenti. Modifiche e annullamenti si aggiornano da soli."
+        description="Il CRM scrive nel calendario che scegli le lezioni di cui sei coach, le call dell’agenda a cui partecipi e le gare dei tuoi studenti. Gli studenti iscritti a una lezione ricevono l’invito da Google sulla loro email. Modifiche e annullamenti si aggiornano da soli."
       >
         {!status ? (
           <SettingsRow title="Caricamento…" />
@@ -141,7 +141,7 @@ export function GoogleCalendarSettings() {
               title={`Collegato come ${connection.googleEmail}`}
               description={
                 connection.lastSyncAt
-                  ? `Ultima sincronizzazione: ${dateTime(connection.lastSyncAt)}`
+                  ? `Ultima sincronizzazione: ${dateTime(connection.lastSyncAt)}. “Risincronizza tutto” rimette nel calendario ogni evento del CRM, anche se l’hai modificato o cancellato su Google.`
                   : "Sincronizzazione in corso…"
               }
             >
@@ -151,7 +151,7 @@ export function GoogleCalendarSettings() {
                 disabled={pending}
                 onClick={() => void act({ action: "sync" }, "Sincronizzato:")}
               >
-                <RefreshCw className="size-4" /> Sincronizza ora
+                <RefreshCw className="size-4" /> Risincronizza tutto
               </Button>
               <Button
                 variant="outline"

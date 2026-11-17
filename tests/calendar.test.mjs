@@ -202,7 +202,9 @@ test("ogni calendario riceve le proprie lezioni, call e gare", () => {
     "race:luca:r2",
   ]);
   const lesson = giorgio.find((i) => i.ref === "lesson:l1");
-  assert.match(lesson.description, /Iscritti \(1\/8\): Anna Rossi/);
+  assert.match(lesson.description, /Iscritti: 1\/8/);
+  assert.doesNotMatch(lesson.description, /Anna/);
+  assert.deepEqual(lesson.attendees, ["a@example.com"]);
   assert.deepEqual(lesson.end, { dateTime: "2026-11-20T08:00:00.000Z" });
   const race = giorgio.find((i) => i.ref === "race:anna:r1");
   assert.deepEqual(
@@ -312,4 +314,73 @@ test("orari occupati dal CRM: lezioni del coach e appuntamenti, senza annullati"
     ),
     [],
   );
+});
+
+test("gli iscritti diventano ospiti Google, senza duplicati, annullati o archiviati", () => {
+  const s = state();
+  s.students.push(
+    { ...s.students[0], id: "dup", email: "A@Example.com" },
+    { ...s.students[1], id: "arch", email: "x@example.com", archived: true },
+    { ...s.students[1], id: "bad", email: "non-una-email" },
+    { ...s.students[1], id: "out", email: "out@example.com" },
+  );
+  s.bookings.push(
+    {
+      id: "b2",
+      studentId: "dup",
+      lessonId: "l1",
+      createdAt: "x",
+      cancelled: false,
+    },
+    {
+      id: "b3",
+      studentId: "arch",
+      lessonId: "l1",
+      createdAt: "x",
+      cancelled: false,
+    },
+    {
+      id: "b4",
+      studentId: "bad",
+      lessonId: "l1",
+      createdAt: "x",
+      cancelled: false,
+    },
+    {
+      id: "b5",
+      studentId: "out",
+      lessonId: "l1",
+      createdAt: "x",
+      cancelled: true,
+    },
+  );
+  const lesson = desiredItems(s, [], "giorgio", "https://crm.test").find(
+    (i) => i.ref === "lesson:l1",
+  );
+  assert.deepEqual(lesson.attendees, ["a@example.com"]);
+  // Cambiare gli ospiti cambia l’impronta: l’evento viene riscritto.
+  const before = itemHash(lesson);
+  assert.notEqual(before, itemHash({ ...lesson, attendees: [] }));
+  // Le gare non hanno ospiti.
+  assert.equal(
+    desiredItems(s, [], "giorgio", "https://crm.test").find((i) =>
+      i.ref.startsWith("race:"),
+    ).attendees,
+    undefined,
+  );
+});
+
+test("la risincronizzazione completa riscrive anche ciò che sembra invariato", () => {
+  const s = state();
+  const items = desiredItems(s, [call], "giorgio", "https://crm.test");
+  const window = { from: "2026-11-01T00:00:00Z", to: "2027-11-01T00:00:00Z" };
+  const links = planSync(items, [], window).write.map((w) => ({
+    ref: w.item.ref,
+    googleEventId: `g-${w.item.ref}`,
+    hash: w.hash,
+  }));
+  assert.equal(planSync(items, links, window).write.length, 0);
+  const forced = planSync(items, links, window, true);
+  assert.equal(forced.write.length, 4);
+  assert.ok(forced.write.every((w) => w.googleEventId === `g-${w.item.ref}`));
 });

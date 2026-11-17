@@ -5,6 +5,7 @@ import type { TeamEvent } from "../agenda";
 import {
   desiredItems,
   googleEventId,
+  itemStart,
   planSync,
   type CalendarLink,
 } from "../calendar-sync";
@@ -56,6 +57,8 @@ export async function syncCalendar(
   adminId: string,
   state?: CrmState,
   events?: TeamEvent[],
+  /** Rewrites every event in the window, restoring edits made on Google. */
+  force = false,
 ) {
   const connection = await getConnection(adminId);
   if (!connection) return { written: 0, removed: 0 };
@@ -67,7 +70,9 @@ export async function syncCalendar(
       desiredItems(crm, agenda, adminId, appUrl().replace(/\/$/, "")),
       await listLinks(adminId),
       syncWindow(),
+      force,
     );
+    const now = new Date().toISOString();
     const written: CalendarLink[] = [];
     const batch = plan.write.slice(0, maxWritesPerRun);
     // A few calls at a time: fast, and well within Google's rate limits.
@@ -78,7 +83,14 @@ export async function syncCalendar(
             .slice(i, i + 5)
             .map(async ({ item, hash, googleEventId: known }) => {
               const id = known ?? (await googleEventId(adminId, item.ref));
-              await putEvent(token, connection.calendarId, id, item);
+              // Guests are emailed by Google only for lessons still to come.
+              await putEvent(
+                token,
+                connection.calendarId,
+                id,
+                item,
+                itemStart(item) > now,
+              );
               return { ref: item.ref, googleEventId: id, hash };
             }),
         )),
@@ -89,7 +101,7 @@ export async function syncCalendar(
         plan.remove
           .slice(i, i + 5)
           .map((link) =>
-            deleteEvent(token, connection.calendarId, link.googleEventId),
+            deleteEvent(token, connection.calendarId, link.googleEventId, true),
           ),
       );
     await deleteLinks(

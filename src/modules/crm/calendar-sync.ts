@@ -12,6 +12,8 @@ export interface CalendarItem {
   summary: string;
   description: string;
   location?: string;
+  /** Guests invited by Google (booked students of a lesson). */
+  attendees?: string[];
   start: { dateTime: string } | { date: string };
   end: { dateTime: string } | { date: string };
 }
@@ -22,6 +24,7 @@ export interface CalendarLink {
 }
 export const calendarTimeZone = "Europe/Rome";
 
+const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const nextDay = (day: string) => {
   const d = new Date(`${day}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
@@ -49,20 +52,27 @@ export function desiredItems(
       lesson.availability?.adminId === adminId ||
       (!lesson.availability && normalize(coachName(lesson.coach)) === name);
     if (!mine) continue;
-    const attendees = (state.bookings ?? [])
+    const booked = (state.bookings ?? [])
       .filter((b) => b.lessonId === lesson.id && !b.cancelled)
-      .map((b) => studentName(b.studentId))
-      .filter(Boolean);
+      .map((b) => state.students.find((s) => s.id === b.studentId))
+      .filter((s): s is NonNullable<typeof s> => Boolean(s && !s.archived));
+    const guests = [
+      ...new Set(
+        booked.map((s) => s.email.trim().toLowerCase()).filter(validEmail),
+      ),
+    ].sort();
     items.push({
       ref: `lesson:${lesson.id}`,
       summary: `Lezione · ${lesson.title}`,
+      // Guests see the description: only a count, never the other names.
       description: [
-        attendees.length
-          ? `Iscritti (${attendees.length}/${lesson.capacity}): ${attendees.join(", ")}`
+        booked.length
+          ? `Iscritti: ${booked.length}/${lesson.capacity}`
           : `Nessun iscritto · ${lesson.capacity} posti`,
         `Gestisci nel CRM: ${appUrl}/admin/lezioni/${encodeURIComponent(lesson.id)}`,
       ].join("\n"),
       ...(lesson.location ? { location: lesson.location } : {}),
+      ...(guests.length ? { attendees: guests } : {}),
       start: { dateTime: lesson.startsAt },
       end: {
         dateTime: new Date(
@@ -121,6 +131,7 @@ export function itemHash(item: CalendarItem) {
     item.summary,
     item.description,
     item.location ?? "",
+    item.attendees ?? [],
     item.start,
     item.end,
   ]);
@@ -150,6 +161,8 @@ export function planSync(
   desired: CalendarItem[],
   links: CalendarLink[],
   window: { from: string; to: string },
+  /** Rewrite everything in the window, even what looks unchanged. */
+  force = false,
 ): SyncPlan {
   const byRef = new Map(links.map((l) => [l.ref, l]));
   const wanted = new Set(desired.map((d) => d.ref));
@@ -158,7 +171,7 @@ export function planSync(
     if (start < window.from || start > window.to) return [];
     const hash = itemHash(item);
     const link = byRef.get(item.ref);
-    if (link?.hash === hash) return [];
+    if (!force && link?.hash === hash) return [];
     return [
       { item, hash, ...(link ? { googleEventId: link.googleEventId } : {}) },
     ];

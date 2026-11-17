@@ -94,8 +94,12 @@ export async function POST(request: Request) {
       });
       return Response.json(await syncCalendar(access.record_id), noStore);
     }
+    // Always a full rewrite: what was changed or deleted on Google comes back.
     if (input.action === "sync")
-      return Response.json(await syncCalendar(access.record_id), noStore);
+      return Response.json(
+        await syncCalendar(access.record_id, undefined, undefined, true),
+        noStore,
+      );
     if (input.action === "disconnect") {
       // Events written by the CRM would no longer be updated: remove them.
       await clearCalendar(access.record_id, own).catch(() => {});

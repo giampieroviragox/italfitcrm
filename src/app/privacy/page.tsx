@@ -50,6 +50,12 @@ export default function PrivacyPage() {
               dal CRM (lezioni, appuntamenti del team, gare degli studenti);
             </li>
             <li>
+              invita come ospiti, con il loro indirizzo email, gli studenti
+              iscritti a una lezione: Google invia loro l’invito e, se
+              l’iscrizione viene annullata, l’aggiornamento. Gli ospiti non
+              vedono gli altri iscritti;
+            </li>
+            <li>
               legge l’elenco dei calendari per permettere di scegliere quello di
               destinazione;
             </li>
