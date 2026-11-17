@@ -406,12 +406,15 @@ export function MaxesPanel({
   exerciseNames,
   today,
   onCommand,
+  staff = false,
 }: {
   maxes: MaxRecord[];
   exerciseNames: string[];
   today: string;
   /** Returns an error message, or "" when saved. */
   onCommand?: (command: MaxCommand) => Promise<string>;
+  /** Staff may remove every record; students only their own. */
+  staff?: boolean;
 }) {
   const listId = useId();
   const [adding, setAdding] = useState(false);
@@ -601,8 +604,14 @@ export function MaxesPanel({
                       <span className="tabular-nums">
                         {formatDate(record.date)} · {record.reps}RM ·{" "}
                         {formatKg(record.kg)}
+                        {record.recordedBy && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · inserito da {record.recordedBy}
+                          </span>
+                        )}
                       </span>
-                      {onCommand && (
+                      {onCommand && (staff || !record.recordedBy) && (
                         <Button
                           type="button"
                           variant="ghost"

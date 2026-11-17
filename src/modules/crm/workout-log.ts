@@ -160,13 +160,15 @@ export const maxRecord = z.object({
   kg: kilograms.refine((kg) => kg > 0, "Inserisci il carico."),
   date: day,
   createdAt: z.iso.datetime({ offset: true }),
+  /** Coach who entered the record; absent when the student did. */
+  recordedBy: z.string().trim().min(1).max(120).optional(),
 });
 export type MaxRecord = z.infer<typeof maxRecord>;
 export const maxRecords = z.array(maxRecord).max(500);
 export const maxCommand = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("add"),
-    record: maxRecord.omit({ id: true, createdAt: true }),
+    record: maxRecord.omit({ id: true, createdAt: true, recordedBy: true }),
   }),
   z.object({ action: z.literal("remove"), id: identifier }),
 ]);
@@ -208,9 +210,14 @@ export function applyMaxCommand(
   command: MaxCommand,
   today: string,
   now = new Date(),
+  /** Coach name when staff record it on the student's profile. */
+  staffName?: string,
 ): CrmState {
   const student = state.students.find(
-    (s) => s.id === studentId && !s.archived && !s.accessDisabled,
+    (s) =>
+      s.id === studentId &&
+      !s.archived &&
+      (staffName !== undefined || !s.accessDisabled),
   );
   if (!student) throw new Error("Studente non disponibile.");
   const current = student.maxes ?? [];
@@ -227,11 +234,17 @@ export function applyMaxCommand(
         exercise: command.record.exercise.trim().replace(/\s+/g, " "),
         id: crypto.randomUUID(),
         createdAt: now.toISOString(),
+        ...(staffName ? { recordedBy: staffName } : {}),
       },
     ];
   } else {
-    if (!current.some((r) => r.id === command.id))
+    const record = current.find((r) => r.id === command.id);
+    if (!record)
       throw new Error("Il massimale non esiste più. Aggiorna la pagina.");
+    if (record.recordedBy && staffName === undefined)
+      throw new Error(
+        "Questo massimale è stato inserito dal coach: chiedi al team di modificarlo.",
+      );
     next = current.filter((r) => r.id !== command.id);
   }
   return {

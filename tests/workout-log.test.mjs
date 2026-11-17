@@ -302,3 +302,84 @@ test("massimali privati: lo staff non li riscrive e solo lo studente li vede", (
   assert.equal(parseStudentPortalData(own), own);
   assert.deepEqual(studentProjection(s, "other").maxes, []);
 });
+
+test("il coach inserisce massimali sulla scheda; lo studente non può cancellarli", () => {
+  const blocked = state();
+  blocked.students[0].accessDisabled = true;
+  // Il coach può registrare anche se lo studente non ha accesso alla piattaforma.
+  const s = applyMaxCommand(
+    blocked,
+    "s",
+    {
+      action: "add",
+      record: { exercise: "Stacco", reps: 1, kg: 180, date: "2026-11-16" },
+    },
+    "2026-11-17",
+    new Date("2026-11-17T10:00:00Z"),
+    "Giorgio Galbiati",
+  );
+  const [record] = s.students[0].maxes;
+  assert.equal(record.recordedBy, "Giorgio Galbiati");
+  assert.ok(isCrmState(s));
+  const open = structuredClone(s);
+  open.students[0].accessDisabled = false;
+  assert.throws(
+    () =>
+      applyMaxCommand(
+        open,
+        "s",
+        { action: "remove", id: record.id },
+        "2026-11-17",
+      ),
+    /inserito dal coach/,
+  );
+  const removed = applyMaxCommand(
+    open,
+    "s",
+    { action: "remove", id: record.id },
+    "2026-11-17",
+    new Date(),
+    "Marta",
+  );
+  assert.deepEqual(removed.students[0].maxes, []);
+  // Il client non può dichiararsi coach.
+  assert.equal(
+    maxCommand.safeParse({
+      action: "add",
+      record: {
+        exercise: "Stacco",
+        reps: 1,
+        kg: 180,
+        date: "2026-11-16",
+        recordedBy: "Giorgio",
+      },
+    }).data.record.recordedBy,
+    undefined,
+  );
+});
+
+test("la cronologia registra i massimali inseriti e rimossi", async () => {
+  const { prepareTransition } =
+    await import("../src/modules/crm/transition.ts");
+  const base = prepareTransition(state(), state());
+  const added = prepareTransition(
+    base,
+    applyMaxCommand(
+      base,
+      "s",
+      {
+        action: "add",
+        record: { exercise: "Squat", reps: 5, kg: 120, date: "2026-11-16" },
+      },
+      "2026-11-17",
+      new Date(),
+      "Giorgio Galbiati",
+    ),
+  );
+  const event = added.students[0].history.at(-1);
+  assert.equal(event.text, "Massimale registrato");
+  assert.match(
+    event.details[0],
+    /Squat · 5RM · 120 kg · .* · inserito da Giorgio/,
+  );
+});

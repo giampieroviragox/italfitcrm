@@ -31,11 +31,13 @@ Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunt
 
 ## 4. Coaching online
 
-- [ ] Gestire abbonamenti a più durate, scadenze e rinnovo del piano di allenamento a cicli di quattro settimane.
-- [ ] Aggiungere una vista con elenco studenti, piano e coach assegnato. La stessa anagrafica deve poter accedere anche alle lezioni in sede.
+- [x] Gestire abbonamenti a più durate, scadenze e rinnovo del piano di allenamento a cicli di quattro settimane.
+- [x] Aggiungere una vista con elenco studenti, piano e coach assegnato. La stessa anagrafica deve poter accedere anche alle lezioni in sede.
+- [x] Assegnare un coach a ogni piano mensile, con default dal coach dell’abbonamento.
 - [ ] Confermare sorgente, campi e regole di deduplicazione prima di importare le anagrafiche.
-- [ ] Affiancare alla prescrizione il registro di serie, ripetizioni, carichi e note. Aggiungere lo storico e i massimali per esercizio.
-- [ ] Valutare i riferimenti per calcolo dei carichi da percentuale, fatica percepita e audio del timer.
+- [x] Affiancare alla prescrizione il registro di serie, ripetizioni, carichi e note. Aggiungere lo storico e i massimali per esercizio, inseribili da studente e coach.
+- [x] Registrare data effettiva e fatica percepita.
+- [ ] Calcolo dei carichi da percentuale e audio del timer: rinviati il 17 novembre 2026.
 - [ ] Provare un ciclo completo con profili tecnici di studente e coach.
 
 ## 5. Feedback, gare e piano successivo

@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { validPropertyValue } from "./model";
-import { useCrm, useHydrated, addStudentComment } from "./store";
+import {
+  useCrm,
+  useHydrated,
+  addStudentComment,
+  updateStudentMaxes,
+} from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
 import { useNavigationRequest } from "./use-unsaved-changes";
 import { StudentEditor } from "./student-editor";
@@ -319,8 +324,33 @@ export function StudentProfile({
                 />
                 <MaxesPanel
                   maxes={student.maxes ?? []}
-                  exerciseNames={[]}
+                  exerciseNames={[
+                    ...new Set(
+                      (state.assignments ?? [])
+                        .filter((a) => a.studentId === id)
+                        .flatMap((a) =>
+                          a.snapshot.sessions
+                            .filter((s) => s.kind !== "run")
+                            .flatMap((s) =>
+                              s.exercises.map((e) => e.name.trim()),
+                            ),
+                        ),
+                    ),
+                  ].toSorted((a, b) => a.localeCompare(b, "it"))}
                   today={todayRome()}
+                  staff
+                  onCommand={
+                    student.archived
+                      ? undefined
+                      : async (command) => {
+                          try {
+                            await updateStudentMaxes(id, command);
+                            return "";
+                          } catch (e) {
+                            return (e as Error).message;
+                          }
+                        }
+                  }
                 />
               </div>
             )}

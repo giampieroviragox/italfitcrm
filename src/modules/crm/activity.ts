@@ -12,6 +12,7 @@ import {
   assignmentCoachId,
   type OnlineSubscription,
 } from "./online-coaching.ts";
+import { formatKg, type MaxRecord } from "./workout-log.ts";
 
 type Change = { text: string; details?: string[] };
 const different = (a: unknown, b: unknown) =>
@@ -173,6 +174,7 @@ export function studentChanges(
     if (properties.length)
       changes.push({ text: "Proprietà CRM aggiornate", details: properties });
     changes.push(...subscriptionChanges(old, student, next));
+    changes.push(...maxChanges(old, student));
     for (const p of next.properties) {
       const before = current.properties.find((x) => x.id === p.id);
       if (!before || !different(before, p) || !(p.id in student.properties))
@@ -388,5 +390,22 @@ function subscriptionChanges(
         text: "Abbonamento Coaching online rimosso",
         details: subscriptionDetails(s, next),
       })),
+  ];
+}
+
+const maxLine = (r: MaxRecord) =>
+  `${r.exercise} · ${r.reps}RM · ${formatKg(r.kg)} · ${day(r.date)}${r.recordedBy ? ` · inserito da ${r.recordedBy}` : ""}`;
+function maxChanges(old: CrmStudent, student: CrmStudent): Change[] {
+  const before = old.maxes ?? [],
+    after = student.maxes ?? [];
+  const added = after.filter((r) => !before.some((x) => x.id === r.id));
+  const removed = before.filter((r) => !after.some((x) => x.id === r.id));
+  return [
+    ...(added.length
+      ? [{ text: "Massimale registrato", details: added.map(maxLine) }]
+      : []),
+    ...(removed.length
+      ? [{ text: "Massimale eliminato", details: removed.map(maxLine) }]
+      : []),
   ];
 }

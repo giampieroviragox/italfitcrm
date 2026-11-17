@@ -69,9 +69,9 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 00:24–01:52.
 | 6 mesi            |         690 € |
 | 12 mesi           |       1.290 € |
 
-- [ ] Configurare i tre abbonamenti e visualizzare la scadenza di ciascuno. Durante l’abbonamento lo studente riceve un piano di quattro settimane per ciclo, usando il formato dei piani già presente in piattaforma.
-- [ ] Aggiungere **Coaching online** nella navigazione del CRM, con elenco dei clienti, scadenza dell’abbonamento e coach assegnato.
-- [ ] Gestire l’assegnazione dello studente a Giorgio o a Marta e associare i singoli piani online al coach che li gestisce. La stessa anagrafica può seguire coaching online e lezioni in presenza.
+- [x] Configurare i tre abbonamenti e visualizzare la scadenza di ciascuno. Durante l’abbonamento lo studente riceve un piano di quattro settimane per ciclo, usando il formato dei piani già presente in piattaforma.
+- [x] Aggiungere **Coaching online** nella navigazione del CRM, con elenco dei clienti, scadenza dell’abbonamento e coach assegnato.
+- [x] Gestire l’assegnazione dello studente a Giorgio o a Marta e associare i singoli piani online al coach che li gestisce. La stessa anagrafica può seguire coaching online e lezioni in presenza. Il coach dell’abbonamento è il default; ogni piano mensile può avere un coach diverso, che è quello a cui va il compenso.
 - [ ] Individuare in Drive il file o la cartella da cui importare le anagrafiche. Confermare campi e gestione dei duplicati. Nell’audio sono citati nome, cognome, email, telefono, altezza, peso, sesso, età e città.
 - [ ] Attivare un account studente di prova per far vedere a Giorgio l’esperienza da studente.
 
@@ -91,13 +91,14 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 07:12–13:49.
 
 ## 6. Registro allenamenti, storico e massimali
 
-- [ ] Per ciascun esercizio del piano, affiancare la prescrizione del coach al registro di ciò che lo studente ha svolto.
-- [ ] Far registrare il numero di serie svolte, le ripetizioni effettive e il carico in chilogrammi per ogni serie.
-- [ ] Far annotare sotto ogni allenamento come lo studente si è sentito e cosa è successo nella sessione.
-- [ ] Creare **Storico allenamenti**. Lo studente può ritrovare sessioni svolte, esercizi, serie, ripetizioni, carichi e note.
-- [ ] Creare **Massimali**. Lo studente registra e consulta i propri riferimenti per esercizio. Nell’audio sono citati 1RM, 3RM e 5RM.
-- [ ] Valutare tre elementi mostrati nell’app di riferimento. Data effettiva rispetto alla data prevista, fatica percepita e audio attivabile sul timer di recupero. Il CRM ha già il timer e le note per allenamento.
-- [ ] Valutare il calcolo automatico dei chilogrammi quando il coach prescrive una percentuale del massimale. Concordare riferimento, formule e arrotondamenti.
+- [x] Per ciascun esercizio del piano, affiancare la prescrizione del coach al registro di ciò che lo studente ha svolto.
+- [x] Far registrare il numero di serie svolte, le ripetizioni effettive e il carico in chilogrammi per ogni serie.
+- [x] Far annotare sotto ogni allenamento come lo studente si è sentito e cosa è successo nella sessione.
+- [x] Creare **Storico allenamenti**. Lo studente può ritrovare sessioni svolte, esercizi, serie, ripetizioni, carichi e note.
+- [x] Creare **Massimali**. Lo studente registra e consulta i propri riferimenti per esercizio. Nell’audio sono citati 1RM, 3RM e 5RM. Anche il coach può inserirli dalla scheda studente.
+- [x] Registrare data effettiva e fatica percepita (RPE 1–10) per ogni allenamento.
+- [ ] Audio attivabile sul timer di recupero. Rinviato il 17 novembre 2026.
+- [ ] Valutare il calcolo automatico dei chilogrammi quando il coach prescrive una percentuale del massimale. Concordare riferimento, formule e arrotondamenti. Rinviato il 17 novembre 2026.
 
 Fonti. Appunti di Giampiero. Fisic Center, 01:13–05:46 e 07:47–09:17.
 

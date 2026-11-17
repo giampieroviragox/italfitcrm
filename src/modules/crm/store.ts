@@ -4,6 +4,8 @@ import { tiers } from "@/modules/students/config";
 import type { CrmState } from "./model";
 import { applyWalletCommand, type WalletCommand } from "./lesson-wallet";
 import { applyCoachingCommand, type CoachingCommand } from "./online-coaching";
+import { applyMaxCommand, type MaxCommand } from "./workout-log";
+import { todayRome } from "./fitness-logic";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
@@ -150,6 +152,28 @@ export async function updateOnlineCoaching(command: CoachingCommand) {
     return activeRemoteStore.coaching(command);
   }
   return updateCrm((state) => applyCoachingCommand(state, command));
+}
+
+/** Staff record or remove a student's maxes from the profile. */
+export async function updateStudentMaxes(
+  studentId: string,
+  command: MaxCommand,
+) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.maxes(studentId, command);
+  }
+  return updateCrm((state) =>
+    applyMaxCommand(
+      state,
+      studentId,
+      command,
+      todayRome(),
+      new Date(),
+      "Amministratore demo",
+    ),
+  );
 }
 
 export async function addStudentComment(studentId: string, text: string) {
