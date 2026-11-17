@@ -1,6 +1,6 @@
 "use client";
 import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useClock } from "./use-clock";
 import {
   durationLabel,
@@ -21,8 +21,11 @@ export function AvailabilityEditor({
   selection,
   close,
   apply,
+  roster,
 }: {
   selection: AvailabilitySelection;
+  /** Enrolled students of a published period, shown under the form. */
+  roster?: ReactNode;
   close: () => void;
   apply: (
     next: AvailabilitySlot | undefined,
@@ -72,7 +75,11 @@ export function AvailabilityEditor({
       title={
         selection.existing ? "Modifica disponibilità" : "Nuova disponibilità"
       }
-      description="Imposta l’orario e quanti studenti possono prenotarsi per l’intera fascia."
+      description={
+        selection.existing
+          ? "Cambia orario e posti, oppure iscrivi tu uno studente che non si è prenotato."
+          : "Imposta l’orario e quanti studenti possono prenotarsi da soli per l’intera fascia."
+      }
       dirty={JSON.stringify(values) !== JSON.stringify(defaults)}
       close={close}
     >
@@ -165,6 +172,7 @@ export function AvailabilityEditor({
           </Button>
         </div>
       </form>
+      {roster}
     </Editor>
   );
 }

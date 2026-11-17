@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import styles from "./calendar-styles";
-import { Plus, Check, Clock3 } from "lucide-react";
+import { Check, Clock3, CalendarPlus, Users } from "lucide-react";
 import { CheckboxControl } from "@/components/ui/checkbox-control";
 import { SelectControl } from "@/components/ui/select-control";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,11 @@ import {
   type AvailabilitySlot,
 } from "./availability";
 import { AvailabilityEditor } from "./availability-editor";
+import { SlotRoster } from "./availability-roster";
 import { clockLabel, type AvailabilitySelection } from "./availability-time";
 import { AvailabilityGrid } from "./availability-grid";
 import { WeekNavigation } from "./week-navigation";
-import { FormError } from "./ui";
+import { Editor, FormError } from "./ui";
 interface Draft {
   original: string;
   slots: AvailabilitySlot[];
@@ -40,7 +41,25 @@ const slotDescription = (slot: AvailabilitySlot) => {
   const capacity = availabilityCapacity(slot);
   return `${day}, ${romeLocal(slot.start).slice(11)}–${romeLocal(slot.end).slice(11)}: ${capacity} ${capacity === 1 ? "posto" : "posti"}`;
 };
-export function AvailabilityCalendar() {
+const slotLabel = (selection: AvailabilitySelection) => {
+  const day = new Intl.DateTimeFormat("it-IT", {
+    timeZone: "Europe/Rome",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(`${selection.date}T12:00:00Z`));
+  return `${day[0]!.toUpperCase()}${day.slice(1)}, ${selection.start}–${selection.end}`;
+};
+export function AvailabilityCalendar({
+  editing,
+  setEditing,
+  onNewLesson,
+}: {
+  /** The availability form is opened here or from the page header. */
+  editing: AvailabilitySelection | null;
+  setEditing: (selection: AvailabilitySelection | null) => void;
+  onNewLesson: (selection: AvailabilitySelection) => void;
+}) {
   const state = useCrm(),
     viewer = useViewer(),
     now = useClock();
@@ -49,7 +68,7 @@ export function AvailabilityCalendar() {
   );
   const [week, setWeek] = useState(() => weekStart(todayRome()));
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [editing, setEditing] = useState<AvailabilitySelection | null>(null);
+  const [choosing, setChoosing] = useState<AvailabilitySelection | null>(null);
   const [discardAction, setDiscardAction] = useState<(() => void) | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
   const [scrollHour, setScrollHour] = useState(7);
@@ -176,23 +195,6 @@ export function AvailabilityCalendar() {
               Giorno
             </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-10 rounded-full max-sm:w-full"
-            onClick={() =>
-              setEditing({
-                date:
-                  days.find((day) => day > todayRome()) ??
-                  addDays(todayRome(), 1),
-                start: "07:00",
-                end: "08:00",
-              })
-            }
-          >
-            <Plus className="size-3.5" />
-            Aggiungi disponibilità
-          </Button>
         </div>
         <div className={styles.meta}>
           <div className="flex items-center gap-3">
@@ -254,7 +256,9 @@ export function AvailabilityCalendar() {
           scrollHour={scrollHour}
           daily={daily}
           showDay={() => setDaily(true)}
-          select={setEditing}
+          select={(selection) =>
+            selection.existing ? setEditing(selection) : setChoosing(selection)
+          }
         />
         <div className={styles.footer} data-dirty={dirty}>
           <p aria-live="polite" className="flex items-center gap-2">
@@ -274,10 +278,13 @@ export function AvailabilityCalendar() {
             ) : (
               <>
                 <span className="hidden sm:inline">
-                  Trascina per creare una fascia. Selezionala per modificarla.
+                  Trascina sul calendario per aggiungere una disponibilità o una
+                  lezione. Clicca una fascia per modificarla o iscrivere
+                  studenti.
                 </span>
                 <span className="sm:hidden">
-                  Tocca un orario per aggiungere una fascia.
+                  Tocca un orario per aggiungere una disponibilità o una
+                  lezione.
                 </span>
               </>
             )}
@@ -316,11 +323,62 @@ export function AvailabilityCalendar() {
         </div>
       </section>
       {!confirming && <FormError message={error} />}
+      {choosing && (
+        <Editor
+          centered
+          title="Cosa vuoi aggiungere?"
+          description={`${slotLabel(choosing)}. Scegli come usare questo orario.`}
+          dirty={false}
+          close={() => setChoosing(null)}
+        >
+          <div className="grid gap-3 pb-6 sm:grid-cols-2">
+            <button
+              type="button"
+              className="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-foreground/10 focus-visible:outline-none"
+              onClick={() => {
+                setEditing({ ...choosing });
+                setChoosing(null);
+              }}
+            >
+              <Users className="size-5" aria-hidden />
+              <span className="text-sm font-semibold">Disponibilità</span>
+              <span className="text-[13px] leading-5 text-muted-foreground">
+                Una fascia con un numero di posti: gli studenti si prenotano da
+                soli.
+              </span>
+            </button>
+            <button
+              type="button"
+              className="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-foreground/10 focus-visible:outline-none"
+              onClick={() => {
+                onNewLesson({ ...choosing });
+                setChoosing(null);
+              }}
+            >
+              <CalendarPlus className="size-5" aria-hidden />
+              <span className="text-sm font-semibold">Lezione</span>
+              <span className="text-[13px] leading-5 text-muted-foreground">
+                Una lezione fissata da te, con gli studenti che scegli o crei.
+              </span>
+            </button>
+          </div>
+        </Editor>
+      )}
       {editing && (
         <AvailabilityEditor
+          key={`${editing.date}${editing.start}${editing.end}${editing.existing?.start ?? ""}`}
           selection={editing}
           close={() => setEditing(null)}
           apply={apply}
+          roster={
+            editing.existing &&
+            saved.some(
+              (item) =>
+                JSON.stringify(item) === JSON.stringify(editing.existing),
+            ) ? (
+              <SlotRoster adminId={member.id} slot={editing.existing} />
+            ) : undefined
+          }
         />
       )}
       <ConfirmDialog
