@@ -82,11 +82,11 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 08:23–09:58. Fisic Center, 09:17
 ## 5. Profilo di Marta, compensi e contabilità
 
 - [ ] Creare il profilo personale di Marta. Mostrarle gli studenti assegnati, i piani online che gestisce e il proprio compenso.
-- [ ] Calcolare il compenso di Marta per ogni coppia studente–piano online che gestisce. Nel rendiconto mensile mostrare quali piani sono stati seguiti, il loro stato, le consegne e il totale dovuto.
+- [x] Calcolare il compenso di Marta per ogni coppia studente–piano online che gestisce. Nel rendiconto mensile mostrare quali piani sono stati seguiti, il loro stato, le consegne e il totale dovuto.
 - [ ] Confermare importo e maturazione del compenso. Nell’audio si parla di un accordo a percentuale per programma. Se la formula è questa, definire aliquota e base di calcolo.
-- [ ] Creare **Contabilità coaching online** per Giorgio e Annalisa, con i rispettivi account. Mostrare incassi dei piani online, dettaglio per studente e piano e rendiconto mensile.
-- [ ] Creare **Contabilità privata** riservata a Giorgio. Mostrare il quadro mensile complessivo con coaching online, lezioni in presenza, conteggi e importi per sede, e compensi dovuti a Marta.
-- [ ] Applicare i permessi ai dati di ciascuna vista. Marta accede al proprio compenso. Giorgio e Annalisa accedono alla contabilità online. Solo Giorgio accede al quadro privato complessivo.
+- [x] Creare **Contabilità coaching online** per Giorgio e Annalisa, con i rispettivi account. Mostrare incassi dei piani online, dettaglio per studente e piano e rendiconto mensile.
+- [x] Creare **Contabilità privata** riservata a Giorgio. Mostrare il quadro mensile complessivo con coaching online, lezioni in presenza, conteggi e importi per sede, e compensi dovuti a Marta.
+- [x] Applicare i permessi ai dati di ciascuna vista. Marta accede al proprio compenso. Giorgio e Annalisa accedono alla contabilità online. Solo Giorgio accede al quadro privato complessivo.
 - [ ] Definire la distinzione tra incassato, da incassare e compensi. Valutare il codice aggiuntivo citato da Giorgio per la vista privata e l’eventuale generazione di fatture.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 07:12–13:49.

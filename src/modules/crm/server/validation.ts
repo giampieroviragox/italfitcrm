@@ -49,6 +49,9 @@ export function validateStaffUpdate(
         email: a.email,
         role: a.role,
         status: a.status,
+        teamRole: a.teamRole,
+        permissions: a.permissions,
+        compensationPercent: a.compensationPercent,
       })),
     );
   if (

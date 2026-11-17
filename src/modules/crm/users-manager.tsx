@@ -5,6 +5,17 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCrm, updateCrm, useViewer, useRemoteMode } from "./store";
 import type { AccountAccess, AdminMember } from "./model";
+import { CheckboxControl } from "@/components/ui/checkbox-control";
+import { SelectControl } from "@/components/ui/select-control";
+import {
+  allPermissions,
+  memberPermissions,
+  permissionCatalog,
+  roleLabel,
+  teamRoles,
+  type Permission,
+  type TeamRole,
+} from "./permissions";
 import {
   EditorCancel,
   Editor,
@@ -31,8 +42,8 @@ export function UsersManager() {
     <>
       <LocalNotice />
       <SettingsSection
-        title="Amministratori"
-        description="Il ruolo si sceglie alla creazione e non può essere cambiato."
+        title="Team"
+        description="Il super admin vede tutto e gestisce ruoli e permessi. Admin e coach vedono solo ciò che il loro ruolo consente."
         action={
           <Button
             size="sm"
@@ -48,7 +59,7 @@ export function UsersManager() {
           <SettingsRow
             key={a.id}
             title={a.name}
-            description={`${a.email} · ${a.role === "owner" ? "Proprietario" : accessLabel(a.access)}`}
+            description={`${roleLabel(a)}${a.role !== "owner" && a.permissions ? " (permessi personalizzati)" : ""} · ${a.email} · ${a.role === "owner" ? "Proprietario" : accessLabel(a.access)}${a.compensationPercent ? ` · compenso ${a.compensationPercent}%` : ""}`}
           >
             {a.role !== "owner" && (
               <InviteButton
@@ -137,10 +148,21 @@ function AdminEditor({
 }) {
   const [original] = useState(JSON.stringify(member));
   const [error, setError] = useState("");
+  const owner = member?.role === "owner";
+  const [teamRole, setTeamRole] = useState<TeamRole>(
+    member?.teamRole ?? "admin",
+  );
+  const [custom, setCustom] = useState(Boolean(member?.permissions));
+  const [permissions, setPermissions] = useState<Permission[]>(() => [
+    ...memberPermissions(member ?? ({ role: "admin" } as AdminMember)),
+  ]);
+  const shown = custom ? permissions : teamRoles[teamRole].permissions;
   return (
     <Editor
-      title={member ? "Modifica amministratore" : "Aggiungi amministratore"}
-      description="Crea un membro del team, poi prepara il suo accesso personale con un invito."
+      title={
+        member ? "Modifica membro del team" : "Aggiungi un membro del team"
+      }
+      description="Scegli ruolo e permessi, poi prepara il suo accesso personale con un invito."
       close={close}
     >
       <form
@@ -160,6 +182,21 @@ function AdminEditor({
             ...(member?.availability
               ? { availability: member.availability }
               : {}),
+            ...(owner ? {} : { teamRole }),
+            ...(!owner && custom
+              ? {
+                  permissions: allPermissions.filter((p) =>
+                    permissions.includes(p),
+                  ),
+                }
+              : {}),
+            ...(String(f.get("compensationPercent") ?? "").trim()
+              ? {
+                  compensationPercent: Number(
+                    String(f.get("compensationPercent")).replace(",", "."),
+                  ),
+                }
+              : {}),
           };
           try {
             await updateCrm((s) => {
@@ -173,6 +210,14 @@ function AdminEditor({
                 );
               if (!next.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.email))
                 throw new Error("Inserisci nome ed email validi.");
+              if (
+                next.compensationPercent !== undefined &&
+                !(
+                  next.compensationPercent >= 0 &&
+                  next.compensationPercent <= 100
+                )
+              )
+                throw new Error("Il compenso deve essere tra 0 e 100%.");
               if (
                 s.admins.some(
                   (a) =>
@@ -225,17 +270,92 @@ function AdminEditor({
             defaultValue={member?.avatarUrl}
           />
         </Field>
-        <Field label="Ruolo">
+        {owner ? (
+          <Field label="Ruolo">
+            <input
+              className={control}
+              readOnly
+              value="Super admin · tutti i permessi"
+            />
+          </Field>
+        ) : (
+          <>
+            <Field label="Ruolo" hint={teamRoles[teamRole].hint}>
+              <SelectControl
+                className={control}
+                value={teamRole}
+                onChange={(e) => {
+                  const next = e.target.value === "coach" ? "coach" : "admin";
+                  setTeamRole(next);
+                  if (!custom) setPermissions([...teamRoles[next].permissions]);
+                }}
+              >
+                {Object.entries(teamRoles).map(([value, role]) => (
+                  <option key={value} value={value}>
+                    {role.label}
+                  </option>
+                ))}
+              </SelectControl>
+            </Field>
+            <fieldset className="space-y-2 rounded-xl border p-3">
+              <legend className="px-1 text-sm font-medium">Permessi</legend>
+              <label className="flex items-center gap-2 text-sm">
+                <CheckboxControl
+                  checked={custom}
+                  onChange={(e) => {
+                    setCustom(e.target.checked);
+                    if (e.target.checked)
+                      setPermissions([...teamRoles[teamRole].permissions]);
+                  }}
+                />
+                Personalizza i permessi di questa persona
+              </label>
+              <ul className="space-y-1.5">
+                {allPermissions.map((permission) => (
+                  <li key={permission}>
+                    <label className="flex items-start gap-2 text-sm">
+                      <CheckboxControl
+                        disabled={!custom}
+                        checked={shown.includes(permission)}
+                        onChange={(e) =>
+                          setPermissions((list) =>
+                            e.target.checked
+                              ? [...list, permission]
+                              : list.filter((p) => p !== permission),
+                          )
+                        }
+                      />
+                      <span>
+                        <span className="block font-medium">
+                          {permissionCatalog[permission].label}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {permissionCatalog[permission].hint}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          </>
+        )}
+        <Field
+          label="Compenso sui piani seguiti (%)"
+          hint="Quota del valore di ogni piano mensile che segue come coach (prezzo dell’abbonamento diviso i mesi). Lascia vuoto se non riceve compensi."
+        >
           <input
             className={control}
-            readOnly
-            value={member?.role === "owner" ? "Proprietario" : "Amministratore"}
+            name="compensationPercent"
+            inputMode="decimal"
+            placeholder="Es. 40"
+            defaultValue={member?.compensationPercent ?? ""}
           />
         </Field>
         <FormError message={error} />
         <div className="crm-form-actions">
           <EditorCancel />
-          <Button type="submit">Salva amministratore</Button>
+          <Button type="submit">Salva</Button>
         </div>
       </form>
     </Editor>

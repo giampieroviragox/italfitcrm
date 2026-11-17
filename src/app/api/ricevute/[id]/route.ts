@@ -5,6 +5,7 @@ import {
 } from "@/modules/crm/server/auth";
 import { readCrm } from "@/modules/crm/server/repository";
 import { downloadReceipt } from "@/modules/crm/server/receipt-storage";
+import { staffScope } from "@/modules/crm/permissions";
 
 /** Serves a receipt to its student or to staff; never through a public URL. */
 export async function GET(
@@ -15,6 +16,11 @@ export async function GET(
     const { id } = await ctx.params;
     const { user, access } = await requireAccess();
     const { state } = await readCrm(user.id);
+    if (
+      access.role !== "student" &&
+      !staffScope(state, access.record_id).can("payments")
+    )
+      throw new HttpError(403, "Il tuo ruolo non include i pagamenti.");
     const students =
       access.role === "student"
         ? state.students.filter((s) => s.id === access.record_id)

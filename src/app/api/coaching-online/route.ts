@@ -1,46 +1,29 @@
-import {
-  checkOrigin,
-  errorResponse,
-  HttpError,
-  readJsonInput,
-  requireAccess,
-} from "@/modules/crm/server/auth";
-import { readCrm, writeCrm } from "@/modules/crm/server/repository";
+import { staffCommand, parsed } from "@/modules/crm/server/commands";
+import { HttpError } from "@/modules/crm/server/errors";
 import {
   applyCoachingCommand,
   coachingCommand,
 } from "@/modules/crm/online-coaching";
-import { prepareTransition } from "@/modules/crm/transition";
+import { requirePermission, requireStudent } from "@/modules/crm/permissions";
 
-export async function POST(request: Request) {
-  try {
-    checkOrigin(request);
-    const { user, access } = await requireAccess(true);
-    const input = await readJsonInput(request, 20_000);
-    const command = coachingCommand.safeParse(input.command);
-    if (!command.success || !Number.isSafeInteger(input.revision))
-      throw new HttpError(400, "Controlla i dati dell’abbonamento.");
-    const current = await readCrm(user.id);
-    if (input.revision !== current.revision)
-      throw new HttpError(409, "Il CRM è cambiato. Verifica i dati e riprova.");
-    let next;
+/** Online coaching subscriptions and their payments. */
+export function POST(request: Request) {
+  return staffCommand(request, (state, input, actorName, scope) => {
+    const command = parsed(
+      coachingCommand.safeParse(input.command),
+      "Controlla i dati dell’abbonamento.",
+    );
     try {
-      next = prepareTransition(
-        current.state,
-        applyCoachingCommand(current.state, command.data),
-        {
-          id: access.record_id,
-          name:
-            current.state.admins.find((admin) => admin.id === access.record_id)
-              ?.name ?? "Amministratore",
-        },
+      requirePermission(
+        scope,
+        command.action === "payment" && !scope.can("coaching")
+          ? "accounting.online"
+          : "coaching",
       );
-    } catch (error) {
-      throw new HttpError(400, (error as Error).message);
+      requireStudent(scope, command.studentId);
+    } catch (e) {
+      throw new HttpError(403, (e as Error).message);
     }
-    const saved = await writeCrm(user.id, current.revision, next);
-    return Response.json(saved, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    return errorResponse(error);
-  }
+    return applyCoachingCommand(state, command, new Date(), actorName);
+  });
 }

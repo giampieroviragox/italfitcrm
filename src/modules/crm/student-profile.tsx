@@ -9,6 +9,7 @@ import {
   useCrm,
   useHydrated,
   addStudentComment,
+  useCan,
   updateStudentMaxes,
   updateStudentRaces,
 } from "./store";
@@ -61,6 +62,10 @@ export function StudentProfile({
   const state = useCrm(),
     hydrated = useHydrated();
   const request = useNavigationRequest();
+  const can = useCan();
+  const visibleTabs = profileTabs.filter(
+    (t) => !["packages", "payments"].includes(t) || can("payments"),
+  );
   const [editorVersion, setEditorVersion] = useState(0);
   const [savedMessage, setSavedMessage] = useState("");
   const commentLock = useRef(false);
@@ -122,7 +127,7 @@ export function StudentProfile({
             />
             {studentAccessLabel(student)}
           </span>
-          <StudentAccessControl student={student} />
+          {can("students.edit") && <StudentAccessControl student={student} />}
         </div>
       </div>
       <FormError message={error} />
@@ -137,7 +142,7 @@ export function StudentProfile({
             role="tablist"
             aria-label="Dettagli studente"
             onKeyDown={(e) => {
-              const ids = profileTabs;
+              const ids = visibleTabs;
               const index = ids.indexOf(tab);
               const next =
                 e.key === "ArrowRight"
@@ -201,26 +206,28 @@ export function StudentProfile({
                 ),
               },
               { id: "history", label: "Cronologia" },
-            ].map((t) => (
-              <button
-                type="button"
-                key={t.id}
-                role="tab"
-                tabIndex={tab === t.id ? 0 : -1}
-                id={`tab-${t.id}`}
-                aria-selected={tab === t.id}
-                aria-controls={`panel-${t.id}`}
-                className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-offset-[-2px]",
-                  tab === t.id
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-subtle hover:text-foreground",
-                )}
-                onClick={() => request(() => setTab(t.id))}
-              >
-                {t.label}
-              </button>
-            ))}
+            ]
+              .filter((t) => visibleTabs.includes(t.id))
+              .map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  role="tab"
+                  tabIndex={tab === t.id ? 0 : -1}
+                  id={`tab-${t.id}`}
+                  aria-selected={tab === t.id}
+                  aria-controls={`panel-${t.id}`}
+                  className={cn(
+                    "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-offset-[-2px]",
+                    tab === t.id
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:bg-subtle hover:text-foreground",
+                  )}
+                  onClick={() => request(() => setTab(t.id))}
+                >
+                  {t.label}
+                </button>
+              ))}
           </div>
           {tab === "properties" ? (
             <>
@@ -232,18 +239,29 @@ export function StudentProfile({
                   {savedMessage}
                 </p>
               )}
-              <StudentEditor
-                key={`${id}:${editorVersion}`}
-                student={student}
-                close={() => {
-                  setEditorVersion((v) => v + 1);
-                  setSavedMessage("");
-                }}
-                saved={() => {
-                  setEditorVersion((v) => v + 1);
-                  setSavedMessage("Modifiche salvate.");
-                }}
-              />
+              {!can("students.edit") && (
+                <p className="rounded-[10px] bg-muted px-3 py-2.5 text-[13px] text-muted-foreground">
+                  Sola lettura: il tuo ruolo non può modificare le schede
+                  studente.
+                </p>
+              )}
+              <fieldset
+                disabled={!can("students.edit")}
+                className="min-w-0 disabled:opacity-90"
+              >
+                <StudentEditor
+                  key={`${id}:${editorVersion}`}
+                  student={student}
+                  close={() => {
+                    setEditorVersion((v) => v + 1);
+                    setSavedMessage("");
+                  }}
+                  saved={() => {
+                    setEditorVersion((v) => v + 1);
+                    setSavedMessage("Modifiche salvate.");
+                  }}
+                />
+              </fieldset>
             </>
           ) : null}
           <section
@@ -413,21 +431,23 @@ export function StudentProfile({
                     </p>
                   )}
                 </section>
-                <LessonWalletView
-                  only="lessons"
-                  wallet={student.lessonWallet}
-                  staff={{ studentId: id, archived: !!student.archived }}
-                />
+                {can("payments") && (
+                  <LessonWalletView
+                    only="lessons"
+                    wallet={student.lessonWallet}
+                    staff={{ studentId: id, archived: !!student.archived }}
+                  />
+                )}
               </div>
             )}
-            {tab === "packages" && (
+            {tab === "packages" && can("payments") && (
               <LessonWalletView
                 only="packages"
                 wallet={student.lessonWallet}
                 staff={{ studentId: id, archived: !!student.archived }}
               />
             )}
-            {tab === "payments" && (
+            {tab === "payments" && can("payments") && (
               <div className="space-y-6">
                 <LessonWalletView
                   only="payments"

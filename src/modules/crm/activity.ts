@@ -375,6 +375,23 @@ function subscriptionChanges(
           },
         ];
       if (!different(previous, s)) return [];
+      const newPayments = (s.payments ?? []).slice(
+        previous.payments?.length ?? 0,
+      );
+      if (
+        newPayments.length &&
+        !different(
+          { ...previous, payments: undefined },
+          { ...s, payments: undefined },
+        )
+      )
+        return newPayments.map((p) => ({
+          text: "Pagamento abbonamento registrato",
+          details: [
+            `${euros(p.amount)} · Coaching online ${s.durationMonths} mesi`,
+            ...(p.by ? [`Registrato da ${p.by}`] : []),
+          ],
+        }));
       const was = subscriptionDetails(previous, next),
         now = subscriptionDetails(s, next);
       return [

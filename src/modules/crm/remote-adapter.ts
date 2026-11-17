@@ -12,6 +12,8 @@ import { requestJson, RequestError } from "../../lib/request-json.ts";
 export interface Viewer {
   role: "owner" | "admin" | "student";
   recordId: string;
+  /** Staff permissions resolved on the server; the UI only hides what they exclude. */
+  permissions?: import("./permissions.ts").Permission[];
 }
 export interface SyncStatus {
   online: boolean;

@@ -6,23 +6,27 @@ import { PageHeading } from "@/components/page-heading";
 import { StudentsDirectory } from "@/modules/students/components/students-directory";
 import { StudentCreateDialog } from "./student-editor";
 import { LocalNotice } from "./ui";
+import { useCan } from "./store";
 export function StudentsWorkspace() {
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
+  const canEdit = useCan()("students.edit");
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeading
         title="Studenti"
         description="Anagrafiche, tier e accesso alla piattaforma."
         action={
-          <Button
-            size="lg"
-            className="rounded-full"
-            onClick={() => setAdding(true)}
-          >
-            <Plus />
-            Aggiungi studente
-          </Button>
+          canEdit ? (
+            <Button
+              size="lg"
+              className="rounded-full"
+              onClick={() => setAdding(true)}
+            >
+              <Plus />
+              Aggiungi studente
+            </Button>
+          ) : undefined
         }
       />
       <LocalNotice />
@@ -35,7 +39,7 @@ export function StudentsWorkspace() {
         </p>
       )}
       <StudentsDirectory onAdd={() => setAdding(true)} />
-      {adding && (
+      {adding && canEdit && (
         <StudentCreateDialog
           close={() => setAdding(false)}
           saved={(_, accessRequested) =>

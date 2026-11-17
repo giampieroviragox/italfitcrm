@@ -49,7 +49,7 @@ Il [piano integrale](piano-implementazione-cliente.md) contiene anche gli appunt
 
 ## 6. Contabilità e compensi
 
-- [ ] Creare la vista di contabilità del coaching online per i ruoli autorizzati e la vista complessiva privata per il proprietario.
+- [x] Creare la vista di contabilità del coaching online per i ruoli autorizzati e la vista complessiva privata per il proprietario.
 - [ ] Consentire al coach di consultare gli studenti assegnati e il proprio compenso. Definire importo o aliquota, base di calcolo e momento di maturazione per studente e ciclo.
 - [ ] Separare importi dovuti e incassati. Verificare i permessi sul server con account distinti e provare il riepilogo mensile.
 

@@ -23,6 +23,15 @@ Le regole sono nel campo `entitlements` del tier, salvato nel payload Postgres. 
 
 Il limite delle lezioni è facoltativo e segue il mese della lezione in Europe/Rome. Prenotazioni e lezioni annullate non consumano disponibilità. Il controllo usa la stessa transazione versionata delle prenotazioni, anche in concorrenza. Ridurre i servizi o il limite non elimina lo storico; lo studente può annullare posti già prenotati.
 
+## Ruoli e permessi del team
+
+Il proprietario è il super admin: vede tutto ed è l’unico che gestisce team, ruoli, permessi e compensi (Impostazioni → Team). Gli altri membri hanno un ruolo, **Admin** o **Coach**, che fissa i permessi predefiniti; il super admin può personalizzarli persona per persona. Ruolo, permessi e percentuale di compenso sono salvati nella scheda del membro e modificabili solo dal proprietario.
+
+- Admin: studenti, piani, calendario, abbonamenti online, contabilità online, compensi, impostazioni. Non vede pagamenti e contabilità delle lezioni.
+- Coach: solo i propri studenti (coach di riferimento, dell’abbonamento o di un piano mensile) e la libreria piani; vede solo il proprio compenso.
+
+I permessi sono applicati dal server: lo stato inviato al browser è filtrato per membro, le scritture rimettono i dati nascosti e rifiutano le modifiche fuori ruolo, e ogni rotta controlla il permesso necessario. La migrazione `20261117180000_italfit_server_only_reads` rimuove la lettura diretta delle tabelle CRM da parte degli utenti autenticati: tutte le letture passano dal server. Va applicata prima di dare accesso a un membro con permessi ridotti.
+
 ## Inviti e recupero password con Resend
 
 L’admin può inviare un invito o un reinvito via email oppure copiare e condividere il link personale. Il destinatario apre `/invito`, trova l’email già compilata e non modificabile e inserisce e conferma la password. Al salvataggio il server verifica il token e i permessi CRM, salva la password e apre l’area corretta. Email, tipo di invito e token sono protetti da una firma server. I link precedenti restano compatibili con il passaggio di conferma. L’anteprima GET può aprire il link e il token viene verificato al momento della conferma.

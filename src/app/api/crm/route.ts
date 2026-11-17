@@ -7,10 +7,14 @@ import {
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { validateStaffUpdate } from "@/modules/crm/server/validation";
 import { isCrmState } from "@/modules/crm/schema";
+import { restrictUpdate, staffScope } from "@/modules/crm/permissions";
+import { visibleEnvelope } from "@/modules/crm/server/commands";
 export async function GET() {
   try {
-    const { user } = await requireAccess(true);
-    return Response.json(await readCrm(user.id), {
+    const { user, access } = await requireAccess(true);
+    const envelope = await readCrm(user.id);
+    const scope = staffScope(envelope.state, access.record_id);
+    return Response.json(visibleEnvelope(envelope, scope), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (e) {
@@ -45,8 +49,16 @@ export async function POST(request: Request) {
         409,
         "Il CRM è cambiato altrove. Ricarica prima di salvare.",
       );
-    const state = validateStaffUpdate(current.state, input.state, access);
-    return Response.json(await writeCrm(user.id, current.revision, state), {
+    const scope = staffScope(current.state, access.record_id);
+    let allowed;
+    try {
+      allowed = restrictUpdate(current.state, input.state, scope);
+    } catch (e) {
+      throw new HttpError(403, (e as Error).message);
+    }
+    const state = validateStaffUpdate(current.state, allowed, access);
+    const saved = await writeCrm(user.id, current.revision, state);
+    return Response.json(visibleEnvelope(saved, scope), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (e) {

@@ -16,7 +16,7 @@ import { PageHeading } from "@/components/page-heading";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { studentAccess } from "./tier-access";
-import { useCrm, useViewer } from "./store";
+import { useCan, useCrm, useViewer } from "./store";
 import { validPropertyValue } from "./model";
 import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
@@ -45,6 +45,7 @@ const rowClass =
 export default function OverviewPage() {
   const state = useCrm();
   const viewer = useViewer();
+  const can = useCan();
   const now = new Date();
   const today = todayRome();
   const month = today.slice(0, 7);
@@ -87,11 +88,13 @@ export default function OverviewPage() {
           <span className="first-letter:uppercase">{fullDate.format(now)}</span>
         }
         action={
-          <Button asChild size="lg" className="rounded-full">
-            <Link href="/admin/studenti/nuovo">
-              <UserPlus /> Aggiungi studente
-            </Link>
-          </Button>
+          can("students.edit") ? (
+            <Button asChild size="lg" className="rounded-full">
+              <Link href="/admin/studenti/nuovo">
+                <UserPlus /> Aggiungi studente
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
       <LocalNotice />

@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/modules/crm/permission-gate";
 import { LessonDetail } from "@/modules/crm/lessons-workspace";
 export default async function Page({
   params,
@@ -5,5 +6,9 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <LessonDetail id={id} />;
+  return (
+    <PermissionGate permission="lessons">
+      <LessonDetail id={id} />
+    </PermissionGate>
+  );
 }

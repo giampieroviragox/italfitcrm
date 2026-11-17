@@ -15,15 +15,24 @@ import type { CrmState } from "@/modules/crm/model";
 import { HttpError } from "@/modules/crm/server/errors";
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { validateStaffUpdate } from "@/modules/crm/server/validation";
+import {
+  projectState,
+  requirePermission,
+  staffScope,
+} from "@/modules/crm/permissions";
 
 const readOnly = { readOnlyHint: true, openWorldHint: false } as const;
 const json = (value: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
 });
 
+/** The CRM as the connected team member may see it (needs the plans permission). */
 async function crmState(authInfo: Parameters<typeof mcpPrincipal>[0]) {
-  const { userId } = mcpPrincipal(authInfo);
-  return (await readCrm(userId)).state;
+  const { userId, access } = mcpPrincipal(authInfo);
+  const state = (await readCrm(userId)).state;
+  const scope = staffScope(state, access.record_id);
+  requirePermission(scope, "plans");
+  return projectState(state, scope);
 }
 
 const text = (max: number) => z.string().max(max);
@@ -71,6 +80,7 @@ async function commitChange<T extends { state: CrmState }>(
   const { userId, access } = mcpPrincipal(authInfo);
   for (let attempt = 0; ; attempt++) {
     const current = await readCrm(userId);
+    requirePermission(staffScope(current.state, access.record_id), "plans");
     const result = change(current.state);
     try {
       await writeCrm(

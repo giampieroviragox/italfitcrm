@@ -68,6 +68,12 @@ export interface AdminMember {
   role: "owner" | "admin";
   status: "draft" | "active";
   availability?: AvailabilitySlot[];
+  /** Role preset for non-owner members (default "admin"). */
+  teamRole?: import("./permissions.ts").TeamRole;
+  /** Custom permissions; when absent the role preset applies. */
+  permissions?: import("./permissions.ts").Permission[];
+  /** Coach share of each monthly plan they follow, in percent. */
+  compensationPercent?: number;
 }
 export interface CrmState {
   version: 1;

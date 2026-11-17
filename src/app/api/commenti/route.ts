@@ -5,6 +5,8 @@ import {
   errorResponse,
   HttpError,
 } from "@/modules/crm/server/auth";
+import { seesStudent, staffScope } from "@/modules/crm/permissions";
+import { visibleEnvelope } from "@/modules/crm/server/commands";
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { validateStaffUpdate } from "@/modules/crm/server/validation";
 
@@ -26,6 +28,9 @@ export async function POST(request: Request) {
       const current = await readCrm(user.id);
       if (!current.state.students.some((s) => s.id === input.studentId))
         throw new HttpError(404, "Studente non trovato.");
+      const scope = staffScope(current.state, access.record_id);
+      if (!seesStudent(scope, input.studentId))
+        throw new HttpError(403, "Non segui questo studente.");
       const next = validateStaffUpdate(
         current.state,
         {
@@ -50,7 +55,7 @@ export async function POST(request: Request) {
       );
       try {
         const saved = await writeCrm(user.id, current.revision, next);
-        return Response.json(saved, {
+        return Response.json(visibleEnvelope(saved, scope), {
           headers: { "Cache-Control": "no-store" },
         });
       } catch (error) {

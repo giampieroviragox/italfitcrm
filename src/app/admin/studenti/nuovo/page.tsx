@@ -2,18 +2,21 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { StudentCreateDialog } from "@/modules/crm/student-editor";
+import { PermissionGate } from "@/modules/crm/permission-gate";
 export default function Page() {
   const router = useRouter(),
     saved = useRef(false);
   return (
-    <StudentCreateDialog
-      close={() => {
-        if (!saved.current) router.replace("/admin/studenti");
-      }}
-      saved={(id) => {
-        saved.current = true;
-        router.replace(`/admin/studenti/${encodeURIComponent(id)}`);
-      }}
-    />
+    <PermissionGate permission="students.edit">
+      <StudentCreateDialog
+        close={() => {
+          if (!saved.current) router.replace("/admin/studenti");
+        }}
+        saved={(id) => {
+          saved.current = true;
+          router.replace(`/admin/studenti/${encodeURIComponent(id)}`);
+        }}
+      />
+    </PermissionGate>
   );
 }

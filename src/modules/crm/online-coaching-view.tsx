@@ -18,13 +18,15 @@ import {
   defaultEndDate,
   includedPlans,
   nextDay,
+  subscriptionOpen,
+  subscriptionPaid,
   subscriptionStatus,
   subscriptionStatusLabels,
   type CoachingDuration,
   type OnlineSubscription,
   type SubscriptionStatus,
 } from "./online-coaching";
-import { updateCrm, updateOnlineCoaching, useCrm } from "./store";
+import { updateCrm, updateOnlineCoaching, useCan, useCrm } from "./store";
 import type { PlanAssignment } from "./fitness-model";
 import { coachName } from "./student-coach";
 import { Field, FormError, control } from "./ui";
@@ -288,6 +290,9 @@ function SubscriptionForm({
 
 export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
   const state = useCrm();
+  const can = useCan();
+  const manage = can("coaching");
+  const money = manage || can("accounting.online");
   const today = todayRome();
   const [form, setForm] = useState<
     | { mode: "create" }
@@ -310,7 +315,7 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
             ogni mese.
           </p>
         </div>
-        {!form && !student.archived && (
+        {!form && !student.archived && manage && (
           <Button size="sm" onClick={() => setForm({ mode: "create" })}>
             Nuovo abbonamento
           </Button>
@@ -349,8 +354,16 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
                   </p>
                   <p className="text-muted-foreground tabular-nums">
                     Piani inclusi {includedPlans(s)} · assegnati nel periodo{" "}
-                    {assigned.length} · {euro(s.price)}
+                    {assigned.length}
+                    {money &&
+                      ` · ${euro(s.price)} · incassato ${euro(subscriptionPaid(s))}`}
                   </p>
+                  {money && subscriptionOpen(s) > 0 && !student.archived && (
+                    <SubscriptionPaymentForm
+                      studentId={student.id}
+                      subscription={s}
+                    />
+                  )}
                   {assigned.length > 0 && (
                     <ul className="flex flex-wrap gap-1.5 pt-1">
                       {assigned.map((a) => {
@@ -372,7 +385,7 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
                     </ul>
                   )}
                 </div>
-                {!student.archived && (
+                {!student.archived && manage && (
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -491,5 +504,82 @@ export function PlanCoachSelect({
         </p>
       )}
     </div>
+  );
+}
+
+/** Registers money received for an online coaching subscription. */
+function SubscriptionPaymentForm({
+  studentId,
+  subscription,
+}: {
+  studentId: string;
+  subscription: OnlineSubscription;
+}) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const left = subscriptionOpen(subscription);
+  if (!open)
+    return (
+      <button
+        type="button"
+        className="text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        onClick={() => {
+          setAmount(String(left / 100).replace(".", ","));
+          setOpen(true);
+        }}
+      >
+        Registra incasso · da incassare {euro(left)}
+      </button>
+    );
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-end gap-2 rounded-xl bg-muted p-3"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const cents = Math.round(Number(amount.replace(",", ".")) * 100);
+        if (!Number.isInteger(cents) || cents <= 0)
+          return setError("Inserisci l’importo incassato.");
+        setPending(true);
+        setError("");
+        try {
+          await updateOnlineCoaching({
+            action: "payment",
+            studentId,
+            subscriptionId: subscription.id,
+            amount: cents,
+          });
+          setOpen(false);
+        } catch (e) {
+          setError((e as Error).message);
+        } finally {
+          setPending(false);
+        }
+      }}
+    >
+      <Field label="Importo incassato (€)">
+        <input
+          inputMode="decimal"
+          className={`${control} w-36 tabular-nums`}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
+        />
+      </Field>
+      <Button type="submit" size="sm" disabled={pending}>
+        {pending ? "Salvataggio…" : "Registra"}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(false)}
+      >
+        Annulla
+      </Button>
+      <div className="basis-full">
+        <FormError message={error} />
+      </div>
+    </form>
   );
 }

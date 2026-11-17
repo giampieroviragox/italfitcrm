@@ -7,6 +7,7 @@ import { applyCoachingCommand, type CoachingCommand } from "./online-coaching";
 import { applyMaxCommand, type MaxCommand } from "./workout-log";
 import { applyRaceCommand, type RaceCommand } from "./cycle-feedback";
 import { todayRome } from "./fitness-logic";
+import type { Permission } from "./permissions";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
@@ -88,6 +89,18 @@ export function useSaving() {
 }
 export function useViewer() {
   return useContext(RemoteContext)?.viewer ?? null;
+}
+/** Whether the signed-in team member has a permission (always in local mode). */
+export function useCan() {
+  const viewer = useViewer();
+  return (permission: Permission) =>
+    !viewer ||
+    viewer.role === "owner" ||
+    Boolean(viewer.permissions?.includes(permission));
+}
+export function useIsOwner() {
+  const viewer = useViewer();
+  return !viewer || viewer.role === "owner";
 }
 export function useRemoteMode() {
   return useContext(RemoteContext) !== null;

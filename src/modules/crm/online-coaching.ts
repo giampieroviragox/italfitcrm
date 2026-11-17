@@ -30,10 +30,17 @@ const subscriptionFields = {
   coachId: identifier,
   price: cents,
 };
+const subscriptionPayment = z.object({
+  amount: cents.min(1),
+  date: timestamp,
+  /** Team member who registered it. */
+  by: z.string().max(120).optional(),
+});
 export const onlineSubscription = z.object({
   ...subscriptionFields,
   id: identifier,
   createdAt: timestamp,
+  payments: z.array(subscriptionPayment).max(200).optional(),
 });
 export type OnlineSubscription = z.infer<typeof onlineSubscription>;
 export const onlineSubscriptions = z.array(onlineSubscription).max(200);
@@ -57,7 +64,18 @@ export const coachingCommand = z.discriminatedUnion("action", [
     studentId: identifier,
     subscriptionId: identifier,
   }),
+  z.object({
+    action: z.literal("payment"),
+    studentId: identifier,
+    subscriptionId: identifier,
+    amount: cents.min(1),
+  }),
 ]);
+export const subscriptionPaid = (s: Pick<OnlineSubscription, "payments">) =>
+  (s.payments ?? []).reduce((sum, p) => sum + p.amount, 0);
+export const subscriptionOpen = (
+  s: Pick<OnlineSubscription, "payments" | "price">,
+) => Math.max(0, s.price - subscriptionPaid(s));
 export type CoachingCommand = z.infer<typeof coachingCommand>;
 
 const utc = (value: string) => new Date(`${value}T12:00:00Z`);
@@ -207,6 +225,7 @@ export function applyCoachingCommand(
   state: CrmState,
   command: CoachingCommand,
   now = new Date(),
+  actorName?: string,
 ): CrmState {
   const student = state.students.find((s) => s.id === command.studentId);
   if (!student) throw new Error("Studente non disponibile.");
@@ -230,10 +249,38 @@ export function applyCoachingCommand(
       throw new Error("L’abbonamento non esiste più. Ricarica e riprova.");
     if (command.action === "update") {
       validInput(state, student, command.subscription, existing.id);
+      if (command.subscription.price < subscriptionPaid(existing))
+        throw new Error(
+          "Il prezzo non può essere inferiore a quanto già incassato.",
+        );
       next = current.map((s) =>
         s.id === existing.id ? { ...s, ...command.subscription } : s,
       );
-    } else next = current.filter((s) => s.id !== existing.id);
+    } else if (command.action === "payment") {
+      if (command.amount > subscriptionOpen(existing))
+        throw new Error("L’importo supera quanto resta da incassare.");
+      next = current.map((s) =>
+        s.id === existing.id
+          ? {
+              ...s,
+              payments: [
+                ...(s.payments ?? []),
+                {
+                  amount: command.amount,
+                  date: now.toISOString(),
+                  ...(actorName ? { by: actorName } : {}),
+                },
+              ],
+            }
+          : s,
+      );
+    } else {
+      if (existing.payments?.length)
+        throw new Error(
+          "L’abbonamento ha incassi registrati: correggi date o prezzo invece di rimuoverlo.",
+        );
+      next = current.filter((s) => s.id !== existing.id);
+    }
   }
   next = next.toSorted((a, b) => a.startsOn.localeCompare(b.startsOn));
   return {

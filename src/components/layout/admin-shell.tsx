@@ -15,6 +15,7 @@ import {
   Laptop,
   LogOut,
   PanelLeft,
+  Calculator,
   Receipt,
   Settings2,
   Users,
@@ -35,6 +36,7 @@ import {
   useSaving,
   useViewer,
   useSyncStatus,
+  useCan,
 } from "@/modules/crm/store";
 import type { CrmState } from "@/modules/crm/model";
 import { signOut } from "@/modules/auth/actions";
@@ -48,6 +50,7 @@ const icons = {
   coaching: Laptop,
   calendar: CalendarDays,
   payments: Receipt,
+  accounting: Calculator,
 };
 const footerLinks = [
   { href: "/admin/impostazioni", label: "Impostazioni", icon: Settings2 },
@@ -68,6 +71,7 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const can = useCan();
   return (
     <div className="flex h-full flex-col bg-sidebar">
       <Link
@@ -85,27 +89,29 @@ function SidebarContent({
         aria-label="Navigazione principale"
         className={cn("mt-3 space-y-1", collapsed ? "px-2.5" : "px-3")}
       >
-        {navigation.map((item) => {
-          const Icon = icons[item.icon],
-            active =
-              item.href === "/admin"
-                ? pathname === item.href
-                : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              title={collapsed ? item.label : undefined}
-              aria-label={collapsed ? item.label : undefined}
-              aria-current={active ? "page" : undefined}
-              className={itemClass(active, collapsed)}
-            >
-              <Icon className="size-[18px] shrink-0" strokeWidth={1.75} />
-              {!collapsed && item.label}
-            </Link>
-          );
-        })}
+        {navigation
+          .filter((item) => !("permission" in item) || can(item.permission))
+          .map((item) => {
+            const Icon = icons[item.icon],
+              active =
+                item.href === "/admin"
+                  ? pathname === item.href
+                  : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                title={collapsed ? item.label : undefined}
+                aria-label={collapsed ? item.label : undefined}
+                aria-current={active ? "page" : undefined}
+                className={itemClass(active, collapsed)}
+              >
+                <Icon className="size-[18px] shrink-0" strokeWidth={1.75} />
+                {!collapsed && item.label}
+              </Link>
+            );
+          })}
       </nav>
       <div
         className={cn(

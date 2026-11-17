@@ -16,15 +16,23 @@ export const navigation = [
     href: "/admin/piani",
     label: "Piani e percorsi",
     icon: "plans",
+    permission: "plans",
   },
   {
     href: "/admin/lezioni",
     label: "Calendario",
     icon: "calendar",
+    permission: "lessons",
   },
   {
     href: "/admin/pagamenti",
     label: "Pagamenti",
     icon: "payments",
+    permission: "payments",
+  },
+  {
+    href: "/admin/contabilita",
+    label: "Contabilità",
+    icon: "accounting",
   },
 ] as const;

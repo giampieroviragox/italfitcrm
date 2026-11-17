@@ -2,6 +2,7 @@ import { lessonWallet } from "./lesson-wallet.ts";
 import { onlineSubscriptions } from "./online-coaching.ts";
 import { maxRecords } from "./workout-log.ts";
 import { cycleFeedbacks, races } from "./cycle-feedback.ts";
+import { isPermission, isTeamRole } from "./permissions.ts";
 import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
 import { validCoachImage } from "./student-coach.ts";
 import { isWorkoutEntries } from "./workout-entry-schema.ts";
@@ -185,6 +186,16 @@ export function isCrmState(v: unknown): v is CrmState {
         isObject(a) &&
         ["id", "name", "email"].every((k) => typeof a[k] === "string") &&
         ["owner", "admin"].includes(String(a.role)) &&
+        (a.teamRole === undefined || isTeamRole(a.teamRole)) &&
+        (a.permissions === undefined ||
+          (Array.isArray(a.permissions) &&
+            a.permissions.every(isPermission) &&
+            new Set(a.permissions).size === a.permissions.length)) &&
+        (a.compensationPercent === undefined ||
+          (typeof a.compensationPercent === "number" &&
+            Number.isFinite(a.compensationPercent) &&
+            a.compensationPercent >= 0 &&
+            a.compensationPercent <= 100)) &&
         ["draft", "active"].includes(String(a.status)) &&
         (a.avatarUrl === undefined || validCoachImage(a.avatarUrl)) &&
         (a.availability === undefined || isAvailability(a.availability)),

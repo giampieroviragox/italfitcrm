@@ -4,6 +4,14 @@ import { studentProjection } from "../student-portal-model";
 import { studentAccess } from "../tier-access";
 import { prepareTransition } from "../transition";
 import {
+  projectState,
+  requirePermission,
+  staffScope,
+  type Permission,
+  type StaffScope,
+} from "../permissions";
+import type { CrmEnvelope } from "../envelope";
+import {
   checkOrigin,
   errorResponse,
   HttpError,
@@ -65,11 +73,25 @@ export async function studentCommand(
   }
 }
 
+/** The envelope a staff member may see, filtered by their permissions. */
+export const visibleEnvelope = (
+  envelope: CrmEnvelope,
+  scope: StaffScope,
+): CrmEnvelope => ({ ...envelope, state: projectState(envelope.state, scope) });
+
 /** A staff member applies a command against the revision they saw. */
 export async function staffCommand(
   request: Request,
-  apply: (state: CrmState, input: Input, actorName: string) => CrmState,
-  { maxLength = 20_000 } = {},
+  apply: (
+    state: CrmState,
+    input: Input,
+    actorName: string,
+    scope: StaffScope,
+  ) => CrmState,
+  {
+    maxLength = 20_000,
+    permission,
+  }: { maxLength?: number; permission?: Permission } = {},
 ) {
   try {
     checkOrigin(request);
@@ -78,6 +100,12 @@ export async function staffCommand(
     if (!Number.isSafeInteger(input.revision))
       throw new HttpError(400, "Richiesta non valida.");
     const current = await readCrm(user.id);
+    const scope = staffScope(current.state, access.record_id);
+    try {
+      if (permission) requirePermission(scope, permission);
+    } catch (e) {
+      throw new HttpError(403, (e as Error).message);
+    }
     if (input.revision !== current.revision)
       throw new HttpError(409, "Il CRM è cambiato. Verifica i dati e riprova.");
     const actor = {
@@ -90,7 +118,7 @@ export async function staffCommand(
     try {
       next = prepareTransition(
         current.state,
-        apply(current.state, input, actor.name),
+        apply(current.state, input, actor.name, scope),
         actor,
       );
     } catch (e) {
@@ -99,7 +127,9 @@ export async function staffCommand(
         : new HttpError(400, (e as Error).message);
     }
     const saved = await writeCrm(user.id, current.revision, next);
-    return Response.json(saved, { headers: { "Cache-Control": "no-store" } });
+    return Response.json(visibleEnvelope(saved, scope), {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (e) {
     return errorResponse(e);
   }

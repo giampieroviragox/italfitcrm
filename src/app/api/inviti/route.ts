@@ -5,6 +5,7 @@ import {
   HttpError,
   readJsonInput,
 } from "@/modules/crm/server/auth";
+import { seesStudent, staffScope } from "@/modules/crm/permissions";
 import { readCrm } from "@/modules/crm/server/repository";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signInvite } from "@/modules/auth/invite-context";
@@ -45,6 +46,15 @@ export async function POST(request: Request) {
         "Solo il proprietario può invitare amministratori.",
       );
     const current = await readCrm(user.id);
+    const scope = staffScope(current.state, access.record_id);
+    if (
+      input.kind === "student" &&
+      (!scope.can("students.edit") || !seesStudent(scope, input.id))
+    )
+      throw new HttpError(
+        403,
+        "Il tuo ruolo non può invitare questo studente.",
+      );
     const person =
       input.kind === "student"
         ? current.state.students.find((s) => s.id === input.id && !s.archived)
