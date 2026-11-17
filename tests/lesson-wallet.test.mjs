@@ -129,31 +129,30 @@ test("il consuntivo congela il prezzo sui presenti ed esclude assenti, duplicati
   );
 });
 
-test("il pacchetto Milano scala i minuti in 1:1 senza generare un secondo addebito", () => {
+test("le lezioni di gruppo si pagano a listino anche con un solo presente: niente pacchetti", () => {
   const input = purchase();
   const credit = input.students[0].lessonWallet.credits[0];
-  assert.throws(
-    () => applyWalletCommand(input, command({ creditId: credit.id }), end),
-    /Credito non utilizzabile/,
-  );
-  assert.throws(
-    () =>
-      applyWalletCommand(
-        input,
-        command({ creditId: credit.id, attending: ["a"], venue: "monza" }),
-        end,
-      ),
-    /Credito non utilizzabile/,
-  );
+  assert.equal(credit.individual, true);
+  assert.equal(credit.kind, "package");
+  for (const attending of [["a", "b"], ["a"]])
+    assert.throws(
+      () =>
+        applyWalletCommand(
+          input,
+          command({ creditId: credit.id, attending }),
+          end,
+        ),
+      /pacchetti valgono solo per le lezioni individuali/,
+    );
+  // Un solo presente a Milano: tariffa di gruppo per una persona, 70 €.
   const { lessonWallet: wallet } = applyWalletCommand(
     input,
-    command({ creditId: credit.id, attending: ["a"] }),
+    command({ attending: ["a"] }),
     end,
   ).students[0];
-  assert.equal(wallet.lessons[0].creditId, credit.id);
-  assert.equal(wallet.lessons[0].price, 0);
-  assert.equal(wallet.lessons[0].allocatedPrice, 6818);
-  assert.equal(remainingCredit(wallet, credit), 600);
+  assert.equal(wallet.lessons[0].price, 7000);
+  assert.equal(wallet.lessons[0].creditId, undefined);
+  assert.equal(remainingCredit(wallet, credit), 660);
   assert.ok(lessonWallet.safeParse(wallet).success);
 });
 

@@ -181,12 +181,13 @@ export const walletCommand = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("record"),
     studentId: identifier,
+    /** Individual lesson agreed directly with the coach. */
     lesson: z.object({
       title: z.string().trim().min(1).max(100),
       startsAt: timestamp,
       minutes: z.number().int().min(15).max(240),
       venue: lessonVenue,
-      participants: z.number().int().min(1).max(200),
+      participants: z.literal(1),
     }),
     /** Agreed price per person; defaults to the list price. */
     manualPrice: cents.optional(),
@@ -234,11 +235,15 @@ function settleLesson(
   )
     throw new Error("Gli iscritti sono cambiati. Riapri il consuntivo.");
 
+  if (command.roster.some((entry) => entry.creditId))
+    throw new Error(
+      "Le lezioni di gruppo si pagano a listino: i pacchetti valgono solo per le lezioni individuali.",
+    );
   const present = bookings.filter((b) => roster.get(b.id)?.present);
   const tariff =
     lessonPrice(command.venue, present.length, lesson.durationMinutes) ??
     command.manualPrice;
-  if (present.some((b) => !roster.get(b.id)?.creditId) && tariff === undefined)
+  if (present.length && tariff === undefined)
     throw new Error(
       "Per questa durata o capienza inserisci la tariffa a persona.",
     );
@@ -266,25 +271,6 @@ function settleLesson(
       const booking = byStudent.get(student.id);
       if (!booking) return student;
       const wallet = student.lessonWallet ?? emptyWallet;
-      const creditId = roster.get(booking.id)?.creditId;
-      const credit = wallet.credits.find((item) => item.id === creditId);
-      if (
-        creditId &&
-        (!credit ||
-          !canUseLessonCredit(
-            wallet,
-            credit,
-            command.venue,
-            present.length,
-            lesson.durationMinutes,
-          ))
-      )
-        throw new Error(
-          `Credito non utilizzabile per ${student.firstName} ${student.lastName}.`,
-        );
-      const allocatedPrice = credit
-        ? creditShare(wallet, credit, lesson.durationMinutes)
-        : undefined;
       const entry: LessonCharge = {
         id: lesson.id,
         title: lesson.title,
@@ -292,8 +278,7 @@ function settleLesson(
         minutes: lesson.durationMinutes,
         venue: command.venue,
         participants: present.length,
-        price: credit ? 0 : (tariff ?? 0),
-        ...(credit ? { creditId: credit.id, allocatedPrice } : {}),
+        price: tariff ?? 0,
         payments: [],
       };
       return {
@@ -317,7 +302,7 @@ function creditShare(
   return allocated(used + portion) - allocated(used);
 }
 
-/** A lesson agreed directly with the student and already held (e.g. 1:1). */
+/** An individual (1:1) lesson agreed directly with the coach and already held. */
 function recordLesson(
   state: CrmState,
   command: Extract<WalletCommand, { action: "record" }>,
@@ -328,6 +313,8 @@ function recordLesson(
   );
   if (!student) throw new Error("Studente non disponibile.");
   const { lesson } = command;
+  if (lesson.participants !== 1)
+    throw new Error("Si registrano a mano solo le lezioni individuali.");
   if (Date.parse(lesson.startsAt) > +now)
     throw new Error("Registra la lezione dopo averla svolta.");
   const wallet = student.lessonWallet ?? emptyWallet;
@@ -400,6 +387,9 @@ export function applyWalletCommand(
         ...wallet.credits,
         {
           ...command.credit,
+          // Packs cover individual lessons only; group lessons use the list price.
+          kind: "package",
+          individual: true,
           id: crypto.randomUUID(),
           purchasedAt: now.toISOString(),
           payments: [],

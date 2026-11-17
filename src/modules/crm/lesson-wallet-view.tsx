@@ -104,15 +104,12 @@ export function LessonWalletView({
         ? milanoPrivateCredit
         : {
             name: String(data.get("name")),
-            kind:
-              purchase === "subscription"
-                ? ("subscription" as const)
-                : ("package" as const),
+            kind: "package" as const,
             quantity:
               Number(data.get("quantity")) * (unit === "minutes" ? 60 : 1),
             unit,
             price: Math.round(Number(data.get("price")) * 100),
-            individual: data.has("individual"),
+            individual: true,
           };
     void asyncSubmit(
       { action: "credit", studentId: staff.studentId, credit },
@@ -168,7 +165,7 @@ export function LessonWalletView({
         </div>
       )}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Pacchetti e abbonamenti</h3>
+        <h3 className="text-sm font-semibold">Pacchetti lezioni individuali</h3>
         {wallet.credits.length ? (
           <>
             <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
@@ -240,7 +237,7 @@ export function LessonWalletView({
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Nessun pacchetto o abbonamento registrato.
+            Nessun pacchetto registrato.
           </p>
         )}
         {staff && !staff.archived && (
@@ -249,20 +246,20 @@ export function LessonWalletView({
             onSubmit={addCredit}
           >
             <fieldset disabled={pending} className="space-y-3">
-              <Field label="Assegna credito">
+              <Field
+                label="Assegna un pacchetto"
+                hint="I pacchetti coprono solo le lezioni individuali. Le lezioni di gruppo si pagano a listino."
+              >
                 <select
                   className={control}
                   value={purchase}
                   onChange={(e) => setPurchase(e.target.value)}
                 >
-                  <option value="">Seleziona il tipo di credito</option>
+                  <option value="">Seleziona il pacchetto</option>
                   <option value="milano">
                     Milano 1:1 · 10 ore + 1 in regalo · 750 €
                   </option>
                   <option value="package">Pacchetto personalizzato</option>
-                  <option value="subscription">
-                    Abbonamento con lezioni in sede
-                  </option>
                 </select>
               </Field>
               {purchase && purchase !== "milano" && (
@@ -322,15 +319,11 @@ export function LessonWalletView({
                       />
                     </Field>
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input name="individual" type="checkbox" /> Solo lezioni
-                    individuali
-                  </label>
                 </>
               )}
               {purchase && (
                 <Button type="submit" size="sm">
-                  Assegna credito
+                  Assegna pacchetto
                 </Button>
               )}
             </fieldset>
@@ -365,11 +358,11 @@ export function LessonWalletView({
                   <div>
                     <p className="font-medium">{lesson.title}</p>
                     <p className="text-muted-foreground">
-                      {date(lesson.startsAt)} · {hours(lesson.minutes)} ·{" "}
-                      {lessonVenues[lesson.venue]} · {lesson.participants}{" "}
-                      {lesson.participants === 1
-                        ? "partecipante"
-                        : "partecipanti"}
+                      {lesson.id.startsWith("manual-")
+                        ? "Individuale"
+                        : `Di gruppo · ${lesson.participants} ${lesson.participants === 1 ? "presente" : "presenti"}`}{" "}
+                      · {date(lesson.startsAt)} · {hours(lesson.minutes)} ·{" "}
+                      {lessonVenues[lesson.venue]}
                     </p>
                   </div>
                   <p className="tabular-nums">
@@ -475,18 +468,17 @@ function RecordLessonForm({
 }) {
   const today = todayRome();
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("Lezione individuale 1:1");
+  const [title, setTitle] = useState("Lezione individuale");
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("");
   const [minutes, setMinutes] = useState(60);
   const [venue, setVenue] = useState<LessonVenue>("milano");
-  const [participants, setParticipants] = useState(1);
   const [creditId, setCreditId] = useState("");
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
-  const listPrice = lessonPrice(venue, participants, minutes);
+  const listPrice = lessonPrice(venue, 1, minutes);
   const usable = wallet.credits.filter((c) =>
-    canUseLessonCredit(wallet, c, venue, participants, minutes),
+    canUseLessonCredit(wallet, c, venue, 1, minutes),
   );
   const credit = usable.find((c) => c.id === creditId);
   const reset = () => {
@@ -499,7 +491,7 @@ function RecordLessonForm({
   if (!open)
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        Registra una lezione svolta
+        Registra una lezione individuale
       </Button>
     );
   return (
@@ -528,7 +520,7 @@ function RecordLessonForm({
           {
             action: "record",
             studentId,
-            lesson: { title, startsAt, minutes, venue, participants },
+            lesson: { title, startsAt, minutes, venue, participants: 1 },
             ...(credit ? { creditId: credit.id } : {}),
             ...(!credit && manual !== undefined ? { manualPrice: manual } : {}),
           },
@@ -538,11 +530,11 @@ function RecordLessonForm({
     >
       <fieldset disabled={pending} className="space-y-3">
         <legend className="mb-1 text-sm font-semibold">
-          Registra una lezione svolta
+          Registra una lezione individuale
         </legend>
         <p className="text-sm text-muted-foreground">
-          Per le lezioni concordate direttamente con lo studente, ad esempio le
-          1:1. Entrano nello storico e nel saldo.
+          Le lezioni 1:1 fissate direttamente con il coach. Si pagano a listino
+          oppure si scalano dal pacchetto, ed entrano nello storico e nel saldo.
         </p>
         <Field label="Titolo">
           <input
@@ -574,42 +566,27 @@ function RecordLessonForm({
             </SelectControl>
           </Field>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Sede">
-            <SelectControl
-              className={control}
-              value={venue}
-              onChange={(e) =>
-                setVenue(e.target.value === "monza" ? "monza" : "milano")
-              }
-            >
-              {Object.entries(lessonVenues).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </SelectControl>
-          </Field>
-          <Field label="Partecipanti">
-            <input
-              required
-              type="number"
-              min={1}
-              max={200}
-              className={control}
-              value={participants}
-              onChange={(e) =>
-                setParticipants(Math.max(1, Number(e.target.value) || 1))
-              }
-            />
-          </Field>
-        </div>
+        <Field label="Sede">
+          <SelectControl
+            className={control}
+            value={venue}
+            onChange={(e) =>
+              setVenue(e.target.value === "monza" ? "monza" : "milano")
+            }
+          >
+            {Object.entries(lessonVenues).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </SelectControl>
+        </Field>
         <Field
-          label="Scala da un credito"
+          label="Scala dal pacchetto"
           hint={
             usable.length
               ? "Lascia vuoto per addebitarla a lezione."
-              : "Nessun pacchetto utilizzabile per questa sede, durata e partecipanti."
+              : "Nessun pacchetto con ore residue utilizzabile per questa sede e durata."
           }
         >
           <SelectControl
@@ -630,7 +607,7 @@ function RecordLessonForm({
             label="Prezzo a persona (€)"
             hint={
               listPrice !== undefined
-                ? `Listino ${lessonVenues[venue]}, ${participants} ${participants === 1 ? "partecipante" : "partecipanti"}: ${euro(listPrice)}. Inserisci un importo solo se diverso.`
+                ? `Listino ${lessonVenues[venue]}, lezione individuale: ${euro(listPrice)}. Inserisci un importo solo se diverso.`
                 : "Il listino non copre questa durata o questo numero di partecipanti: inserisci il prezzo."
             }
           >

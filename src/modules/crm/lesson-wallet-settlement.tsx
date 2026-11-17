@@ -4,12 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Lesson, LessonBooking } from "./fitness-model";
 import type { CrmStudent } from "./model";
-import {
-  lessonPrice,
-  lessonVenues,
-  canUseLessonCredit,
-  type LessonVenue,
-} from "./lesson-wallet";
+import { lessonPrice, lessonVenues, type LessonVenue } from "./lesson-wallet";
 import { euro } from "./lesson-wallet-view";
 import { updateLessonWallet } from "./store";
 import { Field, FormError, control } from "./ui";
@@ -31,7 +26,6 @@ export function LessonWalletSettlement({
         : "",
   );
   const [present, setPresent] = useState<Record<string, boolean>>({});
-  const [credits, setCredits] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const lock = useRef(false);
@@ -48,34 +42,12 @@ export function LessonWalletSettlement({
   const tariff = venue
     ? lessonPrice(venue, count, lesson.durationMinutes)
     : undefined;
-  const roster = bookings.map((booking) => {
-    const student = students.find((s) => s.id === booking.studentId);
-    const wallet = student?.lessonWallet;
-    const available =
-      wallet && venue
-        ? wallet.credits.filter((credit) =>
-            canUseLessonCredit(
-              wallet,
-              credit,
-              venue,
-              count,
-              lesson.durationMinutes,
-            ),
-          )
-        : [];
-    const creditId = available.find((c) => credits[booking.id] === c.id)?.id;
-    return {
-      booking,
-      student,
-      available,
-      creditId,
-      present: Boolean(present[booking.id]),
-    };
-  });
-  const manual =
-    venue &&
-    tariff === undefined &&
-    roster.some((r) => r.present && !r.creditId);
+  const roster = bookings.map((booking) => ({
+    booking,
+    student: students.find((s) => s.id === booking.studentId),
+    present: Boolean(present[booking.id]),
+  }));
+  const manual = venue && tariff === undefined && count > 0;
   return (
     <form
       className="mt-5 space-y-3 rounded-xl border bg-card p-4"
@@ -101,7 +73,6 @@ export function LessonWalletSettlement({
             roster: roster.map((r) => ({
               bookingId: r.booking.id,
               present: r.present,
-              ...(r.present && r.creditId ? { creditId: r.creditId } : {}),
             })),
           });
         } catch (error) {
@@ -117,8 +88,9 @@ export function LessonWalletSettlement({
           Registra presenze e costi
         </legend>
         <p className="text-sm text-muted-foreground">
-          Spunta chi ha partecipato. La tariffa a lezione dipende dal numero dei
-          presenti e viene fissata quando chiudi il consuntivo.
+          Spunta chi ha partecipato. Le lezioni di gruppo si pagano a listino:
+          la tariffa a persona dipende dalla sede e dal numero dei presenti e
+          viene fissata quando chiudi il consuntivo.
         </p>
         <Field label="Sede per la tariffa">
           <select
@@ -133,59 +105,35 @@ export function LessonWalletSettlement({
           </select>
         </Field>
         <ul className="divide-y rounded-lg border px-3">
-          {roster.map(
-            ({ booking, student, available, creditId, present: attended }) => {
-              const name = student
-                ? `${student.firstName} ${student.lastName}`
-                : "Studente";
-              return (
-                <li
-                  key={booking.id}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2"
-                >
-                  <label className="flex min-h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={attended}
-                      onChange={(e) =>
-                        setPresent((old) => ({
-                          ...old,
-                          [booking.id]: e.target.checked,
-                        }))
-                      }
-                    />{" "}
-                    {name}
-                  </label>
-                  {attended && available.length > 0 && (
-                    <select
-                      aria-label={`Addebito per ${name}`}
-                      className={control + " max-w-xs"}
-                      value={creditId ?? ""}
-                      onChange={(e) =>
-                        setCredits((old) => ({
-                          ...old,
-                          [booking.id]: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Pagamento a lezione</option>
-                      {available.map((credit) => (
-                        <option key={credit.id} value={credit.id}>
-                          {credit.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </li>
-              );
-            },
-          )}
+          {roster.map(({ booking, student, present: attended }) => {
+            const name = student
+              ? `${student.firstName} ${student.lastName}`
+              : "Studente";
+            return (
+              <li
+                key={booking.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2"
+              >
+                <label className="flex min-h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={attended}
+                    onChange={(e) =>
+                      setPresent((old) => ({
+                        ...old,
+                        [booking.id]: e.target.checked,
+                      }))
+                    }
+                  />{" "}
+                  {name}
+                </label>
+              </li>
+            );
+          })}
         </ul>
         <p className="text-sm font-medium">
-          {count} presenti
-          {tariff !== undefined
-            ? ` · ${euro(tariff)} a persona per le lezioni non coperte da crediti`
-            : ""}
+          {count} {count === 1 ? "presente" : "presenti"}
+          {tariff !== undefined ? ` · ${euro(tariff)} a persona` : ""}
         </p>
         {manual && (
           <Field

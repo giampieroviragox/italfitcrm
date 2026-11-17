@@ -40,6 +40,8 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 00:00–00:31 e 03:48–05:48.
 
 ## 2. Pacchetti di lezioni e wallet
 
+Regola confermata il 17 novembre 2026: le lezioni di gruppo (fasce prenotabili con posti) si pagano sempre a listino in base a sede e presenti, anche con un solo presente. I pacchetti, come il Milano 10 + 1 da 750 €, valgono solo per le lezioni individuali 1:1 fissate direttamente con il coach, che si possono anche pagare a lezione.
+
 La prima versione del wallet e del consuntivo è implementata e verificata in locale. Il rilascio in produzione è ancora da fare.
 
 - [x] Configurare il pacchetto Milano **1:1 da 10 ore + 1 ora in regalo a 750 €**, utilizzabile per lezioni individuali.

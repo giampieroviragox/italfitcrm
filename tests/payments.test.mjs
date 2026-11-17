@@ -94,7 +94,7 @@ test("la proiezione indica quando prenotazione o disdetta sono chiuse", () => {
   assert.match(data.lessons[0].restriction, /12 ore prima/);
 });
 
-test("il team registra una lezione 1:1 già svolta con il listino o con un pacchetto", () => {
+test("il team registra una lezione individuale già svolta a listino o scalata dal pacchetto", () => {
   const now = new Date("2026-11-17T12:00:00Z");
   const record = (extra = {}) => ({
     action: "record",
@@ -114,10 +114,19 @@ test("il team registra una lezione 1:1 già svolta con il listino o con un pacch
   assert.match(wallet.lessons[0].id, /^manual-/);
   s = applyWalletCommand(
     s,
-    record({ lesson: { ...record().lesson, venue: "monza", participants: 2 } }),
+    record({ lesson: { ...record().lesson, venue: "monza" } }),
     now,
   );
-  assert.equal(s.students[0].lessonWallet.lessons[1].price, 2500);
+  assert.equal(s.students[0].lessonWallet.lessons[1].price, 4000);
+  assert.throws(
+    () =>
+      applyWalletCommand(
+        s,
+        record({ lesson: { ...record().lesson, participants: 2 } }),
+        now,
+      ),
+    /individuali/,
+  );
   s = applyWalletCommand(s, record({ manualPrice: 6000 }), now);
   assert.equal(s.students[0].lessonWallet.lessons[2].price, 6000);
   assert.throws(
@@ -158,7 +167,7 @@ test("il team registra una lezione 1:1 già svolta con il listino o con un pacch
         pack,
         record({
           creditId: credit.id,
-          lesson: { ...record().lesson, participants: 2 },
+          lesson: { ...record().lesson, venue: "monza" },
         }),
         now,
       ),
