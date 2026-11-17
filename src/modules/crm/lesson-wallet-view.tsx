@@ -47,12 +47,17 @@ export function LessonWalletView({
   wallet = emptyWallet,
   staff,
   onSubmitReceipt,
+  only,
 }: {
   wallet?: LessonWallet;
   staff?: { studentId: string; archived: boolean };
   /** Student mode: declares a payment with its receipt. */
   onSubmitReceipt?: (form: FormData) => Promise<string>;
+  /** Shows one part only, as a section of the student profile. */
+  only?: "packages" | "lessons" | "payments";
 }) {
+  const show = (part: "packages" | "lessons" | "payments") =>
+    !only || only === part;
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [purchase, setPurchase] = useState("");
@@ -118,12 +123,14 @@ export function LessonWalletView({
   };
   return (
     <section id="wallet-lezioni" className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Wallet lezioni</h2>
-        <p className="text-sm text-muted-foreground">
-          Crediti, presenze e pagamenti delle lezioni in sede.
-        </p>
-      </div>
+      {!only && (
+        <div>
+          <h2 className="text-lg font-semibold">Wallet lezioni</h2>
+          <p className="text-sm text-muted-foreground">
+            Pacchetti, lezioni svolte e pagamenti delle lezioni in sede.
+          </p>
+        </div>
+      )}
       <dl className="grid gap-2 sm:grid-cols-3">
         {[
           {
@@ -140,246 +147,255 @@ export function LessonWalletView({
         ))}
       </dl>
       <FormError message={error} />
-      {(onSubmitReceipt || (wallet.receipts?.length ?? 0) > 0) && (
+      {show("payments") &&
+        (onSubmitReceipt || (wallet.receipts?.length ?? 0) > 0) && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">
+              {staff
+                ? "Pagamenti dichiarati dallo studente"
+                : "I tuoi pagamenti"}
+            </h3>
+            {onSubmitReceipt && (
+              <ReceiptForm
+                outstanding={outstandingAmount(wallet)}
+                onSubmit={onSubmitReceipt}
+              />
+            )}
+            <ReceiptList
+              receipts={wallet.receipts ?? []}
+              staff={
+                staff
+                  ? {
+                      studentId: staff.studentId,
+                      outstanding: outstandingAmount(wallet),
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      {show("packages") && (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">
-            {staff ? "Pagamenti dichiarati dallo studente" : "I tuoi pagamenti"}
+            Pacchetti lezioni individuali
           </h3>
-          {onSubmitReceipt && (
-            <ReceiptForm
-              outstanding={outstandingAmount(wallet)}
-              onSubmit={onSubmitReceipt}
-            />
+          {wallet.credits.length ? (
+            <>
+              <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+                {(["quantity", "paid", "remaining"] as const).map((key) => {
+                  const amount = (unit: "minutes" | "lessons") =>
+                    wallet.credits
+                      .filter((c) => c.unit === unit)
+                      .reduce(
+                        (sum, c) =>
+                          sum +
+                          (key === "quantity"
+                            ? c.quantity
+                            : key === "paid"
+                              ? paidAmount(c) >= c.price
+                                ? c.quantity
+                                : 0
+                              : remainingCredit(wallet, c)),
+                        0,
+                      );
+                  return (
+                    <div key={key}>
+                      <dt className="text-muted-foreground">
+                        {
+                          {
+                            quantity: "Acquistate",
+                            paid: "Saldate per intero",
+                            remaining: "Residue",
+                          }[key]
+                        }
+                      </dt>
+                      <dd className="font-medium tabular-nums">
+                        {units(amount("minutes"), "minutes")} ·{" "}
+                        {units(amount("lessons"), "lessons")}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+              <ul className="divide-y rounded-xl border px-3">
+                {wallet.credits.toReversed().map((credit) => {
+                  const remaining = remainingCredit(wallet, credit);
+                  return (
+                    <li
+                      key={credit.id}
+                      className="flex flex-wrap justify-between gap-x-3 gap-y-1 py-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-medium">{credit.name}</p>
+                        <p className="text-muted-foreground">
+                          {credit.kind === "package"
+                            ? "Pacchetto"
+                            : "Abbonamento"}{" "}
+                          · {date(credit.purchasedAt)}
+                          {credit.individual ? " · Solo individuale" : ""}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {units(credit.quantity - remaining, credit.unit)}{" "}
+                          usate · {units(remaining, credit.unit)} residue su{" "}
+                          {units(credit.quantity, credit.unit)}
+                        </p>
+                      </div>
+                      <p className="tabular-nums">
+                        {euro(paidAmount(credit))} / {euro(credit.price)} pagati
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Nessun pacchetto registrato.
+            </p>
           )}
-          <ReceiptList
-            receipts={wallet.receipts ?? []}
-            staff={
-              staff
-                ? {
-                    studentId: staff.studentId,
-                    outstanding: outstandingAmount(wallet),
-                  }
-                : undefined
-            }
-          />
+          {staff && !staff.archived && (
+            <form
+              className="space-y-3 rounded-xl border bg-card p-3"
+              onSubmit={addCredit}
+            >
+              <fieldset disabled={pending} className="space-y-3">
+                <Field
+                  label="Assegna un pacchetto"
+                  hint="I pacchetti coprono solo le lezioni individuali. Le lezioni di gruppo si pagano a listino."
+                >
+                  <select
+                    className={control}
+                    value={purchase}
+                    onChange={(e) => setPurchase(e.target.value)}
+                  >
+                    <option value="">Seleziona il pacchetto</option>
+                    <option value="milano">
+                      Milano 1:1 · 10 ore + 1 in regalo · 750 €
+                    </option>
+                    <option value="package">Pacchetto personalizzato</option>
+                  </select>
+                </Field>
+                {purchase && purchase !== "milano" && (
+                  <>
+                    <Field label="Nome">
+                      <input
+                        required
+                        name="name"
+                        maxLength={100}
+                        className={control}
+                      />
+                    </Field>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <Field label="Unità">
+                        <select
+                          className={control}
+                          value={unit}
+                          onChange={(e) =>
+                            setUnit(
+                              e.target.value === "minutes"
+                                ? "minutes"
+                                : "lessons",
+                            )
+                          }
+                        >
+                          <option value="minutes">Ore</option>
+                          <option value="lessons">Lezioni</option>
+                        </select>
+                      </Field>
+                      <Field
+                        label={
+                          unit === "minutes"
+                            ? "Ore acquistate"
+                            : "Lezioni acquistate"
+                        }
+                      >
+                        <input
+                          key={unit}
+                          required
+                          name="quantity"
+                          type="number"
+                          min={unit === "minutes" ? 0.25 : 1}
+                          step={unit === "minutes" ? 0.25 : 1}
+                          max={unit === "minutes" ? 1000 : 60000}
+                          className={control}
+                        />
+                      </Field>
+                      <Field label="Prezzo totale (€)">
+                        <input
+                          required
+                          name="price"
+                          type="number"
+                          min="0"
+                          max="100000"
+                          step="0.01"
+                          className={control}
+                        />
+                      </Field>
+                    </div>
+                  </>
+                )}
+                {purchase && (
+                  <Button type="submit" size="sm">
+                    Assegna pacchetto
+                  </Button>
+                )}
+              </fieldset>
+            </form>
+          )}
         </div>
       )}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Pacchetti lezioni individuali</h3>
-        {wallet.credits.length ? (
-          <>
-            <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
-              {(["quantity", "paid", "remaining"] as const).map((key) => {
-                const amount = (unit: "minutes" | "lessons") =>
-                  wallet.credits
-                    .filter((c) => c.unit === unit)
-                    .reduce(
-                      (sum, c) =>
-                        sum +
-                        (key === "quantity"
-                          ? c.quantity
-                          : key === "paid"
-                            ? paidAmount(c) >= c.price
-                              ? c.quantity
-                              : 0
-                            : remainingCredit(wallet, c)),
-                      0,
-                    );
-                return (
-                  <div key={key}>
-                    <dt className="text-muted-foreground">
-                      {
-                        {
-                          quantity: "Acquistate",
-                          paid: "Saldate per intero",
-                          remaining: "Residue",
-                        }[key]
-                      }
-                    </dt>
-                    <dd className="font-medium tabular-nums">
-                      {units(amount("minutes"), "minutes")} ·{" "}
-                      {units(amount("lessons"), "lessons")}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
+      {show("lessons") && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Storico lezioni svolte</h3>
+          {settledSingleLessons.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              A lezione, saldate:{" "}
+              {units(settledSingleLessons.length, "lessons")} ·{" "}
+              {hours(
+                settledSingleLessons.reduce(
+                  (sum, lesson) => sum + lesson.minutes,
+                  0,
+                ),
+              )}
+            </p>
+          )}
+          {wallet.lessons.length ? (
             <ul className="divide-y rounded-xl border px-3">
-              {wallet.credits.toReversed().map((credit) => {
-                const remaining = remainingCredit(wallet, credit);
-                return (
+              {wallet.lessons
+                .toSorted(
+                  (a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt),
+                )
+                .map((lesson) => (
                   <li
-                    key={credit.id}
+                    key={lesson.id}
                     className="flex flex-wrap justify-between gap-x-3 gap-y-1 py-3 text-sm"
                   >
                     <div>
-                      <p className="font-medium">{credit.name}</p>
+                      <p className="font-medium">{lesson.title}</p>
                       <p className="text-muted-foreground">
-                        {credit.kind === "package"
-                          ? "Pacchetto"
-                          : "Abbonamento"}{" "}
-                        · {date(credit.purchasedAt)}
-                        {credit.individual ? " · Solo individuale" : ""}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {units(credit.quantity - remaining, credit.unit)} usate
-                        · {units(remaining, credit.unit)} residue su{" "}
-                        {units(credit.quantity, credit.unit)}
+                        {lesson.id.startsWith("manual-")
+                          ? "Individuale"
+                          : `Di gruppo · ${lesson.participants} ${lesson.participants === 1 ? "presente" : "presenti"}`}{" "}
+                        · {date(lesson.startsAt)} · {hours(lesson.minutes)} ·{" "}
+                        {lessonVenues[lesson.venue]}
                       </p>
                     </div>
                     <p className="tabular-nums">
-                      {euro(paidAmount(credit))} / {euro(credit.price)} pagati
+                      {lesson.creditId
+                        ? `Coperta da ${wallet.credits.find((credit) => credit.id === lesson.creditId)?.name ?? "credito"}${lesson.allocatedPrice !== undefined ? ` · quota ${euro(lesson.allocatedPrice)}` : ""}`
+                        : `${euro(paidAmount(lesson))} / ${euro(lesson.price)} pagati`}
                     </p>
                   </li>
-                );
-              })}
+                ))}
             </ul>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Nessun pacchetto registrato.
-          </p>
-        )}
-        {staff && !staff.archived && (
-          <form
-            className="space-y-3 rounded-xl border bg-card p-3"
-            onSubmit={addCredit}
-          >
-            <fieldset disabled={pending} className="space-y-3">
-              <Field
-                label="Assegna un pacchetto"
-                hint="I pacchetti coprono solo le lezioni individuali. Le lezioni di gruppo si pagano a listino."
-              >
-                <select
-                  className={control}
-                  value={purchase}
-                  onChange={(e) => setPurchase(e.target.value)}
-                >
-                  <option value="">Seleziona il pacchetto</option>
-                  <option value="milano">
-                    Milano 1:1 · 10 ore + 1 in regalo · 750 €
-                  </option>
-                  <option value="package">Pacchetto personalizzato</option>
-                </select>
-              </Field>
-              {purchase && purchase !== "milano" && (
-                <>
-                  <Field label="Nome">
-                    <input
-                      required
-                      name="name"
-                      maxLength={100}
-                      className={control}
-                    />
-                  </Field>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <Field label="Unità">
-                      <select
-                        className={control}
-                        value={unit}
-                        onChange={(e) =>
-                          setUnit(
-                            e.target.value === "minutes"
-                              ? "minutes"
-                              : "lessons",
-                          )
-                        }
-                      >
-                        <option value="minutes">Ore</option>
-                        <option value="lessons">Lezioni</option>
-                      </select>
-                    </Field>
-                    <Field
-                      label={
-                        unit === "minutes"
-                          ? "Ore acquistate"
-                          : "Lezioni acquistate"
-                      }
-                    >
-                      <input
-                        key={unit}
-                        required
-                        name="quantity"
-                        type="number"
-                        min={unit === "minutes" ? 0.25 : 1}
-                        step={unit === "minutes" ? 0.25 : 1}
-                        max={unit === "minutes" ? 1000 : 60000}
-                        className={control}
-                      />
-                    </Field>
-                    <Field label="Prezzo totale (€)">
-                      <input
-                        required
-                        name="price"
-                        type="number"
-                        min="0"
-                        max="100000"
-                        step="0.01"
-                        className={control}
-                      />
-                    </Field>
-                  </div>
-                </>
-              )}
-              {purchase && (
-                <Button type="submit" size="sm">
-                  Assegna pacchetto
-                </Button>
-              )}
-            </fieldset>
-          </form>
-        )}
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Storico lezioni svolte</h3>
-        {settledSingleLessons.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            A lezione, saldate: {units(settledSingleLessons.length, "lessons")}{" "}
-            ·{" "}
-            {hours(
-              settledSingleLessons.reduce(
-                (sum, lesson) => sum + lesson.minutes,
-                0,
-              ),
-            )}
-          </p>
-        )}
-        {wallet.lessons.length ? (
-          <ul className="divide-y rounded-xl border px-3">
-            {wallet.lessons
-              .toSorted(
-                (a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt),
-              )
-              .map((lesson) => (
-                <li
-                  key={lesson.id}
-                  className="flex flex-wrap justify-between gap-x-3 gap-y-1 py-3 text-sm"
-                >
-                  <div>
-                    <p className="font-medium">{lesson.title}</p>
-                    <p className="text-muted-foreground">
-                      {lesson.id.startsWith("manual-")
-                        ? "Individuale"
-                        : `Di gruppo · ${lesson.participants} ${lesson.participants === 1 ? "presente" : "presenti"}`}{" "}
-                      · {date(lesson.startsAt)} · {hours(lesson.minutes)} ·{" "}
-                      {lessonVenues[lesson.venue]}
-                    </p>
-                  </div>
-                  <p className="tabular-nums">
-                    {lesson.creditId
-                      ? `Coperta da ${wallet.credits.find((credit) => credit.id === lesson.creditId)?.name ?? "credito"}${lesson.allocatedPrice !== undefined ? ` · quota ${euro(lesson.allocatedPrice)}` : ""}`
-                      : `${euro(paidAmount(lesson))} / ${euro(lesson.price)} pagati`}
-                  </p>
-                </li>
-              ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Nessuna presenza confermata.
-          </p>
-        )}
-      </div>
-      {staff && !staff.archived && (
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Nessuna presenza confermata.
+            </p>
+          )}
+        </div>
+      )}
+      {show("lessons") && staff && !staff.archived && (
         <RecordLessonForm
           wallet={wallet}
           studentId={staff.studentId}
@@ -387,7 +403,7 @@ export function LessonWalletView({
           submit={asyncSubmit}
         />
       )}
-      {staff && charges.length > 0 && (
+      {show("payments") && staff && charges.length > 0 && (
         <form
           className="rounded-xl border bg-card p-3"
           onSubmit={(event) => {

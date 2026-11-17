@@ -22,19 +22,27 @@ import { lessonDate } from "./lessons-workspace";
 import { StudentAccessControl } from "./student-access-control";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { LessonWalletView } from "./lesson-wallet-view";
+import { StudentOverview } from "./student-overview";
+import { PaymentHistoryList } from "./payments-workspace";
+import { paymentHistory } from "./payment-history";
 import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
 import { FeedbackHistory, RacesPanel } from "./cycle-feedback-view";
 import { todayRome } from "./fitness-logic";
 import { OnlineCoachingPanel, PlanCoachSelect } from "./online-coaching-view";
 const profileTabs = [
+  "overview",
   "properties",
   "coaching",
   "plans",
   "training",
-  "wallet",
+  "lessons",
+  "packages",
+  "payments",
   "notes",
   "history",
 ];
+/** Old links keep working after the wallet was split into sections. */
+const tabAliases: Record<string, string> = { wallet: "payments" };
 const timestamp = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -62,11 +70,10 @@ export function StudentProfile({
   const [assigning, setAssigning] = useState(false);
   const [removingAssignment, setRemovingAssignment] =
     useState<PlanAssignment | null>(null);
-  const [tab, setTab] = useState(
-      initialTab && profileTabs.includes(initialTab)
-        ? initialTab
-        : "properties",
-    ),
+  const [tab, setTab] = useState(() => {
+      const wanted = initialTab && (tabAliases[initialTab] ?? initialTab);
+      return wanted && profileTabs.includes(wanted) ? wanted : "overview";
+    }),
     [note, setNote] = useState(""),
     [error, setError] = useState("");
   const student = state.students.find((s) => s.id === id);
@@ -157,11 +164,29 @@ export function StudentProfile({
             className="flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-card p-1 [scrollbar-width:none]"
           >
             {[
+              { id: "overview", label: "Panoramica" },
               { id: "properties", label: "Proprietà" },
               { id: "coaching", label: "Coaching online" },
-              { id: "plans", label: "Piani e lezioni" },
+              { id: "plans", label: "Piani" },
               { id: "training", label: "Progressi e gare" },
-              { id: "wallet", label: "Wallet lezioni" },
+              { id: "lessons", label: "Lezioni" },
+              { id: "packages", label: "Pacchetti" },
+              {
+                id: "payments",
+                label: (
+                  <>
+                    Pagamenti
+                    {student.lessonWallet?.receipts?.some(
+                      (r) => r.status === "pending",
+                    ) ? (
+                      <span
+                        className="size-1.5 rounded-full bg-[var(--workspace-accent)]"
+                        aria-label="Pagamenti da verificare"
+                      />
+                    ) : null}
+                  </>
+                ),
+              },
               {
                 id: "notes",
                 label: (
@@ -278,40 +303,6 @@ export function StudentProfile({
                     Nessun piano assegnato.
                   </p>
                 )}
-                <section className="pt-4">
-                  <h2 className="text-sm font-medium text-muted-foreground">
-                    Lezioni prenotate
-                  </h2>
-                  <div className="mt-2 divide-y rounded-xl border px-4 empty:hidden">
-                    {(state.bookings ?? [])
-                      .filter((b) => b.studentId === id && !b.cancelled)
-                      .map((b) => {
-                        const l = state.lessons?.find(
-                          (l) => l.id === b.lessonId,
-                        );
-                        return l ? (
-                          <Link
-                            className="block py-3 text-sm"
-                            key={b.id}
-                            href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
-                          >
-                            {l.title}
-                            {l.cancelled ? " · Annullata" : ""}
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                              {lessonDate(l.startsAt)}
-                            </span>
-                          </Link>
-                        ) : null;
-                      })}
-                  </div>
-                  {!state.bookings?.some(
-                    (b) => b.studentId === id && !b.cancelled,
-                  ) && (
-                    <p className="mt-2 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-                      Nessuna prenotazione.
-                    </p>
-                  )}
-                </section>
               </>
             )}
             {tab === "coaching" && <OnlineCoachingPanel student={student} />}
@@ -379,11 +370,78 @@ export function StudentProfile({
                 />
               </div>
             )}
-            {tab === "wallet" && (
+            {tab === "overview" && (
+              <StudentOverview
+                student={student}
+                state={state}
+                open={(next) => request(() => setTab(next))}
+              />
+            )}
+            {tab === "lessons" && (
+              <div className="space-y-6">
+                <section>
+                  <h2 className="text-sm font-medium text-muted-foreground">
+                    Lezioni prenotate (di gruppo)
+                  </h2>
+                  <div className="mt-2 divide-y rounded-xl border px-4 empty:hidden">
+                    {(state.bookings ?? [])
+                      .filter((b) => b.studentId === id && !b.cancelled)
+                      .map((b) => {
+                        const l = state.lessons?.find(
+                          (l) => l.id === b.lessonId,
+                        );
+                        return l ? (
+                          <Link
+                            className="block py-3 text-sm"
+                            key={b.id}
+                            href={`/admin/lezioni/${encodeURIComponent(l.id)}`}
+                          >
+                            {l.title}
+                            {l.cancelled ? " · Annullata" : ""}
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              {lessonDate(l.startsAt)}
+                            </span>
+                          </Link>
+                        ) : null;
+                      })}
+                  </div>
+                  {!state.bookings?.some(
+                    (b) => b.studentId === id && !b.cancelled,
+                  ) && (
+                    <p className="mt-2 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                      Nessuna prenotazione.
+                    </p>
+                  )}
+                </section>
+                <LessonWalletView
+                  only="lessons"
+                  wallet={student.lessonWallet}
+                  staff={{ studentId: id, archived: !!student.archived }}
+                />
+              </div>
+            )}
+            {tab === "packages" && (
               <LessonWalletView
+                only="packages"
                 wallet={student.lessonWallet}
                 staff={{ studentId: id, archived: !!student.archived }}
               />
+            )}
+            {tab === "payments" && (
+              <div className="space-y-6">
+                <LessonWalletView
+                  only="payments"
+                  wallet={student.lessonWallet}
+                  staff={{ studentId: id, archived: !!student.archived }}
+                />
+                <section className="space-y-2">
+                  <h3 className="text-sm font-semibold">Storico pagamenti</h3>
+                  <PaymentHistoryList
+                    rows={paymentHistory([student])}
+                    showStudent={false}
+                  />
+                </section>
+              </div>
             )}
             {tab === "notes" && (
               <div className="space-y-6">

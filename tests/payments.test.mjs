@@ -334,3 +334,81 @@ test("la ripartizione FIFO non supera mai il dovuto di ogni voce", () => {
     /supera/,
   );
 });
+
+test("storico, filtri, saldi ed esportazione CSV dei pagamenti", async () => {
+  const {
+    balances,
+    balancesCsv,
+    collectedTotal,
+    filterPayments,
+    paymentHistory,
+    paymentMonths,
+    paymentsCsv,
+  } = await import("../src/modules/crm/payment-history.ts");
+  let s = owing();
+  // Incasso registrato dal team sul pacchetto.
+  s = applyWalletCommand(
+    s,
+    {
+      action: "payment",
+      studentId: "a",
+      category: "credit",
+      targetId: s.students[0].lessonWallet.credits[0].id,
+      amount: 30000,
+    },
+    new Date("2026-10-20T10:00:00Z"),
+  );
+  for (const [id, amount] of [
+    ["ok", 10000],
+    ["no", 5000],
+  ])
+    s = submitReceipt(
+      s,
+      "a",
+      { amount, method: "paypal", paidOn: "2026-11-16", note: "" },
+      file,
+      "2026-11-17",
+      new Date("2026-11-16T10:00:00Z"),
+      id,
+    );
+  s = applyWalletCommand(
+    s,
+    { action: "review", studentId: "a", receiptId: "ok", decision: "approve" },
+    new Date("2026-11-17T10:00:00Z"),
+  );
+  s = applyWalletCommand(
+    s,
+    {
+      action: "review",
+      studentId: "a",
+      receiptId: "no",
+      decision: "reject",
+      reason: "Illeggibile",
+    },
+    new Date("2026-11-17T11:00:00Z"),
+  );
+  const rows = paymentHistory(s.students);
+  assert.deepEqual(
+    rows.map((r) => r.kind),
+    ["rejected", "approved", "registered"],
+  );
+  assert.equal(rows[0].details[0], "Motivo: Illeggibile");
+  assert.match(rows[1].details[0], /Milano 1:1.*100,00/);
+  assert.equal(collectedTotal(rows), 40000);
+  assert.equal(filterPayments(rows, { kind: "approved" }).length, 1);
+  assert.equal(filterPayments(rows, { method: "paypal" }).length, 2);
+  assert.equal(filterPayments(rows, { month: "2026-10" }).length, 1);
+  assert.equal(filterPayments(rows, { studentId: "b" }).length, 0);
+  assert.deepEqual(paymentMonths(rows), ["2026-11", "2026-10"]);
+  const [balance] = balances(s.students);
+  assert.equal(balance.total, 82000);
+  assert.equal(balance.paid, 40000);
+  assert.equal(balance.open, 42000);
+  const csv = paymentsCsv(rows);
+  assert.ok(csv.startsWith('﻿"Data"'));
+  assert.match(csv, /"Ricevuta rifiutata","PayPal","2026-11-16","50,00"/);
+  assert.match(
+    balancesCsv([balance]),
+    /"TEST a","820,00","400,00","420,00","0,00"/,
+  );
+});
