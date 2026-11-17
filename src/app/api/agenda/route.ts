@@ -13,8 +13,10 @@ import { staffScope } from "@/modules/crm/permissions";
 
 const noStore = { headers: { "Cache-Control": "no-store" } };
 async function agendaAccess() {
-  const { user, access } = await requireAccess(true);
-  const { state } = await readCrm(user.id);
+  const {
+    access,
+    preloaded: { state },
+  } = await requireAccess(true, readCrm);
   const scope = staffScope(state, access.record_id);
   if (!scope.can("agenda"))
     throw new HttpError(403, "Il tuo ruolo non include l’agenda del team.");
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
       throw new HttpError(400, (e as Error).message);
     }
     await saveEvent(event);
-    scheduleCalendarSync();
+    scheduleCalendarSync(state);
     return Response.json({ event }, noStore);
   } catch (e) {
     return errorResponse(e);

@@ -14,13 +14,13 @@ export default async function AdminLayout({
   if (!supabaseConfigured) return <AdminShell>{children}</AdminShell>;
   let identity;
   try {
-    identity = await requireAccess(true);
+    identity = await requireAccess(true, readCrm);
   } catch (e) {
     if (e instanceof HttpError && e.status === 401) redirect("/login");
     if (e instanceof HttpError && e.status === 403) redirect("/area-studente");
     throw e;
   }
-  const saved = await readCrm(identity.user.id);
+  const saved = identity.preloaded;
   const scope = staffScope(saved.state, identity.access.record_id);
   return (
     <RemoteCrmProvider

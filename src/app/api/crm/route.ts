@@ -12,8 +12,7 @@ import { visibleEnvelope } from "@/modules/crm/server/commands";
 import { scheduleCalendarSync } from "@/modules/crm/server/calendar-sync";
 export async function GET() {
   try {
-    const { user, access } = await requireAccess(true);
-    const envelope = await readCrm(user.id);
+    const { access, preloaded: envelope } = await requireAccess(true, readCrm);
     const scope = staffScope(envelope.state, access.record_id);
     return Response.json(visibleEnvelope(envelope, scope), {
       headers: { "Cache-Control": "no-store" },
@@ -59,7 +58,7 @@ export async function POST(request: Request) {
     }
     const state = validateStaffUpdate(current.state, allowed, access);
     const saved = await writeCrm(user.id, current.revision, state);
-    scheduleCalendarSync();
+    scheduleCalendarSync(saved.state);
     return Response.json(visibleEnvelope(saved, scope), {
       headers: { "Cache-Control": "no-store" },
     });

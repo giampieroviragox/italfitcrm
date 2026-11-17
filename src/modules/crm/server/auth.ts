@@ -11,52 +11,66 @@ export type Access = {
 };
 import { HttpError } from "./errors.ts";
 export { HttpError } from "./errors.ts";
-export async function requireAccess(staff = false) {
+/**
+ * Verifies the signed session locally (asymmetric JWT, no Auth round trip),
+ * then checks the CRM access row. `preload` starts in parallel with the
+ * access checks and its result is returned only once access is confirmed.
+ */
+export async function requireAccess<T = undefined>(
+  staff = false,
+  preload?: (userId: string) => Promise<T>,
+) {
   const session = await createSessionClient();
-  const {
-    data: { user },
-    error,
-  } = await session.auth.getUser();
-  if (error || !user) throw new HttpError(401, "Accedi per continuare.");
+  const { data: verified, error } = await session.auth.getClaims();
+  const userId = verified?.claims?.sub;
+  if (error || !userId) throw new HttpError(401, "Accedi per continuare.");
+  const user = {
+    id: userId,
+    email:
+      typeof verified.claims.email === "string"
+        ? verified.claims.email
+        : undefined,
+  };
+  const preloading = preload?.(userId);
+  // Discarded when access is denied: never surface it as unhandled.
+  preloading?.catch(() => undefined);
   const { data, error: accessError } = await session
     .from("crm_access")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
   const access = data as Access | null;
   if (accessError || !access?.active)
     throw new HttpError(403, "Questo account non ha accesso al workspace.");
+  if (staff && access.role === "student")
+    throw new HttpError(403, "Accesso riservato agli amministratori.");
+  const admin = createAdminClient();
   if (access.role === "student") {
-    const { data: student, error: studentError } = await createAdminClient()
+    const { data: student, error: studentError } = await admin
       .from("crm_students")
-      .select("payload")
+      .select(
+        "accessDisabled:payload->accessDisabled,archived:payload->archived",
+      )
       .eq("id", access.record_id)
       .maybeSingle();
     if (studentError)
       throw new HttpError(503, "Impossibile verificare l’accesso studente.");
-    const payload = student?.payload;
-    if (
-      !payload ||
-      typeof payload !== "object" ||
-      Array.isArray(payload) ||
-      payload.accessDisabled ||
-      payload.archived
-    )
+    if (!student || student.accessDisabled || student.archived)
       throw new HttpError(
         403,
         "L’accesso alla piattaforma è disattivato. Contatta il team.",
       );
   }
-  if (staff && access.role === "student")
-    throw new HttpError(403, "Accesso riservato agli amministratori.");
+  // Only on the very first visit after the invitation.
   if (!access.accepted_at) {
-    const { error: acceptError } = await createAdminClient()
-      .rpc("crm_accept_access", { p_actor: user.id })
+    const { error: acceptError } = await admin
+      .rpc("crm_accept_access", { p_actor: userId })
       .retry(false);
     if (acceptError)
       throw new HttpError(503, "Impossibile verificare l’account.");
   }
-  return { user, access, session };
+  const preloaded = (await preloading) as T;
+  return { user, access, session, preloaded };
 }
 export function checkOrigin(request: Request) {
   const origin = request.headers.get("origin");

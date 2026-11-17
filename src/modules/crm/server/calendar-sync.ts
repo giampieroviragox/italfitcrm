@@ -69,17 +69,29 @@ export async function syncCalendar(
       syncWindow(),
     );
     const written: CalendarLink[] = [];
-    for (const { item, hash, googleEventId: known } of plan.write.slice(
-      0,
-      maxWritesPerRun,
-    )) {
-      const id = known ?? (await googleEventId(adminId, item.ref));
-      await putEvent(token, connection.calendarId, id, item);
-      written.push({ ref: item.ref, googleEventId: id, hash });
-    }
+    const batch = plan.write.slice(0, maxWritesPerRun);
+    // A few calls at a time: fast, and well within Google's rate limits.
+    for (let i = 0; i < batch.length; i += 5)
+      written.push(
+        ...(await Promise.all(
+          batch
+            .slice(i, i + 5)
+            .map(async ({ item, hash, googleEventId: known }) => {
+              const id = known ?? (await googleEventId(adminId, item.ref));
+              await putEvent(token, connection.calendarId, id, item);
+              return { ref: item.ref, googleEventId: id, hash };
+            }),
+        )),
+      );
     await saveLinks(adminId, written);
-    for (const link of plan.remove)
-      await deleteEvent(token, connection.calendarId, link.googleEventId);
+    for (let i = 0; i < plan.remove.length; i += 5)
+      await Promise.all(
+        plan.remove
+          .slice(i, i + 5)
+          .map((link) =>
+            deleteEvent(token, connection.calendarId, link.googleEventId),
+          ),
+      );
     await deleteLinks(
       adminId,
       plan.remove.map((l) => l.ref),
@@ -104,20 +116,26 @@ export async function syncCalendar(
   }
 }
 
-/** Syncs every connected member, reading the CRM and agenda once. */
-export async function syncAllCalendars() {
+/**
+ * Syncs every connected member in parallel, reading the CRM and agenda once.
+ * A state just saved can be passed in to skip reading it again.
+ */
+export async function syncAllCalendars(saved?: CrmState) {
   const connections = await listConnections();
   if (!connections.length) return;
-  const [{ state }, events] = await Promise.all([
-    readCrm(systemActor),
+  const [state, events] = await Promise.all([
+    saved ?? readCrm(systemActor).then((e) => e.state),
     listEvents(),
   ]);
-  for (const c of connections)
-    await syncCalendar(c.adminId, state, events).catch(() => {});
+  await Promise.all(
+    connections.map((c) =>
+      syncCalendar(c.adminId, state, events).catch(() => {}),
+    ),
+  );
 }
 
 /** Runs the sync after the response, so saving in the CRM never waits for Google. */
-export function scheduleCalendarSync() {
+export function scheduleCalendarSync(saved?: CrmState) {
   if (!googleConfigured()) return;
-  after(() => syncAllCalendars().catch(() => {}));
+  after(() => syncAllCalendars(saved).catch(() => {}));
 }

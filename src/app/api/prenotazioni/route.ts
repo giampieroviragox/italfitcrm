@@ -11,10 +11,9 @@ import { prepareStudentBooking } from "@/modules/crm/student-booking";
 import { scheduleCalendarSync } from "@/modules/crm/server/calendar-sync";
 export async function GET() {
   try {
-    const { user, access } = await requireAccess();
+    const { access, preloaded: current } = await requireAccess(false, readCrm);
     if (access.role !== "student")
       throw new HttpError(403, "Usa l’anteprima studente dell’admin.");
-    const current = await readCrm(user.id);
     return Response.json(studentProjection(current.state, access.record_id), {
       headers: { "Cache-Control": "no-store" },
     });
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       }
       try {
         const saved = await writeCrm(user.id, current.revision, next);
-        scheduleCalendarSync();
+        scheduleCalendarSync(saved.state);
         return Response.json(studentProjection(saved.state, access.record_id), {
           headers: { "Cache-Control": "no-store" },
         });

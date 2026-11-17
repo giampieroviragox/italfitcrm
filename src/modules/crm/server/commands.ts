@@ -34,12 +34,12 @@ export async function studentCommand(
 ) {
   try {
     checkOrigin(request);
-    const { user, access } = await requireAccess();
+    const { user, access, preloaded } = await requireAccess(false, readCrm);
     if (access.role !== "student")
       throw new HttpError(403, "Questa operazione è riservata agli studenti.");
     const input = await readJsonInput(request, maxLength);
     for (let attempt = 0; attempt < 3; attempt++) {
-      const current = await readCrm(user.id);
+      const current = attempt === 0 ? preloaded : await readCrm(user.id);
       const student = current.state.students.find(
         (s) => s.id === access.record_id,
       );
@@ -60,7 +60,7 @@ export async function studentCommand(
       }
       try {
         const saved = await writeCrm(user.id, current.revision, next);
-        scheduleCalendarSync();
+        scheduleCalendarSync(saved.state);
         return Response.json(studentProjection(saved.state, access.record_id), {
           headers: { "Cache-Control": "no-store" },
         });
@@ -97,11 +97,14 @@ export async function staffCommand(
 ) {
   try {
     checkOrigin(request);
-    const { user, access } = await requireAccess(true);
+    const {
+      user,
+      access,
+      preloaded: current,
+    } = await requireAccess(true, readCrm);
     const input = await readJsonInput(request, maxLength);
     if (!Number.isSafeInteger(input.revision))
       throw new HttpError(400, "Richiesta non valida.");
-    const current = await readCrm(user.id);
     const scope = staffScope(current.state, access.record_id);
     try {
       if (permission) requirePermission(scope, permission);
@@ -129,7 +132,7 @@ export async function staffCommand(
         : new HttpError(400, (e as Error).message);
     }
     const saved = await writeCrm(user.id, current.revision, next);
-    scheduleCalendarSync();
+    scheduleCalendarSync(saved.state);
     return Response.json(visibleEnvelope(saved, scope), {
       headers: { "Cache-Control": "no-store" },
     });

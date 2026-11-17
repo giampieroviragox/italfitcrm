@@ -26,8 +26,10 @@ import { romeToIso } from "@/modules/crm/fitness-logic";
  */
 export async function GET(request: NextRequest) {
   try {
-    const { user, access } = await requireAccess(true);
-    const { state } = await readCrm(user.id);
+    const {
+      access,
+      preloaded: { state },
+    } = await requireAccess(true, readCrm);
     if (!staffScope(state, access.record_id).can("agenda"))
       throw new HttpError(403, "Il tuo ruolo non include l’agenda del team.");
     const day = request.nextUrl.searchParams.get("date") ?? "";

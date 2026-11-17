@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   StudentCoachingCard,
   StudentHome,
@@ -39,13 +40,13 @@ import {
   RacesPanel,
 } from "./cycle-feedback-view";
 import type { PlanAssignment } from "./fitness-model";
-export function StudentPortal({
-  initial,
-  view = "home",
-}: {
-  initial: StudentPortalData;
-  view?: StudentView;
-}) {
+const views: Record<string, StudentView> = {
+  "/area-studente/piano": "piano",
+  "/area-studente/progressi": "progressi",
+  "/area-studente/prenotazioni": "prenotazioni",
+};
+export function StudentPortal({ initial }: { initial: StudentPortalData }) {
+  const view = views[usePathname().replace(/\/$/, "")] ?? "home";
   const [data, setData] = useState(initial),
     [month, setMonth] = useState(todayRome().slice(0, 7)),
     [pending, setPending] = useState<string | null>(null),

@@ -14,8 +14,10 @@ export async function GET(
 ) {
   try {
     const { id } = await ctx.params;
-    const { user, access } = await requireAccess();
-    const { state } = await readCrm(user.id);
+    const {
+      access,
+      preloaded: { state },
+    } = await requireAccess(false, readCrm);
     const students =
       access.role === "student"
         ? state.students.filter((s) => s.id === access.record_id)

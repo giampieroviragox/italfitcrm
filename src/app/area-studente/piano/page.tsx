@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { StudentAreaPage } from "@/modules/crm/student-area-page";
 export const metadata: Metadata = { title: "Il mio piano" };
+// The student area layout renders the view for this path.
 export default function Page() {
-  return <StudentAreaPage view="piano" />;
+  return null;
 }

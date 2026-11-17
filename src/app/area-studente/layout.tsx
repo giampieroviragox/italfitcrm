@@ -4,27 +4,35 @@ import { supabaseConfigured } from "@/lib/supabase/config";
 import { requireAccess, HttpError } from "@/modules/crm/server/auth";
 import { readCrm } from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
-import type { StudentView } from "./student-home";
-export async function StudentAreaPage({
-  view = "home",
+
+/**
+ * The student area loads once here: switching tabs only swaps the view on
+ * the client, without re-reading the CRM.
+ */
+export default async function StudentAreaLayout({
+  children,
 }: {
-  view?: StudentView;
+  children: React.ReactNode;
 }) {
   // The student area exists only for signed-in students; staff use the CRM.
   if (!supabaseConfigured) redirect("/admin");
   let identity;
   try {
-    identity = await requireAccess();
+    identity = await requireAccess(false, readCrm);
   } catch (e) {
     if (e instanceof HttpError) redirect("/login");
     throw e;
   }
   if (identity.access.role !== "student") redirect("/admin");
-  const initial = await readCrm(identity.user.id);
   return (
-    <StudentPortal
-      view={view}
-      initial={studentProjection(initial.state, identity.access.record_id)}
-    />
+    <>
+      <StudentPortal
+        initial={studentProjection(
+          identity.preloaded.state,
+          identity.access.record_id,
+        )}
+      />
+      {children}
+    </>
   );
 }
