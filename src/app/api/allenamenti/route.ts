@@ -7,7 +7,10 @@ import {
 } from "@/modules/crm/server/auth";
 import { readCrm, writeCrm } from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
-import { prepareWorkoutEntry } from "@/modules/crm/workout-progress";
+import {
+  prepareWorkoutEntry,
+  type WorkoutInput,
+} from "@/modules/crm/workout-progress";
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
@@ -17,7 +20,7 @@ export async function POST(request: Request) {
         403,
         "I progressi vengono registrati dall’account studente.",
       );
-    const input = await readJsonInput(request);
+    const input = await readJsonInput(request, 100_000);
     if (
       typeof input.assignmentId !== "string" ||
       typeof input.assignmentCreatedAt !== "string" ||
@@ -36,6 +39,10 @@ export async function POST(request: Request) {
           sessionId: input.sessionId,
           notes: input.notes,
           completed: input.completed,
+          // Shape-checked by prepareWorkoutEntry.
+          performedOn: input.performedOn as string | undefined,
+          rpe: input.rpe as number | undefined,
+          exercises: input.exercises as WorkoutInput["exercises"],
         });
       } catch (e) {
         throw new HttpError(400, (e as Error).message);

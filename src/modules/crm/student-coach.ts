@@ -30,6 +30,22 @@ export function isStudentCoach(value: unknown): value is StudentCoach {
     (!("avatarUrl" in value) || validCoachImage(value.avatarUrl)),
   );
 }
+/** Coach card for a team member, with the default photo for Giorgio. */
+export function teamMemberCoach(
+  state: CrmState,
+  adminId: string,
+): StudentCoach | undefined {
+  const admin = state.admins.find((a) => a.id === adminId);
+  if (!admin) return undefined;
+  const name = coachName(admin.name);
+  const avatarUrl = validCoachImage(admin.avatarUrl)
+    ? admin.avatarUrl
+    : normalize(name) === normalize(defaultCoachName)
+      ? defaultCoachAvatarUrl
+      : undefined;
+  return { name, ...(avatarUrl ? { avatarUrl } : {}) };
+}
+
 export function assignedStudentCoach(
   state: CrmState,
   student: CrmStudent,

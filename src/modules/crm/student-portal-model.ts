@@ -1,6 +1,7 @@
 import { lessonWallet, type LessonWallet } from "./lesson-wallet.ts";
 import {
   assignedStudentCoach,
+  teamMemberCoach,
   isStudentCoach,
   type StudentCoach,
 } from "./student-coach.ts";
@@ -11,8 +12,10 @@ import {
   withAvailabilityCapacity,
 } from "./availability-lessons.ts";
 import type { PlanAssignment, Lesson } from "./fitness-model.ts";
-import type { CrmState, TierAccess } from "./model.ts";
-import { isFitnessData } from "./fitness-logic.ts";
+import { validDate, type CrmState, type TierAccess } from "./model.ts";
+import { isFitnessData, todayRome } from "./fitness-logic.ts";
+import { maxRecords, type MaxRecord } from "./workout-log.ts";
+import { assignmentCoachId, currentSubscription } from "./online-coaching.ts";
 import {
   studentAccess,
   bookingRestriction,
@@ -22,14 +25,37 @@ export interface StudentPortalData {
   student: { id: string; firstName: string; lastName: string; status: string };
   services: TierAccess;
   coach?: StudentCoach;
+  /** Coach of each monthly plan, by assignment ID. */
+  planCoaches?: Record<string, StudentCoach>;
   workoutEntries?: import("./fitness-model.ts").WorkoutEntry[];
+  maxes?: MaxRecord[];
   assignments: PlanAssignment[];
   lessonWallet?: LessonWallet;
+  coaching?: StudentCoaching;
   lessons: (Lesson & {
     enrolled: boolean;
     occupied: number;
     restriction: string;
   })[];
+}
+/** The student's current online coaching subscription, without staff-only data. */
+export interface StudentCoaching {
+  durationMonths: number;
+  startsOn: string;
+  endsOn: string;
+  coachName: string;
+}
+function isStudentCoaching(value: unknown): value is StudentCoaching {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    [3, 6, 12].includes(Number(v.durationMonths)) &&
+    typeof v.startsOn === "string" &&
+    validDate(v.startsOn) &&
+    typeof v.endsOn === "string" &&
+    validDate(v.endsOn) &&
+    typeof v.coachName === "string"
+  );
 }
 export function parseStudentPortalData(value: unknown): StudentPortalData {
   if (
@@ -56,6 +82,17 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
       value.lessonWallet !== undefined &&
       !lessonWallet.safeParse(value.lessonWallet).success) ||
     ("workoutEntries" in value && !isWorkoutEntries(value.workoutEntries)) ||
+    ("maxes" in value &&
+      value.maxes !== undefined &&
+      !maxRecords.safeParse(value.maxes).success) ||
+    ("planCoaches" in value &&
+      value.planCoaches !== undefined &&
+      (!value.planCoaches ||
+        typeof value.planCoaches !== "object" ||
+        !Object.values(value.planCoaches).every(isStudentCoach))) ||
+    ("coaching" in value &&
+      value.coaching !== undefined &&
+      !isStudentCoaching(value.coaching)) ||
     !value.lessons.every(
       (lesson) =>
         typeof lesson.enrolled === "boolean" &&
@@ -89,20 +126,46 @@ export function studentProjection(
   const own = (state.bookings ?? []).filter(
     (booking) => booking.studentId === id,
   );
+  const assignments = services.plans
+    ? (state.assignments ?? []).filter((a) => a.studentId === id)
+    : [];
+  const planCoaches = Object.fromEntries(
+    assignments.flatMap((a) => {
+      const coachId = assignmentCoachId(state, a);
+      const coach = coachId ? teamMemberCoach(state, coachId) : undefined;
+      return coach ? [[a.id, coach]] : [];
+    }),
+  );
+  const subscription = currentSubscription(
+    student.onlineSubscriptions,
+    todayRome(),
+  );
   return {
     services,
     lessonWallet: student.lessonWallet,
+    ...(subscription
+      ? {
+          coaching: {
+            durationMonths: subscription.durationMonths,
+            startsOn: subscription.startsOn,
+            endsOn: subscription.endsOn,
+            coachName:
+              state.admins.find((a) => a.id === subscription.coachId)?.name ??
+              "",
+          },
+        }
+      : {}),
     coach: assignedStudentCoach(state, student),
     workoutEntries: services.plans ? (student.workoutEntries ?? []) : [],
+    maxes: services.plans ? (student.maxes ?? []) : [],
     student: {
       id: student.id,
       firstName: student.firstName,
       lastName: student.lastName,
       status: student.status,
     },
-    assignments: services.plans
-      ? (state.assignments ?? []).filter((a) => a.studentId === id)
-      : [],
+    assignments,
+    planCoaches,
     lessons: (projectedState.lessons ?? [])
       .filter(
         (l) =>

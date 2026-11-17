@@ -1,4 +1,5 @@
 import type { WalletCommand } from "./lesson-wallet.ts";
+import type { CoachingCommand } from "./online-coaching.ts";
 import type { CrmState } from "./model.ts";
 import { isCrmEnvelope, type CrmEnvelope } from "./envelope.ts";
 import { assertCrmTransition } from "./logic.ts";
@@ -25,6 +26,7 @@ export interface RemoteStore {
   refresh: () => Promise<void>;
   comment: (studentId: string, text: string) => Promise<void>;
   wallet: (command: WalletCommand) => Promise<void>;
+  coaching: (command: CoachingCommand) => Promise<void>;
   remove: (target: RemovalTarget) => Promise<void>;
   pending: () => boolean;
   error: () => string;
@@ -175,6 +177,13 @@ export function createRemoteStore(
     wallet: (command) =>
       write(() =>
         send("/api/wallet-lezioni", { command, revision: envelope.revision }),
+      ),
+    coaching: (command) =>
+      write(() =>
+        send("/api/coaching-online", {
+          command,
+          revision: envelope.revision,
+        }),
       ),
     comment: (studentId, text) =>
       write(() => send("/api/commenti", { studentId, text })),

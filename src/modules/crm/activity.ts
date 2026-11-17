@@ -8,6 +8,10 @@ import {
 } from "./model.ts";
 import type { Lesson, PlanAssignment } from "./fitness-model.ts";
 import { statusLabels } from "../students/config.ts";
+import {
+  assignmentCoachId,
+  type OnlineSubscription,
+} from "./online-coaching.ts";
 
 type Change = { text: string; details?: string[] };
 const different = (a: unknown, b: unknown) =>
@@ -168,6 +172,7 @@ export function studentChanges(
     });
     if (properties.length)
       changes.push({ text: "Proprietà CRM aggiornate", details: properties });
+    changes.push(...subscriptionChanges(old, student, next));
     for (const p of next.properties) {
       const before = current.properties.find((x) => x.id === p.id);
       if (!before || !different(before, p) || !(p.id in student.properties))
@@ -234,11 +239,40 @@ export function studentChanges(
     if (a.studentId !== student.id) continue;
     const before = current.assignments?.find((x) => x.id === a.id);
     if (!different(before, a)) continue;
+    const coachBefore = before && assignmentCoachId(current, before),
+      coachAfter = assignmentCoachId(next, a);
+    const coachLine = (id: string | undefined, state: CrmState) =>
+      `Coach: ${state.admins.find((x) => x.id === id)?.name ?? "—"}`;
+    if (
+      before &&
+      !different(
+        { ...before, coachId: undefined },
+        { ...a, coachId: undefined },
+      )
+    ) {
+      if (coachBefore !== coachAfter)
+        changes.push({
+          text: "Coach del piano aggiornato",
+          details: [
+            `Piano: “${a.snapshot.title}” · mese ${a.month}`,
+            `${coachLine(coachBefore, current)} → ${coachLine(coachAfter, next).slice(7)}`,
+          ],
+        });
+      continue;
+    }
     changes.push({
       text: before ? "Piano mensile aggiornato" : "Piano mensile assegnato",
       details: [
-        ...(before ? ["Prima", ...assignmentDetails(before), "Dopo"] : []),
+        ...(before
+          ? [
+              "Prima",
+              ...assignmentDetails(before),
+              coachLine(coachBefore, current),
+              "Dopo",
+            ]
+          : []),
         ...assignmentDetails(a),
+        coachLine(coachAfter, next),
       ],
     });
   }
@@ -296,4 +330,63 @@ export function studentChanges(
       });
   }
   return changes;
+}
+
+const day = (value: string) =>
+  new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`));
+const euros = (cents: number) =>
+  new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    useGrouping: "always",
+  }).format(cents / 100);
+function subscriptionDetails(s: OnlineSubscription, state: CrmState) {
+  return [
+    `Durata: ${s.durationMonths} mesi · ${s.durationMonths} piani inclusi`,
+    `Periodo: ${day(s.startsOn)} → ${day(s.endsOn)}`,
+    `Coach: ${state.admins.find((a) => a.id === s.coachId)?.name ?? "—"}`,
+    `Prezzo: ${euros(s.price)}`,
+  ];
+}
+function subscriptionChanges(
+  old: CrmStudent,
+  student: CrmStudent,
+  next: CrmState,
+): Change[] {
+  const before = old.onlineSubscriptions ?? [],
+    after = student.onlineSubscriptions ?? [];
+  return [
+    ...after.flatMap((s) => {
+      const previous = before.find((x) => x.id === s.id);
+      if (!previous)
+        return [
+          {
+            text: "Abbonamento Coaching online creato",
+            details: subscriptionDetails(s, next),
+          },
+        ];
+      if (!different(previous, s)) return [];
+      const was = subscriptionDetails(previous, next),
+        now = subscriptionDetails(s, next);
+      return [
+        {
+          text: "Abbonamento Coaching online modificato",
+          details: now.flatMap((line, i) =>
+            line === was[i]
+              ? []
+              : [`${was[i]} → ${line.replace(/^[^:]+: /, "")}`],
+          ),
+        },
+      ];
+    }),
+    ...before
+      .filter((s) => !after.some((x) => x.id === s.id))
+      .map((s) => ({
+        text: "Abbonamento Coaching online rimosso",
+        details: subscriptionDetails(s, next),
+      })),
+  ];
 }

@@ -15,9 +15,11 @@ import { updateLessonWallet } from "./store";
 import { Field, FormError, control } from "./ui";
 
 export const euro = (cents: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(
-    cents / 100,
-  );
+  new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    useGrouping: "always",
+  }).format(cents / 100);
 const date = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",

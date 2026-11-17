@@ -3,6 +3,7 @@ import { useContext, useSyncExternalStore } from "react";
 import { tiers } from "@/modules/students/config";
 import type { CrmState } from "./model";
 import { applyWalletCommand, type WalletCommand } from "./lesson-wallet";
+import { applyCoachingCommand, type CoachingCommand } from "./online-coaching";
 import { isCrmState } from "./schema";
 import { assertCrmTransition } from "./logic";
 import { prepareTransition } from "./transition";
@@ -140,6 +141,15 @@ export async function updateLessonWallet(command: WalletCommand) {
     return activeRemoteStore.wallet(command);
   }
   return updateCrm((state) => applyWalletCommand(state, command));
+}
+
+export async function updateOnlineCoaching(command: CoachingCommand) {
+  if (supabaseConfigured) {
+    if (!activeRemoteStore)
+      throw new Error("Il CRM si sta caricando. Riprova tra un istante.");
+    return activeRemoteStore.coaching(command);
+  }
+  return updateCrm((state) => applyCoachingCommand(state, command));
 }
 
 export async function addStudentComment(studentId: string, text: string) {

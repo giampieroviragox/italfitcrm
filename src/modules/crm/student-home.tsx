@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, Dumbbell } from "lucide-react";
+import { formatDate } from "@/lib/format";
 import type { TierAccess } from "./model";
+import {
+  daysBetween,
+  subscriptionStatus,
+  subscriptionStatusLabels,
+} from "./online-coaching";
+import type { StudentCoaching } from "./student-portal-model";
 
-export type StudentView = "home" | "piano" | "prenotazioni";
+export type StudentView = "home" | "piano" | "progressi" | "prenotazioni";
 
 export function StudentHome({
   services,
@@ -69,5 +76,66 @@ export function StudentHome({
     <p className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">
       Il team non ha ancora abilitato servizi per il tuo percorso.
     </p>
+  );
+}
+
+export function StudentCoachingCard({
+  coaching,
+  today,
+}: {
+  coaching: StudentCoaching;
+  today: string;
+}) {
+  const status = subscriptionStatus(coaching, today);
+  const left = daysBetween(today, coaching.endsOn);
+  return (
+    <section
+      aria-labelledby="coaching-online-title"
+      className="mt-3 rounded-3xl border bg-card p-5 sm:p-7"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm text-muted-foreground">Coaching online</p>
+        <span className="rounded-full border px-2.5 py-0.5 text-xs font-medium">
+          {subscriptionStatusLabels[status]}
+        </span>
+      </div>
+      <h2
+        id="coaching-online-title"
+        className="mt-1 text-2xl font-semibold tracking-tight"
+      >
+        Abbonamento {coaching.durationMonths} mesi
+      </h2>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+        <div>
+          <dt className="text-muted-foreground">Periodo</dt>
+          <dd className="font-medium tabular-nums">
+            {formatDate(coaching.startsOn)} → {formatDate(coaching.endsOn)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Piani inclusi</dt>
+          <dd className="font-medium">
+            {coaching.durationMonths} piani da quattro settimane
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">
+            {coaching.coachName ? "Coach" : "Scadenza"}
+          </dt>
+          <dd className="font-medium">
+            {coaching.coachName ||
+              (status === "expired" ? "Scaduto" : `Tra ${left} giorni`)}
+          </dd>
+        </div>
+      </dl>
+      {status === "expiring" && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {left === 0
+            ? "L’abbonamento scade oggi."
+            : `L’abbonamento scade tra ${left} ${left === 1 ? "giorno" : "giorni"}.`}{" "}
+          Contatta il team per il rinnovo.
+        </p>
+      )}
+    </section>
   );
 }

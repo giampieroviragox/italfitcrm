@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { CalendarDays, Dumbbell, Home } from "lucide-react";
+import { CalendarDays, Dumbbell, Home, TrendingUp } from "lucide-react";
 import { Brand } from "@/components/brand";
 import "./student-area.css";
 import { cn } from "@/lib/utils";
@@ -10,10 +10,16 @@ export interface StudentNavItem {
   view: StudentView;
   label: string;
 }
-const icons = { home: Home, piano: Dumbbell, prenotazioni: CalendarDays };
+const icons = {
+  home: Home,
+  piano: Dumbbell,
+  progressi: TrendingUp,
+  prenotazioni: CalendarDays,
+};
 const paths = {
   home: "/area-studente",
   piano: "/area-studente/piano",
+  progressi: "/area-studente/progressi",
   prenotazioni: "/area-studente/prenotazioni",
 };
 
@@ -107,7 +113,12 @@ export function studentNavItems(
 ): StudentNavItem[] {
   return [
     { view: "home", label: "Home" },
-    ...(services.plans ? [{ view: "piano" as const, label: "Piano" }] : []),
+    ...(services.plans
+      ? [
+          { view: "piano" as const, label: "Piano" },
+          { view: "progressi" as const, label: "Progressi" },
+        ]
+      : []),
     ...(services.lessons || hasBookings
       ? [{ view: "prenotazioni" as const, label: "Prenotazioni" }]
       : []),

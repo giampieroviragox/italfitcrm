@@ -8,6 +8,11 @@ export const navigation = [
   { href: "/admin", label: "Home", icon: "overview" },
   { href: "/admin/studenti", label: "Studenti", icon: "students" },
   {
+    href: "/admin/coaching-online",
+    label: "Coaching online",
+    icon: "coaching",
+  },
+  {
     href: "/admin/piani",
     label: "Piani e percorsi",
     icon: "plans",

@@ -498,9 +498,11 @@ export function RemoveAssignmentDialog({
 export function AssignedPlan({
   assignment,
   onRemove,
+  coachControl,
 }: {
   assignment: PlanAssignment;
   onRemove?: () => void;
+  coachControl?: React.ReactNode;
 }) {
   return (
     <section className="rounded-xl border p-5">
@@ -525,6 +527,12 @@ export function AssignedPlan({
           )}
         </div>
       </div>
+      {coachControl && (
+        <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-subtle px-3 py-2.5">
+          <span className="text-sm font-medium">Coach del piano</span>
+          {coachControl}
+        </div>
+      )}
       <WorkoutContent plan={assignment.snapshot} />
     </section>
   );

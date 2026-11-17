@@ -126,6 +126,7 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             ["id", "studentId", "planId", "month", "createdAt"].every((k) =>
               string(a[k]),
             ) &&
+            (a.coachId === undefined || string(a.coachId)) &&
             obj(a.snapshot) &&
             string(a.snapshot.title) &&
             string(a.snapshot.description) &&
@@ -224,6 +225,9 @@ export function reconcileFitness(s: CrmState): CrmState {
     ),
   };
 }
+function withoutCoach<T extends { coachId?: string }>(item: T | undefined) {
+  return item && { ...item, coachId: undefined };
+}
 export function assertFitnessTransition(
   previous: CrmState,
   next: CrmState,
@@ -254,6 +258,11 @@ export function assertFitnessTransition(
     const plan = plans.find((p) => p.id === a.planId),
       student = next.students.find((s) => s.id === a.studentId),
       old = previous.assignments?.find((x) => x.id === a.id);
+    // Reassigning the coach alone keeps archived plans and students editable.
+    const contentChanged =
+      JSON.stringify(withoutCoach(old)) !== JSON.stringify(withoutCoach(a));
+    if (a.coachId !== undefined && !next.admins.some((x) => x.id === a.coachId))
+      throw new Error("Il coach del piano non fa parte del team.");
     if (
       !plan ||
       !student ||
@@ -262,20 +271,14 @@ export function assertFitnessTransition(
       !a.snapshot.title.trim()
     )
       throw new Error("Assegnazione piano non valida.");
-    if (
-      JSON.stringify(old) !== JSON.stringify(a) &&
-      (student.archived || plan.status !== "published")
-    )
+    if (contentChanged && (student.archived || plan.status !== "published"))
       throw new Error(
         "Assegna solo piani pubblicati a studenti non archiviati.",
       );
     validateSessions({ sessions: a.snapshot.sessions, status: "published" });
     if (!programValid(a.snapshot.program))
       throw new Error("Programma assegnato non valido.");
-    if (
-      JSON.stringify(old) !== JSON.stringify(a) &&
-      !studentAccess(next, student).plans
-    )
+    if (contentChanged && !studentAccess(next, student).plans)
       throw new Error(
         "Il tier dello studente non include i piani di allenamento.",
       );

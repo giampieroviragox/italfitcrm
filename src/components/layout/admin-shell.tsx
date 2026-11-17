@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Dumbbell,
   Home,
+  Laptop,
   LogOut,
   PanelLeft,
   Settings2,
@@ -43,6 +44,7 @@ const icons = {
   overview: Home,
   students: Users,
   plans: Dumbbell,
+  coaching: Laptop,
   calendar: CalendarDays,
 };
 const footerLinks = [

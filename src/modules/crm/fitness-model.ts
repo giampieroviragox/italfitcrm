@@ -21,6 +21,12 @@ export interface WorkoutEntry {
   completed: boolean;
   notes: string;
   updatedAt: string;
+  /** Day the session was actually done (Europe/Rome). */
+  performedOn?: string;
+  /** Perceived effort, 1–10. */
+  rpe?: number;
+  /** Sets actually done, per prescribed exercise. */
+  exercises?: import("./workout-log.ts").ExerciseLog[];
 }
 export interface WorkoutSession {
   week?: number;
@@ -47,6 +53,8 @@ export interface PlanAssignment {
   planId: string;
   month: string;
   createdAt: string;
+  /** Coach who follows this monthly plan; defaults to the subscription coach. */
+  coachId?: string;
   snapshot: {
     title: string;
     description: string;

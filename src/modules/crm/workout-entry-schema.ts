@@ -1,4 +1,5 @@
 import type { WorkoutEntry } from "./fitness-model.ts";
+import { workoutDetails } from "./workout-log.ts";
 export function isWorkoutEntries(value: unknown): value is WorkoutEntry[] {
   return (
     Array.isArray(value) &&
@@ -16,6 +17,11 @@ export function isWorkoutEntries(value: unknown): value is WorkoutEntry[] {
         ].every((k) => typeof e[k] === "string") &&
         e.notes.length <= 5000 &&
         typeof e.completed === "boolean" &&
+        workoutDetails.safeParse({
+          performedOn: e.performedOn,
+          rpe: e.rpe,
+          exercises: e.exercises,
+        }).success &&
         Number.isFinite(Date.parse(e.assignmentCreatedAt)) &&
         Number.isFinite(Date.parse(e.updatedAt)),
     ) &&

@@ -15,6 +15,7 @@ import type {
   PlanAssignment,
 } from "./fitness-model";
 import { todayRome, validateSessions } from "./fitness-logic";
+import { assignmentCoachId, defaultPlanCoachId } from "./online-coaching";
 const exercise = (): WorkoutExercise => ({
   id: crypto.randomUUID(),
   name: "",
@@ -637,11 +638,20 @@ export function AssignmentEditor({
     [plan, setPlan] = useState(planId ?? ""),
     [month, setMonth] = useState(todayRome().slice(0, 7)),
     [replace, setReplace] = useState(false),
+    [coachChoice, setCoachChoice] = useState<string | null>(null),
     [error, setError] = useState("");
   const [confirmedAssignment, setConfirmedAssignment] = useState("");
   const existing = state.assignments?.find(
     (a) => a.studentId === student && a.month === month,
   );
+  const selectedStudent = state.students.find((s) => s.id === student);
+  // Follows the subscription of the chosen month until the admin picks someone else.
+  const suggestedCoach = existing
+    ? assignmentCoachId(state, existing)
+    : selectedStudent
+      ? defaultPlanCoachId(state, selectedStudent, month)
+      : undefined;
+  const coach = coachChoice ?? suggestedCoach ?? "";
   return (
     <Editor
       title="Assegna piano mensile"
@@ -675,6 +685,7 @@ export function AssignmentEditor({
                 studentId: student,
                 planId: plan,
                 month,
+                ...(coach ? { coachId: coach } : {}),
                 createdAt: new Date().toISOString(),
                 snapshot: structuredClone({
                   title: source.title,
@@ -706,6 +717,7 @@ export function AssignmentEditor({
             onChange={(e) => {
               setStudent(e.target.value);
               setReplace(false);
+              setCoachChoice(null);
             }}
           >
             <option value="">Seleziona studente…</option>
@@ -725,6 +737,7 @@ export function AssignmentEditor({
             onChange={(v) => {
               setMonth(v);
               setReplace(false);
+              setCoachChoice(null);
             }}
           />
         </Field>
@@ -743,6 +756,27 @@ export function AssignmentEditor({
                   {p.title}
                 </option>
               ))}
+          </SelectControl>
+        </Field>
+        <Field
+          label="Coach del piano"
+          hint={
+            coachChoice === null && suggestedCoach
+              ? "Predefinito dall’abbonamento Coaching online del mese, se presente."
+              : "Il coach che segue questo piano mensile."
+          }
+        >
+          <SelectControl
+            className={control}
+            value={coach}
+            onChange={(e) => setCoachChoice(e.target.value)}
+          >
+            <option value="">Nessun coach</option>
+            {state.admins.map((admin) => (
+              <option key={admin.id} value={admin.id}>
+                {admin.name}
+              </option>
+            ))}
           </SelectControl>
         </Field>
         {existing && (

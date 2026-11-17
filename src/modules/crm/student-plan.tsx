@@ -31,6 +31,17 @@ import type {
 } from "./fitness-model";
 import type { WorkoutInput } from "./workout-progress";
 import { formatMonth } from "@/lib/format";
+import { DatePicker } from "@/components/ui/date-time-picker";
+import { todayRome } from "./fitness-logic";
+import { lastLoggedSets, type LoggedSession } from "./workout-log";
+import {
+  LoggedSets,
+  RpePicker,
+  SetLogger,
+  draftToLogs,
+  initialDraft,
+  type LogDraft,
+} from "./workout-log-view";
 
 function MovementIcon({
   run = false,
@@ -104,6 +115,7 @@ function WorkoutGuide({
   assignment,
   session,
   entry,
+  history,
   save,
   close,
   returnFocus,
@@ -111,24 +123,40 @@ function WorkoutGuide({
   assignment: PlanAssignment;
   session: WorkoutSession;
   entry?: WorkoutEntry;
+  history: LoggedSession[];
   save: (input: WorkoutInput) => Promise<boolean>;
   close: () => void;
   returnFocus: () => void;
 }) {
+  const strength = session.kind !== "run";
+  const today = todayRome();
+  const [initial] = useState(() =>
+    JSON.stringify({
+      notes: entry?.notes ?? "",
+      draft: initialDraft(session.exercises, entry?.exercises),
+      rpe: entry?.rpe,
+      date: entry?.performedOn ?? today,
+    }),
+  );
   const [index, setIndex] = useState(0),
     [done, setDone] = useState(false),
     [notes, setNotes] = useState(entry?.notes ?? ""),
+    [draft, setDraft] = useState<LogDraft>(() =>
+      initialDraft(session.exercises, entry?.exercises),
+    ),
+    [rpe, setRpe] = useState<number | undefined>(entry?.rpe),
+    [date, setDate] = useState(entry?.performedOn ?? today),
     [pending, setPending] = useState(false),
     [error, setError] = useState("");
   const submitting = useRef(false);
   const exercise = session.exercises[index];
-  const dirty = notes !== (entry?.notes ?? "");
+  const dirty = JSON.stringify({ notes, draft, rpe, date }) !== initial;
   const leave = () => {
     if (
       !pending &&
       (!dirty ||
         window.confirm(
-          "Le note non sono ancora salvate. Vuoi uscire dall’allenamento?",
+          "Serie e note non sono ancora salvate. Vuoi uscire dall’allenamento?",
         ))
     )
       close();
@@ -226,6 +254,22 @@ function WorkoutGuide({
                     />
                   </div>
                 )}
+                {strength && draft[exercise.id] && (
+                  <div className="mt-6 border-t pt-5">
+                    <SetLogger
+                      key={exercise.id}
+                      exercise={exercise}
+                      sets={draft[exercise.id]!}
+                      onChange={(sets) =>
+                        setDraft((d) => ({ ...d, [exercise.id]: sets }))
+                      }
+                      last={lastLoggedSets(history, exercise.name, {
+                        assignmentId: assignment.id,
+                        sessionId: session.id,
+                      })}
+                    />
+                  </div>
+                )}
               </div>
               <div className="mt-5 flex gap-2">
                 <Button
@@ -269,9 +313,20 @@ function WorkoutGuide({
                   text={session.guidance}
                 />
               </div>
+              <div className="mb-5 space-y-5">
+                <Field label="Data dell’allenamento">
+                  <DatePicker
+                    required
+                    max={today}
+                    value={date}
+                    onChange={setDate}
+                  />
+                </Field>
+                <RpePicker value={rpe} onChange={setRpe} />
+              </div>
               <Field
-                label="Le tue note"
-                hint="Carichi, ripetizioni, RPE, tempi e sensazioni."
+                label="Come ti sei sentito?"
+                hint="Sensazioni, cosa è successo nella sessione, tempi o difficoltà."
               >
                 <textarea
                   className={`${control} text-base sm:text-sm`}
@@ -296,6 +351,13 @@ function WorkoutGuide({
                   setPending(true);
                   setError("");
                   try {
+                    let exercises: ReturnType<typeof draftToLogs> | undefined;
+                    try {
+                      exercises = strength ? draftToLogs(draft) : undefined;
+                    } catch (e) {
+                      setError((e as Error).message);
+                      return;
+                    }
                     if (
                       await save({
                         assignmentId: assignment.id,
@@ -303,12 +365,15 @@ function WorkoutGuide({
                         sessionId: session.id,
                         completed: true,
                         notes,
+                        performedOn: date || today,
+                        ...(rpe ? { rpe } : {}),
+                        ...(exercises?.length ? { exercises } : {}),
                       })
                     )
                       close();
                     else
                       setError(
-                        "Salvataggio non riuscito. Le note sono ancora qui: riprova.",
+                        "Salvataggio non riuscito. Serie e note sono ancora qui: riprova.",
                       );
                   } finally {
                     submitting.current = false;
@@ -339,10 +404,12 @@ export function StudentPlan({
   entries = [],
   onSave,
   coach,
+  history = [],
 }: {
   assignment: PlanAssignment;
   entries?: WorkoutEntry[];
   coach?: StudentCoach;
+  history?: LoggedSession[];
   onSave?: (input: WorkoutInput) => Promise<boolean>;
 }) {
   const { snapshot: plan } = assignment;
@@ -580,6 +647,11 @@ export function StudentPlan({
                               Recupero {secondsLabel(exercise.restSeconds)}
                             </span>
                           )}
+                          <LoggedSets
+                            log={entry?.exercises?.find(
+                              (l) => l.exerciseId === exercise.id,
+                            )}
+                          />
                         </div>
                       </li>
                     ))}
@@ -611,6 +683,7 @@ export function StudentPlan({
           assignment={assignment}
           session={session}
           entry={entry}
+          history={history}
           save={onSave}
           close={() => setGuide(false)}
           returnFocus={() => startButton.current?.focus()}

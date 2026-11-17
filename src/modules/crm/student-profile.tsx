@@ -16,7 +16,18 @@ import { lessonDate } from "./lessons-workspace";
 import { StudentAccessControl } from "./student-access-control";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { LessonWalletView } from "./lesson-wallet-view";
-const profileTabs = ["properties", "plans", "wallet", "notes", "history"];
+import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
+import { todayRome } from "./fitness-logic";
+import { OnlineCoachingPanel, PlanCoachSelect } from "./online-coaching-view";
+const profileTabs = [
+  "properties",
+  "coaching",
+  "plans",
+  "training",
+  "wallet",
+  "notes",
+  "history",
+];
 const timestamp = (value: string) =>
   new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
@@ -26,9 +37,11 @@ const timestamp = (value: string) =>
 export function StudentProfile({
   id,
   embedded = false,
+  initialTab,
 }: {
   id: string;
   embedded?: boolean;
+  initialTab?: string;
 }) {
   const state = useCrm(),
     hydrated = useHydrated();
@@ -42,7 +55,11 @@ export function StudentProfile({
   const [assigning, setAssigning] = useState(false);
   const [removingAssignment, setRemovingAssignment] =
     useState<PlanAssignment | null>(null);
-  const [tab, setTab] = useState("properties"),
+  const [tab, setTab] = useState(
+      initialTab && profileTabs.includes(initialTab)
+        ? initialTab
+        : "properties",
+    ),
     [note, setNote] = useState(""),
     [error, setError] = useState("");
   const student = state.students.find((s) => s.id === id);
@@ -134,7 +151,9 @@ export function StudentProfile({
           >
             {[
               { id: "properties", label: "Proprietà" },
+              { id: "coaching", label: "Coaching online" },
               { id: "plans", label: "Piani e lezioni" },
+              { id: "training", label: "Allenamenti" },
               { id: "wallet", label: "Wallet lezioni" },
               {
                 id: "notes",
@@ -240,6 +259,7 @@ export function StudentProfile({
                       key={a.id}
                       assignment={a}
                       onRemove={() => setRemovingAssignment(a)}
+                      coachControl={<PlanCoachSelect assignment={a} />}
                     />
                   ))}
                 <RemoveAssignmentDialog
@@ -286,6 +306,23 @@ export function StudentProfile({
                   )}
                 </section>
               </>
+            )}
+            {tab === "coaching" && <OnlineCoachingPanel student={student} />}
+            {tab === "training" && (
+              <div className="space-y-8">
+                <WorkoutHistory
+                  assignments={(state.assignments ?? []).filter(
+                    (a) => a.studentId === id,
+                  )}
+                  entries={student.workoutEntries ?? []}
+                  emptyText="Lo studente non ha ancora registrato allenamenti."
+                />
+                <MaxesPanel
+                  maxes={student.maxes ?? []}
+                  exerciseNames={[]}
+                  today={todayRome()}
+                />
+              </div>
             )}
             {tab === "wallet" && (
               <LessonWalletView

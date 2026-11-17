@@ -1,6 +1,10 @@
 "use client";
 import Link from "next/link";
-import { StudentHome, type StudentView } from "./student-home";
+import {
+  StudentCoachingCard,
+  StudentHome,
+  type StudentView,
+} from "./student-home";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Check, KeyRound, LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
@@ -19,6 +23,8 @@ import {
   type StudentPortalData,
 } from "./student-portal-model";
 import { LessonWalletView } from "./lesson-wallet-view";
+import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
+import { loggedSessions, type MaxCommand } from "./workout-log";
 export function StudentPortal({
   initial,
   view = "home",
@@ -101,6 +107,26 @@ export function StudentPortal({
       pendingRef.current = false;
     }
   };
+  const saveMax = async (command: MaxCommand) => {
+    if (pendingRef.current || refreshRef.current)
+      return "Attendi il salvataggio in corso e riprova.";
+    pendingRef.current = true;
+    try {
+      const next = await requestJson("/api/massimali", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+      setData(parseStudentPortalData(next));
+      setAuthRequired(false);
+      return "";
+    } catch (e) {
+      setAuthRequired(e instanceof RequestError && e.status === 401);
+      return (e as Error).message;
+    } finally {
+      pendingRef.current = false;
+    }
+  };
   const saveWorkout = async (input: WorkoutInput) => {
     if (pendingRef.current || refreshRef.current) return false;
     pendingRef.current = true;
@@ -126,8 +152,19 @@ export function StudentPortal({
   const titles = {
     home: `Ciao, ${data.student.firstName}`,
     piano: "Il mio piano",
+    progressi: "I miei progressi",
     prenotazioni: "Prenotazioni",
   };
+  const history = loggedSessions(data.assignments, data.workoutEntries ?? []);
+  const exerciseNames = [
+    ...new Set(
+      data.assignments.flatMap((a) =>
+        a.snapshot.sessions
+          .filter((s) => s.kind !== "run")
+          .flatMap((s) => s.exercises.map((e) => e.name.trim())),
+      ),
+    ),
+  ].toSorted((a, b) => a.localeCompare(b, "it"));
   return (
     <StudentShell
       view={view}
@@ -174,6 +211,9 @@ export function StudentPortal({
           }
         />
       )}
+      {view === "home" && data.coaching && (
+        <StudentCoachingCard coaching={data.coaching} today={todayRome()} />
+      )}
       {message && (
         <p
           role="status"
@@ -213,7 +253,8 @@ export function StudentPortal({
               key={assignment.id + assignment.createdAt}
               assignment={assignment}
               entries={data.workoutEntries}
-              coach={data.coach}
+              coach={data.planCoaches?.[assignment.id] ?? data.coach}
+              history={history}
               onSave={saveWorkout}
             />
           ) : (
@@ -224,8 +265,22 @@ export function StudentPortal({
           )}
         </>
       )}
+      {view === "progressi" && data.services.plans && (
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,38%)]">
+          <WorkoutHistory
+            assignments={data.assignments}
+            entries={data.workoutEntries ?? []}
+          />
+          <MaxesPanel
+            maxes={data.maxes ?? []}
+            exerciseNames={exerciseNames}
+            today={todayRome()}
+            onCommand={saveMax}
+          />
+        </div>
+      )}
       {view !== "home" &&
-        ((view === "piano" && !data.services.plans) ||
+        (((view === "piano" || view === "progressi") && !data.services.plans) ||
           (view === "prenotazioni" &&
             !data.services.lessons &&
             !data.lessons.length &&
