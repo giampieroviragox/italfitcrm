@@ -25,7 +25,7 @@ test("email requires a public HTTPS origin and an explicit sender", () => {
 });
 test("email escapes recipient-controlled markup and contains HTML and plain text", () => {
   const message = accessEmail("<img src=x onerror=alert(1)>", link);
-  assert.ok(!message.html.includes("<img"));
+  assert.ok(!message.html.includes("<img src=x"));
   assert.match(message.html, /&lt;img/);
   assert.match(message.html, /&amp;type=invite/);
   assert.match(message.text, /https:\/\//);
@@ -105,6 +105,13 @@ test("first invite, renewed invite and recovery have distinct copy and preserve 
     new URL("../supabase/templates/recovery.html", import.meta.url),
     "utf8",
   );
+  const logo = "/brand/team-italfit-email.png";
+  for (const markup of [invite.html, renewed.html])
+    assert.ok(
+      markup.includes(`src="${config.appUrl}${logo}" alt="Team Italfit"`),
+    );
+  for (const markup of [recovery.html, deployable])
+    assert.ok(markup.includes(`src="{{ .SiteURL }}${logo}"`));
   assert.ok(deployable.includes(`href="${href}"`));
   assert.ok(deployable.includes(recovery.subject));
 });

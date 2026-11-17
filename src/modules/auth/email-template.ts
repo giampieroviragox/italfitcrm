@@ -38,11 +38,18 @@ const escapeHtml = (text: string) =>
       ]!,
   );
 const expiry = "Il link è personale, scade e si può usare una sola volta.";
+const logoPath = "/brand/team-italfit-email.png";
 
-function buildEmail(kind: keyof typeof copy, link: string, name?: string) {
+function buildEmail(
+  kind: keyof typeof copy,
+  link: string,
+  siteUrl: string,
+  name?: string,
+) {
   const { subject, eyebrow, title, intro, button, security } = copy[kind];
   const greeting = name?.trim() ? `Ciao ${name.trim()},` : "Ciao,";
   const href = escapeHtml(link);
+  const logoSrc = escapeHtml(siteUrl + logoPath);
   return {
     subject,
     text: `${greeting}\n\n${intro}\n\n${button}: ${link}\n\n${expiry}\n${security}\n\nTeam Italfit`,
@@ -54,8 +61,8 @@ function buildEmail(kind: keyof typeof copy, link: string, name?: string) {
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5">
 <tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;border:1px solid #e4e4e7;border-radius:14px;overflow:hidden;background-color:#ffffff">
-<tr><td style="padding:22px 26px;background-color:#18181b;color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:-0.7px">
-Team Italfit<span style="color:#ff6161">.</span>
+<tr><td bgcolor="#18181b" style="padding:16px 26px;background-color:#18181b">
+<img src="${logoSrc}" alt="Team Italfit" width="72" height="74" style="display:block;border:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:13px">
 </td></tr>
 <tr><td style="padding:28px 26px 26px">
 <p style="margin:0 0 10px;color:#a31620;font-size:12px;font-weight:bold;letter-spacing:1px">${eyebrow}</p>
@@ -80,11 +87,12 @@ export function accessEmail(
   link: string,
   kind: "invite" | "reinvite" = "invite",
 ) {
-  return buildEmail(kind, link, name);
+  return buildEmail(kind, link, new URL(link).origin, name);
 }
 export function recoveryEmailTemplate() {
   return buildEmail(
     "recovery",
     "{{ .SiteURL }}/invito?token_hash={{ .TokenHash }}&type=recovery",
+    "{{ .SiteURL }}",
   );
 }
