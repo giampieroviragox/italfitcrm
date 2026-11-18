@@ -6,6 +6,7 @@ import { LoginForm } from "@/modules/auth/login-form";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { requireAccess } from "@/modules/crm/server/auth";
 import { safeLoginNext } from "@/modules/auth/oauth-consent";
+import { InstallHint } from "@/modules/pwa/install-hint";
 export const metadata: Metadata = { title: "Accedi" };
 export default async function LoginPage({
   searchParams,
@@ -61,6 +62,7 @@ export default async function LoginPage({
         </p>
       )}
       <LoginForm enabled={supabaseConfigured} next={next} />
+      <InstallHint />
     </AuthLayout>
   );
 }

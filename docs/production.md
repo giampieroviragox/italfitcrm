@@ -56,3 +56,10 @@ Dal 19 novembre 2026 il CRM scrive solo i record cambiati, con versioni per
 record, e legge differenze: vedi `docs/data-layer.md`. La migrazione
 `20261119090000_italfit_record_sync` è stata applicata in produzione tramite la
 Management API e registrata in `supabase_migrations.schema_migrations`.
+
+## App installabile (PWA)
+
+- Il manifest (`src/app/manifest.ts`) e le icone (`public/icons/`) rendono il CRM installabile: su iPhone da Safari con Condividi → Aggiungi alla schermata Home, su Android da Chrome con Installa app. L'app si apre da `/login`, che porta ognuno alla propria area.
+- Il service worker (`public/sw.js`) serve solo una pagina "Sei offline" (`public/offline.html`) quando una navigazione fallisce. Non salva pagine, API o dati di una persona: non c'è modalità offline del CRM.
+- Le icone sono il logo bianco su `#0f0f10`: per cambiarle sostituire i PNG in `public/icons/` (192, 512, maskable 512 e Apple Touch 180).
+- La pagina di accesso mostra su iPhone e iPad un suggerimento per aggiungere l'app alla Home, finché non è già installata.

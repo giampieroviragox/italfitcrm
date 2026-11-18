@@ -1,13 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { themeScript } from "@/components/theme-toggle";
+import { RegisterServiceWorker } from "@/modules/pwa/register-service-worker";
 
 export const metadata: Metadata = {
   title: { default: "Team Italfit · Workspace", template: "%s · Team Italfit" },
   description:
     "Lo spazio di lavoro di Team Italfit. Persone, percorsi e allenamento, insieme.",
   robots: { index: false, follow: false },
-  icons: { icon: "/brand/favicon.png", apple: "/brand/favicon.png" },
+  icons: {
+    icon: "/brand/favicon.png",
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Team Italfit",
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -25,7 +35,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }
