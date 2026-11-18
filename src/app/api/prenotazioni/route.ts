@@ -5,18 +5,29 @@ import {
   HttpError,
   readJsonInput,
 } from "@/modules/crm/server/auth";
-import { readCrm, writeCrm } from "@/modules/crm/server/repository";
+import {
+  readStudentScopeForUser,
+  writeCrm,
+} from "@/modules/crm/server/repository";
 import { studentProjection } from "@/modules/crm/student-portal-model";
 import { prepareStudentBooking } from "@/modules/crm/student-booking";
 import { scheduleCalendarSync } from "@/modules/crm/server/calendar-sync";
+import { adjustOccupancy } from "@/modules/crm/sync";
+
+const noStore = { headers: { "Cache-Control": "no-store" } };
+
 export async function GET() {
   try {
-    const { access, preloaded: current } = await requireAccess(false, readCrm);
-    if (access.role !== "student")
+    const { access, preloaded } = await requireAccess(
+      false,
+      readStudentScopeForUser,
+    );
+    if (access.role !== "student" || !preloaded)
       throw new HttpError(403, "Usa l’anteprima studente dell’admin.");
-    return Response.json(studentProjection(current.state, access.record_id), {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return Response.json(
+      studentProjection(preloaded.state, access.record_id, preloaded.occupancy),
+      noStore,
+    );
   } catch (error) {
     return errorResponse(error);
   }
@@ -24,8 +35,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
-    const { user, access } = await requireAccess();
-    if (access.role !== "student")
+    const { user, access, preloaded } = await requireAccess(
+      false,
+      readStudentScopeForUser,
+    );
+    if (access.role !== "student" || !preloaded)
       throw new HttpError(403, "Usa la gestione iscritti dell’admin.");
     const input = await readJsonInput(request);
     if (
@@ -33,8 +47,8 @@ export async function POST(request: Request) {
       typeof input.cancelled !== "boolean"
     )
       throw new HttpError(400, "Prenotazione non valida.");
+    let current = preloaded;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const current = await readCrm(user.id);
       let next;
       try {
         next = prepareStudentBooking(
@@ -42,18 +56,34 @@ export async function POST(request: Request) {
           access.record_id,
           input.lessonId,
           input.cancelled,
+          Date.now(),
+          current.occupancy,
         );
       } catch (e) {
         throw new HttpError(400, (e as Error).message);
       }
       try {
-        const saved = await writeCrm(user.id, current.revision, next);
-        scheduleCalendarSync(saved.state);
-        return Response.json(studentProjection(saved.state, access.record_id), {
-          headers: { "Cache-Control": "no-store" },
-        });
+        const saved = await writeCrm(user.id, current, next);
+        scheduleCalendarSync();
+        return Response.json(
+          studentProjection(
+            saved.state,
+            access.record_id,
+            adjustOccupancy(
+              current.occupancy,
+              current.state,
+              saved.state,
+              access.record_id,
+            ),
+          ),
+          noStore,
+        );
       } catch (e) {
-        if (e instanceof HttpError && e.status === 409 && attempt < 2) continue;
+        if (e instanceof HttpError && e.status === 409 && attempt < 2) {
+          const fresh = await readStudentScopeForUser(user.id);
+          if (fresh) current = fresh;
+          continue;
+        }
         throw e;
       }
     }

@@ -64,7 +64,7 @@ export async function requireAccess<T = undefined>(
   // Only on the very first visit after the invitation.
   if (!access.accepted_at) {
     const { error: acceptError } = await admin
-      .rpc("crm_accept_access", { p_actor: userId })
+      .rpc("crm_accept_access_v2", { p_actor: userId })
       .retry(false);
     if (acceptError)
       throw new HttpError(503, "Impossibile verificare l’account.");

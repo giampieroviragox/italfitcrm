@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         "Impossibile preparare il link di accesso. Riprova tra poco.",
       );
     const targetUser = generated.data.user.id;
-    const { error } = await admin.rpc("crm_link_access", {
+    const { error } = await admin.rpc("crm_link_access_v2", {
       p_actor: user.id,
       p_user: targetUser,
       p_role: input.kind,

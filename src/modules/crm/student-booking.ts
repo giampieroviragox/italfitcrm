@@ -1,5 +1,8 @@
 import type { CrmState } from "./model.ts";
-import { availabilityLessons } from "./availability-lessons.ts";
+import {
+  availabilityLessons,
+  withAvailabilityCapacity,
+} from "./availability-lessons.ts";
 import { prepareTransition } from "./transition.ts";
 
 /** Students book and cancel up to this many hours before the start. */
@@ -16,6 +19,8 @@ export function prepareStudentBooking(
   lessonId: string,
   cancelled: boolean,
   now = Date.now(),
+  /** Places taken per lesson, when the state holds only this student's bookings. */
+  occupancy?: Record<string, number>,
 ): CrmState {
   const student = state.students.find(
     (item) => item.id === studentId && !item.archived,
@@ -40,6 +45,11 @@ export function prepareStudentBooking(
   const changing = cancelled ? old && !old.cancelled : !old || old.cancelled;
   if (changing && bookingWindowClosed(lesson.startsAt, now))
     throw new Error(cancelled ? cancelClosedMessage : bookingClosedMessage);
+  if (changing && !cancelled && occupancy) {
+    const capacity = withAvailabilityCapacity(state, lesson).capacity;
+    if ((occupancy[lessonId] ?? 0) >= capacity)
+      throw new Error("La lezione è al completo.");
+  }
   const booking = {
     id: old?.id ?? crypto.randomUUID(),
     studentId,

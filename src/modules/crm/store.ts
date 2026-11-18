@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useSyncExternalStore } from "react";
+import { useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { tiers } from "@/modules/students/config";
 import type { CrmState } from "./model";
 import { applyWalletCommand, type WalletCommand } from "./lesson-wallet";
@@ -14,6 +14,7 @@ import { prepareTransition } from "./transition";
 import { removalState, type RemovalTarget } from "./removal";
 import { RemoteContext, activeRemoteStore } from "./remote-store";
 import { supabaseConfigured } from "@/lib/supabase/config";
+import { requestJson } from "@/lib/request-json";
 // v1 saves still hold the old fictional students: they are discarded on load.
 const KEY = "italfit.crm.v2";
 const LEGACY_KEYS = ["italfit.crm.v1"];
@@ -79,6 +80,56 @@ export function useCrm() {
     remote?.snapshot ?? (() => initialState),
   );
 }
+/**
+ * Workout logs, notes and history of one student come with the profile, not
+ * with the list. Returns whether they are still loading.
+ */
+export function useStudentDetail(studentId: string) {
+  const remote = useContext(RemoteContext);
+  const status = useSyncExternalStore(
+    remote?.subscribe ?? subscribe,
+    () => remote?.detailStatus(studentId) ?? "ready",
+    () => "ready",
+  );
+  useEffect(() => {
+    if (remote && (status === "none" || status === "stale"))
+      void remote.loadDetail(studentId).catch(() => {});
+  }, [remote, studentId, status]);
+  return { loading: status === "none" || status === "loading" };
+}
+
+/** Latest events across students for the home page. */
+export function useRecentActivity() {
+  const remote = useContext(RemoteContext);
+  const version = useSyncExternalStore(
+    remote?.subscribe ?? subscribe,
+    () => remote?.snapshot() ?? snapshot(),
+    () => initialState,
+  );
+  const [events, setEvents] = useState<
+    | {
+        student: string;
+        event: { id: string; text: string; createdAt: string };
+      }[]
+    | null
+  >(null);
+  useEffect(() => {
+    if (!remote) return;
+    let live = true;
+    requestJson("/api/crm/attivita")
+      .then((data) => {
+        const rows = (data as { events?: typeof events })?.events;
+        if (live && Array.isArray(rows)) setEvents(rows);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+    // A change to the CRM can add an event: ask again.
+  }, [remote, version]);
+  return events;
+}
+
 export function useSaving() {
   const remote = useContext(RemoteContext);
   return useSyncExternalStore(

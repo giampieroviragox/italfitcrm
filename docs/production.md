@@ -49,3 +49,10 @@ Il servizio segnala conferma o mancata conferma dell’invio; in caso di errore 
 62 test automatici, lint, TypeScript e build locale. Sette prove sul database reale: salvataggio delle abilitazioni, scansioni del link non distruttive e conferma POST con controllo dell’origine, isolamento online/sede, limiti concorrenti, cancellazione dopo riduzione dei servizi, invio email disabilitato correttamente.
 
 Stato e prove del deployment vengono riportati nel resoconto di rilascio dopo il controllo dell’indirizzo pubblico.
+
+## Livello dati a record singoli
+
+Dal 19 novembre 2026 il CRM scrive solo i record cambiati, con versioni per
+record, e legge differenze: vedi `docs/data-layer.md`. La migrazione
+`20261119090000_italfit_record_sync` è stata applicata in produzione tramite la
+Management API e registrata in `supabase_migrations.schema_migrations`.

@@ -71,14 +71,20 @@ export type Database = {
         Row: {
           id: string;
           payload: Json;
+          seq: number;
+          version: number;
         };
         Insert: {
           id: string;
           payload: Json;
+          seq?: number;
+          version?: number;
         };
         Update: {
           id?: string;
           payload?: Json;
+          seq?: number;
+          version?: number;
         };
         Relationships: [];
       };
@@ -88,21 +94,27 @@ export type Database = {
           month: string;
           payload: Json;
           plan_id: string;
+          seq: number;
           student_id: string;
+          version: number;
         };
         Insert: {
           id: string;
           month?: string;
           payload: Json;
           plan_id?: string;
+          seq?: number;
           student_id?: string;
+          version?: number;
         };
         Update: {
           id?: string;
           month?: string;
           payload?: Json;
           plan_id?: string;
+          seq?: number;
           student_id?: string;
+          version?: number;
         };
         Relationships: [
           {
@@ -126,19 +138,25 @@ export type Database = {
           id: string;
           lesson_id: string;
           payload: Json;
+          seq: number;
           student_id: string;
+          version: number;
         };
         Insert: {
           id: string;
           lesson_id?: string;
           payload: Json;
+          seq?: number;
           student_id?: string;
+          version?: number;
         };
         Update: {
           id?: string;
           lesson_id?: string;
           payload?: Json;
+          seq?: number;
           student_id?: string;
+          version?: number;
         };
         Relationships: [
           {
@@ -246,14 +264,20 @@ export type Database = {
         Row: {
           id: string;
           payload: Json;
+          seq: number;
+          version: number;
         };
         Insert: {
           id: string;
           payload: Json;
+          seq?: number;
+          version?: number;
         };
         Update: {
           id?: string;
           payload?: Json;
+          seq?: number;
+          version?: number;
         };
         Relationships: [];
       };
@@ -305,14 +329,20 @@ export type Database = {
         Row: {
           id: string;
           payload: Json;
+          seq: number;
+          version: number;
         };
         Insert: {
           id: string;
           payload: Json;
+          seq?: number;
+          version?: number;
         };
         Update: {
           id?: string;
           payload?: Json;
+          seq?: number;
+          version?: number;
         };
         Relationships: [];
       };
@@ -335,14 +365,20 @@ export type Database = {
         Row: {
           id: string;
           payload: Json;
+          seq: number;
+          version: number;
         };
         Insert: {
           id: string;
           payload: Json;
+          seq?: number;
+          version?: number;
         };
         Update: {
           id?: string;
           payload?: Json;
+          seq?: number;
+          version?: number;
         };
         Relationships: [];
       };
@@ -384,19 +420,25 @@ export type Database = {
           email: string;
           id: string;
           payload: Json;
+          seq: number;
           tier_id: string;
+          version: number;
         };
         Insert: {
           email?: string;
           id: string;
           payload: Json;
+          seq?: number;
           tier_id?: string;
+          version?: number;
         };
         Update: {
           email?: string;
           id?: string;
           payload?: Json;
+          seq?: number;
           tier_id?: string;
+          version?: number;
         };
         Relationships: [
           {
@@ -412,14 +454,38 @@ export type Database = {
         Row: {
           id: string;
           payload: Json;
+          seq: number;
+          version: number;
         };
         Insert: {
           id: string;
           payload: Json;
+          seq?: number;
+          version?: number;
         };
         Update: {
           id?: string;
           payload?: Json;
+          seq?: number;
+          version?: number;
+        };
+        Relationships: [];
+      };
+      crm_tombstones: {
+        Row: {
+          id: string;
+          kind: string;
+          seq: number;
+        };
+        Insert: {
+          id: string;
+          kind: string;
+          seq: number;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          seq?: number;
         };
         Relationships: [];
       };
@@ -429,6 +495,12 @@ export type Database = {
     };
     Functions: {
       crm_accept_access: { Args: { p_actor: string }; Returns: undefined };
+      crm_accept_access_v2: { Args: { p_actor: string }; Returns: undefined };
+      crm_admin_json: {
+        Args: { x: Database["public"]["Tables"]["crm_admins"]["Row"] };
+        Returns: Json;
+      };
+      crm_apply: { Args: { p_actor: string; p_changes: Json }; Returns: Json };
       crm_link_access: {
         Args: {
           p_actor: string;
@@ -439,7 +511,30 @@ export type Database = {
         };
         Returns: Json;
       };
+      crm_link_access_v2: {
+        Args: {
+          p_actor: string;
+          p_email: string;
+          p_record: string;
+          p_role: string;
+          p_user: string;
+        };
+        Returns: undefined;
+      };
+      crm_load: { Args: { p_actor: string }; Returns: Json };
+      crm_load_changes: {
+        Args: { p_actor: string; p_since: number };
+        Returns: Json;
+      };
+      crm_load_detail: { Args: { p_student: string }; Returns: Json };
+      crm_load_scope: { Args: { p_student: string }; Returns: Json };
+      crm_load_scope_user: { Args: { p_user: string }; Returns: Json };
+      crm_put: {
+        Args: { p_item: Json; p_kind: string; p_rev: number; p_table: string };
+        Returns: Record<string, unknown>;
+      };
       crm_read: { Args: { p_actor: string }; Returns: Json };
+      crm_recent_activity: { Args: { p_limit: number }; Returns: Json };
       crm_remove: {
         Args: {
           p_actor: string;
@@ -450,6 +545,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      crm_student_json: {
+        Args: {
+          p_detail: boolean;
+          s: Database["public"]["Tables"]["crm_students"]["Row"];
+        };
+        Returns: Json;
+      };
+      crm_touch: { Args: { p_id: string; p_kind: string }; Returns: undefined };
       crm_write: {
         Args: { p_actor: string; p_expected: number; p_state: Json };
         Returns: Json;

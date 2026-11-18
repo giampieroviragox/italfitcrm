@@ -13,7 +13,11 @@ import {
 import { mcpPrincipal, verifyMcpToken } from "@/modules/crm/server/mcp-auth";
 import type { CrmState } from "@/modules/crm/model";
 import { HttpError } from "@/modules/crm/server/errors";
-import { readCrm, writeCrm } from "@/modules/crm/server/repository";
+import {
+  readCrm,
+  readStudentDetail,
+  writeCrm,
+} from "@/modules/crm/server/repository";
 import { validateStaffUpdate } from "@/modules/crm/server/validation";
 import {
   projectState,
@@ -85,7 +89,7 @@ async function commitChange<T extends { state: CrmState }>(
     try {
       await writeCrm(
         userId,
-        current.revision,
+        current,
         validateStaffUpdate(current.state, result.state, access),
       );
       return result;
@@ -227,10 +231,27 @@ const handler = createMcpHandler(
         }),
         annotations: readOnly,
       },
-      async ({ studenteId, mese }, ctx) =>
-        json(
-          mcpStudentPlan(await crmState(ctx.http?.authInfo), studenteId, mese),
-        ),
+      async ({ studenteId, mese }, ctx) => {
+        const state = await crmState(ctx.http?.authInfo);
+        // The workout log is loaded for this one student, not for everyone.
+        const detail = state.students.some((s) => s.id === studenteId)
+          ? await readStudentDetail(studenteId)
+          : null;
+        return json(
+          mcpStudentPlan(
+            detail
+              ? {
+                  ...state,
+                  students: state.students.map((s) =>
+                    s.id === studenteId ? { ...s, ...detail.student } : s,
+                  ),
+                }
+              : state,
+            studenteId,
+            mese,
+          ),
+        );
+      },
     );
     server.registerTool(
       "elenca_modelli_piano",

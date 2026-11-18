@@ -148,6 +148,8 @@ export function parseStudentPortalData(value: unknown): StudentPortalData {
 export function studentProjection(
   state: CrmState,
   id: string,
+  /** Places taken per lesson, when the state holds only this student's bookings. */
+  occupancy?: Record<string, number>,
 ): StudentPortalData {
   const student = state.students.find((s) => s.id === id && !s.archived);
   if (!student) throw new Error("Studente non disponibile.");
@@ -235,9 +237,11 @@ export function studentProjection(
             ? { cancelRestriction: cancelClosedMessage }
             : {}),
           enrolled,
-          occupied: (state.bookings ?? []).filter(
-            (b) => b.lessonId === l.id && !b.cancelled,
-          ).length,
+          occupied: occupancy
+            ? (occupancy[l.id] ?? 0)
+            : (state.bookings ?? []).filter(
+                (b) => b.lessonId === l.id && !b.cancelled,
+              ).length,
         };
       }),
   };

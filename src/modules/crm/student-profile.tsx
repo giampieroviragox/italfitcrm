@@ -12,6 +12,7 @@ import {
   useCan,
   updateStudentMaxes,
   updateStudentRaces,
+  useStudentDetail,
 } from "./store";
 import { LocalNotice, FormError, Field, control } from "./ui";
 import { useNavigationRequest } from "./use-unsaved-changes";
@@ -82,6 +83,7 @@ export function StudentProfile({
     [note, setNote] = useState(""),
     [error, setError] = useState("");
   const student = state.students.find((s) => s.id === id);
+  const detail = useStudentDetail(id);
   if (!hydrated)
     return (
       <p role="status" className="py-12 text-sm text-muted-foreground">
@@ -229,6 +231,12 @@ export function StudentProfile({
                 </button>
               ))}
           </div>
+          {detail.loading &&
+            ["overview", "training", "notes", "history"].includes(tab) && (
+              <p role="status" className="text-sm text-muted-foreground">
+                Caricamento di allenamenti, commenti e cronologia…
+              </p>
+            )}
           {tab === "properties" ? (
             <>
               {savedMessage && (

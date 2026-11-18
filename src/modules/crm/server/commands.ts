@@ -10,7 +10,14 @@ import {
   type Permission,
   type StaffScope,
 } from "../permissions";
-import type { CrmEnvelope } from "../envelope";
+import {
+  adjustOccupancy,
+  changedIds,
+  collections,
+  deltaBetween,
+  type CrmDelta,
+  type Versions,
+} from "../sync";
 import {
   checkOrigin,
   errorResponse,
@@ -18,14 +25,22 @@ import {
   readJsonInput,
   requireAccess,
 } from "./auth";
-import { readCrm, writeCrm } from "./repository";
+import {
+  readCrm,
+  readStudentScopeForUser,
+  writeCrm,
+  type Committed,
+  type CrmEnvelope,
+} from "./repository";
 import { scheduleCalendarSync } from "./calendar-sync";
 
 type Input = Record<string, unknown>;
+const noStore = { headers: { "Cache-Control": "no-store" } };
 
 /**
- * A student changes their own data. The command is re-applied on the latest
- * state up to three times, and the response is the student projection.
+ * A student changes their own data. Only that student's slice of the CRM is
+ * read; the command is re-applied on a fresh read if the record changed in
+ * between, and the answer is the student projection.
  */
 export async function studentCommand(
   request: Request,
@@ -34,12 +49,15 @@ export async function studentCommand(
 ) {
   try {
     checkOrigin(request);
-    const { user, access, preloaded } = await requireAccess(false, readCrm);
-    if (access.role !== "student")
+    const { user, access, preloaded } = await requireAccess(
+      false,
+      readStudentScopeForUser,
+    );
+    if (access.role !== "student" || !preloaded)
       throw new HttpError(403, "Questa operazione è riservata agli studenti.");
     const input = await readJsonInput(request, maxLength);
+    let current = preloaded;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const current = attempt === 0 ? preloaded : await readCrm(user.id);
       const student = current.state.students.find(
         (s) => s.id === access.record_id,
       );
@@ -59,13 +77,27 @@ export async function studentCommand(
           : new HttpError(400, (e as Error).message);
       }
       try {
-        const saved = await writeCrm(user.id, current.revision, next);
-        scheduleCalendarSync(saved.state);
-        return Response.json(studentProjection(saved.state, access.record_id), {
-          headers: { "Cache-Control": "no-store" },
-        });
+        const saved = await writeCrm(user.id, current, next);
+        scheduleCalendarSync();
+        return Response.json(
+          studentProjection(
+            saved.state,
+            access.record_id,
+            adjustOccupancy(
+              current.occupancy,
+              current.state,
+              saved.state,
+              access.record_id,
+            ),
+          ),
+          noStore,
+        );
       } catch (e) {
-        if (e instanceof HttpError && e.status === 409 && attempt < 2) continue;
+        if (e instanceof HttpError && e.status === 409 && attempt < 2) {
+          const fresh = await readStudentScopeForUser(user.id);
+          if (fresh) current = fresh;
+          continue;
+        }
         throw e;
       }
     }
@@ -75,13 +107,53 @@ export async function studentCommand(
   }
 }
 
-/** The envelope a staff member may see, filtered by their permissions. */
-export const visibleEnvelope = (
+/** The envelope a member may see: state and versions limited to their scope. */
+export function visibleEnvelope(
   envelope: CrmEnvelope,
   scope: StaffScope,
-): CrmEnvelope => ({ ...envelope, state: projectState(envelope.state, scope) });
+): CrmEnvelope {
+  const state = projectState(envelope.state, scope);
+  if (state === envelope.state) return envelope;
+  const versions: Versions = {};
+  for (const collection of collections) {
+    const ids = new Set(
+      ((state[collection] ?? []) as { id: string }[]).map((r) => r.id),
+    );
+    versions[collection] = Object.fromEntries(
+      Object.entries(envelope.versions[collection] ?? {}).filter(([id]) =>
+        ids.has(id),
+      ),
+    );
+  }
+  return { revision: envelope.revision, versions, state };
+}
 
-/** A staff member applies a command against the revision they saw. */
+/** What a write changed, for the browser of the member who made it. */
+export function writeDelta(
+  before: CrmEnvelope,
+  saved: Committed,
+  scope: StaffScope,
+): { revision: number; delta: CrmDelta } {
+  return {
+    revision: saved.revision,
+    delta: deltaBetween(
+      projectState(before.state, scope),
+      projectState(saved.state, scope),
+      saved.versions,
+      changedIds(saved.changes),
+    ),
+  };
+}
+export const deltaResponse = (
+  before: CrmEnvelope,
+  saved: Committed,
+  scope: StaffScope,
+) => Response.json(writeDelta(before, saved, scope), noStore);
+
+/**
+ * A team member applies a command to the latest state. Commands describe an
+ * operation (not a screen), so a conflict is retried on a fresh read.
+ */
 export async function staffCommand(
   request: Request,
   apply: (
@@ -97,45 +169,47 @@ export async function staffCommand(
 ) {
   try {
     checkOrigin(request);
-    const {
-      user,
-      access,
-      preloaded: current,
-    } = await requireAccess(true, readCrm);
+    const { user, access, preloaded } = await requireAccess(true, readCrm);
     const input = await readJsonInput(request, maxLength);
-    if (!Number.isSafeInteger(input.revision))
-      throw new HttpError(400, "Richiesta non valida.");
-    const scope = staffScope(current.state, access.record_id);
-    try {
-      if (permission) requirePermission(scope, permission);
-    } catch (e) {
-      throw new HttpError(403, (e as Error).message);
+    let current = preloaded;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const scope = staffScope(current.state, access.record_id);
+      try {
+        if (permission) requirePermission(scope, permission);
+      } catch (e) {
+        throw new HttpError(403, (e as Error).message);
+      }
+      const actor = {
+        id: access.record_id,
+        name:
+          current.state.admins.find((a) => a.id === access.record_id)?.name ??
+          "Amministratore",
+      };
+      let next;
+      try {
+        next = prepareTransition(
+          current.state,
+          apply(current.state, input, actor.name, scope),
+          actor,
+        );
+      } catch (e) {
+        throw e instanceof HttpError
+          ? e
+          : new HttpError(400, (e as Error).message);
+      }
+      try {
+        const saved = await writeCrm(user.id, current, next);
+        scheduleCalendarSync(saved.state);
+        return deltaResponse(current, saved, scope);
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 409 && attempt < 2) {
+          current = await readCrm(user.id);
+          continue;
+        }
+        throw e;
+      }
     }
-    if (input.revision !== current.revision)
-      throw new HttpError(409, "Il CRM è cambiato. Verifica i dati e riprova.");
-    const actor = {
-      id: access.record_id,
-      name:
-        current.state.admins.find((a) => a.id === access.record_id)?.name ??
-        "Amministratore",
-    };
-    let next;
-    try {
-      next = prepareTransition(
-        current.state,
-        apply(current.state, input, actor.name, scope),
-        actor,
-      );
-    } catch (e) {
-      throw e instanceof HttpError
-        ? e
-        : new HttpError(400, (e as Error).message);
-    }
-    const saved = await writeCrm(user.id, current.revision, next);
-    scheduleCalendarSync(saved.state);
-    return Response.json(visibleEnvelope(saved, scope), {
-      headers: { "Cache-Control": "no-store" },
-    });
+    throw new HttpError(409, "Il CRM è cambiato. Riprova.");
   } catch (e) {
     return errorResponse(e);
   }

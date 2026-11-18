@@ -4,7 +4,11 @@ import {
   HttpError,
   requireAccess,
 } from "@/modules/crm/server/auth";
-import { readCrm, writeCrm } from "@/modules/crm/server/repository";
+import {
+  readStudentScopeForUser,
+  writeCrm,
+} from "@/modules/crm/server/repository";
+import { adjustOccupancy } from "@/modules/crm/sync";
 import {
   receiptType,
   removeReceipt,
@@ -26,8 +30,11 @@ export async function POST(request: Request) {
   let uploaded: string | undefined;
   try {
     checkOrigin(request);
-    const { user, access } = await requireAccess();
-    if (access.role !== "student")
+    const { user, access, preloaded } = await requireAccess(
+      false,
+      readStudentScopeForUser,
+    );
+    if (access.role !== "student" || !preloaded)
       throw new HttpError(
         403,
         "I pagamenti vengono dichiarati dallo studente.",
@@ -83,7 +90,7 @@ export async function POST(request: Request) {
     };
     // Validate before storing the file, so rejected requests leave nothing behind.
     try {
-      apply((await readCrm(user.id)).state);
+      apply(preloaded.state);
     } catch (e) {
       throw new HttpError(400, (e as Error).message);
     }
@@ -91,8 +98,8 @@ export async function POST(request: Request) {
       await uploadReceipt(meta.path, file, meta.type);
       uploaded = meta.path;
     }
+    let current = preloaded;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const current = await readCrm(user.id);
       let next;
       try {
         next = apply(current.state);
@@ -100,13 +107,27 @@ export async function POST(request: Request) {
         throw new HttpError(400, (e as Error).message);
       }
       try {
-        const saved = await writeCrm(user.id, current.revision, next);
+        const saved = await writeCrm(user.id, current, next);
         uploaded = undefined;
-        return Response.json(studentProjection(saved.state, access.record_id), {
-          headers: { "Cache-Control": "no-store" },
-        });
+        return Response.json(
+          studentProjection(
+            saved.state,
+            access.record_id,
+            adjustOccupancy(
+              current.occupancy,
+              current.state,
+              saved.state,
+              access.record_id,
+            ),
+          ),
+          { headers: { "Cache-Control": "no-store" } },
+        );
       } catch (e) {
-        if (e instanceof HttpError && e.status === 409 && attempt < 2) continue;
+        if (e instanceof HttpError && e.status === 409 && attempt < 2) {
+          const fresh = await readStudentScopeForUser(user.id);
+          if (fresh) current = fresh;
+          continue;
+        }
         throw e;
       }
     }

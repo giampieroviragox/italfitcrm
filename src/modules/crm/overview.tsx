@@ -16,7 +16,7 @@ import { PageHeading } from "@/components/page-heading";
 import { StudentIdentity } from "@/modules/students/components/student-identity";
 import { studentAccessEnabled, studentAccessLabel } from "./student-access";
 import { studentAccess } from "./tier-access";
-import { useCan, useCrm, useViewer } from "./store";
+import { useCan, useCrm, useRecentActivity, useViewer } from "./store";
 import { validPropertyValue } from "./model";
 import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
@@ -71,8 +71,17 @@ export default function OverviewPage() {
   const recent = students
     .toSorted((a, b) => b.joinedAt.localeCompare(a.joinedAt))
     .slice(0, 5);
-  const events = students
-    .flatMap((s) => (s.history ?? []).map((h) => ({ ...h, student: s })))
+  const remoteEvents = useRecentActivity();
+  const events = (
+    remoteEvents
+      ? remoteEvents.flatMap((row) => {
+          const student = state.students.find((s) => s.id === row.student);
+          return student ? [{ ...row.event, student }] : [];
+        })
+      : students.flatMap((s) =>
+          (s.history ?? []).map((h) => ({ ...h, student: s })),
+        )
+  )
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5);
   const firstName = state.admins
