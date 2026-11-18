@@ -12,7 +12,7 @@ export default function NotFound() {
         La pagina o la scheda che cerchi non è disponibile.
       </p>
       <Button asChild variant="outline" className="mt-6">
-        <Link href="/admin">Torna alla Home</Link>
+        <Link href="/login">Torna alla Home</Link>
       </Button>
     </div>
   );

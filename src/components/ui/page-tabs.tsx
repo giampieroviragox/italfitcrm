@@ -10,7 +10,7 @@ export interface PageTab {
 }
 
 export const pageTabItem =
-  "relative inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-foreground/10 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-[9px] after:h-px";
+  "relative inline-flex h-[30px] max-sm:h-10 shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-foreground/10 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-[9px] after:h-px";
 export const pageTabActive = "border-input text-foreground after:bg-foreground";
 export const pageTabIdle =
   "border-transparent text-muted-foreground hover:text-foreground after:bg-transparent";

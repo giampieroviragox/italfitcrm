@@ -34,6 +34,8 @@ export function StudentIdentity({
       </span>
       <span className="min-w-0">
         <span
+          // The large identity is a profile's title: expose it as the page heading.
+          {...(large ? { role: "heading", "aria-level": 1 } : {})}
           className={cn(
             "block truncate font-medium text-foreground",
             large ? "text-xl tracking-[-0.02em]" : "text-sm",

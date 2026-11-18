@@ -21,14 +21,26 @@ const romeMonth = (iso: string) =>
   }).format(new Date(iso));
 const name = (s: CrmStudent) => `${s.firstName} ${s.lastName}`.trim();
 
-/** Value of a monthly plan: its subscription price spread over the months. */
+const monthNumber = (month: string) =>
+  Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7));
+
+/**
+ * Value of a monthly plan: its subscription price spread over the months.
+ * The cents that do not divide evenly go to the first months, so the monthly
+ * values always add up to the price.
+ */
 export function planValue(state: CrmState, assignment: PlanAssignment) {
   const student = state.students.find((s) => s.id === assignment.studentId);
   const sub = subscriptionForMonth(
     student?.onlineSubscriptions,
     assignment.month,
   );
-  return sub ? Math.round(sub.price / sub.durationMonths) : 0;
+  if (!sub) return 0;
+  const share = Math.floor(sub.price / sub.durationMonths);
+  const extra = sub.price - share * sub.durationMonths;
+  const index =
+    monthNumber(assignment.month) - monthNumber(sub.startsOn.slice(0, 7));
+  return share + (index >= 0 && index < extra ? 1 : 0);
 }
 
 export interface PlanRow {

@@ -482,12 +482,12 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                   aria-label={config.groupBy ? group.label : undefined}
                 >
                   {config.groupBy && (
-                    <h3 className="sticky top-0 z-10 border-y bg-subtle px-4 py-2 text-xs font-semibold">
+                    <h2 className="sticky top-0 z-10 border-y bg-subtle px-4 py-2 text-xs font-semibold">
                       {group.label}{" "}
                       <span className="font-normal text-muted-foreground">
                         · {group.total}
                       </span>
-                    </h3>
+                    </h2>
                   )}
                   <ul className="divide-y border-b">
                     {group.students.map((student) => (
