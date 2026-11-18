@@ -418,6 +418,7 @@ export type Database = {
       crm_students: {
         Row: {
           email: string;
+          heavy: Json;
           id: string;
           payload: Json;
           seq: number;
@@ -426,6 +427,7 @@ export type Database = {
         };
         Insert: {
           email?: string;
+          heavy?: Json;
           id: string;
           payload: Json;
           seq?: number;
@@ -434,6 +436,7 @@ export type Database = {
         };
         Update: {
           email?: string;
+          heavy?: Json;
           id?: string;
           payload?: Json;
           seq?: number;
@@ -494,23 +497,12 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      crm_accept_access: { Args: { p_actor: string }; Returns: undefined };
       crm_accept_access_v2: { Args: { p_actor: string }; Returns: undefined };
       crm_admin_json: {
         Args: { x: Database["public"]["Tables"]["crm_admins"]["Row"] };
         Returns: Json;
       };
       crm_apply: { Args: { p_actor: string; p_changes: Json }; Returns: Json };
-      crm_link_access: {
-        Args: {
-          p_actor: string;
-          p_email: string;
-          p_record: string;
-          p_role: string;
-          p_user: string;
-        };
-        Returns: Json;
-      };
       crm_link_access_v2: {
         Args: {
           p_actor: string;
@@ -533,30 +525,17 @@ export type Database = {
         Args: { p_item: Json; p_kind: string; p_rev: number; p_table: string };
         Returns: Record<string, unknown>;
       };
-      crm_read: { Args: { p_actor: string }; Returns: Json };
       crm_recent_activity: { Args: { p_limit: number }; Returns: Json };
-      crm_remove: {
-        Args: {
-          p_actor: string;
-          p_assignments: string[];
-          p_expected: number;
-          p_plans: string[];
-          p_state: Json;
-        };
-        Returns: Json;
-      };
       crm_student_json: {
         Args: {
           p_detail: boolean;
-          s: Database["public"]["Tables"]["crm_students"]["Row"];
+          p_heavy: Json;
+          p_id: string;
+          p_payload: Json;
         };
         Returns: Json;
       };
       crm_touch: { Args: { p_id: string; p_kind: string }; Returns: undefined };
-      crm_write: {
-        Args: { p_actor: string; p_expected: number; p_state: Json };
-        Returns: Json;
-      };
     };
     Enums: {
       [_ in never]: never;

@@ -68,9 +68,8 @@ occupati per lezione, senza i dati degli altri studenti.
 
 - I conflitti usano `PT409`, non `40001`: con `40001` PostgREST riprova fino al
   timeout del gateway (due minuti).
-- `crm_read`, `crm_write`, `crm_remove` restano finché non si applica la
-  migrazione finale (`..._finish`), che sposta gli allenamenti nella colonna
-  `heavy` e rimuove le funzioni vecchie.
+- La migrazione finale (`..._finish`) è applicata: gli allenamenti stanno nella
+  colonna `heavy` e `crm_read`, `crm_write`, `crm_remove` non esistono più.
 - Nelle liste lezioni e prenotazioni crescono senza limite: la prossima
   ottimizzazione è leggere solo una finestra recente (la contabilità dei mesi
   passati userebbe una lettura dedicata).
