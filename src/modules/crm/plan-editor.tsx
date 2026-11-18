@@ -8,6 +8,10 @@ import { ChevronDown, Dumbbell, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorCancel, Field, control, FormError } from "./ui";
 import { useCrm, updateCrm } from "./store";
+import {
+  ExerciseNameSuggestions,
+  ExercisePreview,
+} from "./exercise-media-view";
 import type {
   WorkoutPlan,
   WorkoutExercise,
@@ -483,6 +487,7 @@ export function PlanEditor({
                     <Plus /> Aggiungi esercizio
                   </Button>
                 </div>
+                <ExerciseNameSuggestions id="nomi-esercizi" />
                 <div className="divide-y">
                   {active.exercises.map((ex, j) => (
                     <div key={ex.id} className="space-y-2 py-3">
@@ -491,6 +496,7 @@ export function PlanEditor({
                           <Field label={`Esercizio ${j + 1}`}>
                             <input
                               className={control}
+                              list="nomi-esercizi"
                               value={ex.name}
                               placeholder="Nome esercizio"
                               onChange={(e) =>
@@ -500,6 +506,7 @@ export function PlanEditor({
                               }
                             />
                           </Field>
+                          <ExercisePreview name={ex.name} />
                         </div>
                         <Button
                           type="button"

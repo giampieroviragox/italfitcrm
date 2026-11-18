@@ -24,6 +24,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Field, FormError, control } from "./ui";
+import { ExerciseHero, ExerciseThumb } from "./exercise-media-view";
 import type {
   PlanAssignment,
   WorkoutSession,
@@ -241,6 +242,10 @@ function WorkoutGuide({
                   {exercise.sets > 1 ? `${exercise.sets} × ` : ""}
                   {exercise.reps}
                 </p>
+                <ExerciseHero
+                  name={exercise.name}
+                  videoUrl={exercise.videoUrl}
+                />
                 {exercise.notes && (
                   <p className="mt-4 whitespace-pre-line text-sm leading-6 text-muted-foreground">
                     {exercise.notes}
@@ -620,7 +625,7 @@ export function StudentPlan({
                     {session.exercises.map((exercise, index) => (
                       <li
                         key={exercise.id}
-                        className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 p-3.5 sm:px-4 sm:py-4"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 p-3.5 sm:px-4 sm:py-4"
                       >
                         <span
                           aria-hidden
@@ -653,6 +658,10 @@ export function StudentPlan({
                             )}
                           />
                         </div>
+                        <ExerciseThumb
+                          name={exercise.name}
+                          videoUrl={exercise.videoUrl}
+                        />
                       </li>
                     ))}
                   </ol>

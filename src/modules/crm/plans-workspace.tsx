@@ -11,6 +11,7 @@ import { useCrm, updateCrm, useHydrated, removeCrmRecord } from "./store";
 import { PlanEditor, AssignmentEditor } from "./plan-editor";
 import { LocalNotice, FormError, control } from "./ui";
 import { ConfirmDialog } from "./confirm-dialog";
+import { ExerciseThumb } from "./exercise-media-view";
 import type { WorkoutPlan, PlanAssignment } from "./fitness-model";
 import { formatMonth } from "@/lib/format";
 const labels = {
@@ -56,9 +57,12 @@ export function WorkoutContent({
             {session.exercises.map((ex) => (
               <div key={ex.id} className="px-4 py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-medium">
-                    {ex.name || "Esercizio da completare"}
-                  </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ExerciseThumb name={ex.name} videoUrl={ex.videoUrl} />
+                    <p className="text-sm font-medium">
+                      {ex.name || "Esercizio da completare"}
+                    </p>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {ex.sets} serie × {ex.reps || "—"}
                     {ex.restSeconds > 0 ? ` · Recupero ${ex.restSeconds}s` : ""}

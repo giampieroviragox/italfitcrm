@@ -120,9 +120,9 @@ Fonti. Appunti di Giampiero. Via Pantigliate, 13:51–14:26. Fisic Center, 05:25
 
 ## 8. Foto e supporto per gli esercizi
 
-- [ ] Mostrare una foto dimostrativa quando l’esercizio ne ha una associata. La stima iniziale era di 70–80 esercizi base e quella aggiornata supera i 400 con le varianti.
-- [ ] Decidere come scegliere e associare le foto. Nel primo audio si propone di farle cercare e associare da Claude.
-- [ ] Scegliere cosa offrire per gli esercizi senza foto. Le opzioni discusse sono un pulsante di ricerca Google e un’animazione breve in motion graphics.
+- [x] Mostrare un disegno dimostrativo quando l’esercizio ne ha uno associato. Fatti 41 disegni per gli esercizi dei due piani importati, tutti dello stesso stile ([dettagli](illustrazioni-esercizi.md)). Per gli altri, fino a 400 con le varianti, si aggiungono i movimenti e le regole di associazione.
+- [x] Decidere come scegliere e associare le foto. I disegni sono generati da codice e associati dal nome dell’esercizio.
+- [x] Scegliere cosa offrire per gli esercizi senza foto: collegamenti a Google Immagini e a YouTube già impostati sul nome.
 - [ ] Tenere in programma, come idea futura, video dimostrativi prodotti dal team.
 
 Fonti. Appunti di Giampiero. Via Pantigliate, 14:27–15:20. Fisic Center, 00:00–01:12.
