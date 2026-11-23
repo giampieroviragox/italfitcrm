@@ -76,9 +76,7 @@ occupati per lezione, senza i dati degli altri studenti.
 - I controlli tra record diversi (sovrapposizioni di orario) restano validati
   sullo stato letto: due scritture simultanee di lezioni sovrapposte sono
   improbabili ma non bloccate dal database.
-- **Da applicare:** `20261120090000_italfit_removal_student_version.sql`. Senza,
-  rimuovere un'assegnazione di piano dalla scheda di uno studente fallisce sempre
-  con un conflitto (PT409): la rimozione alza la versione dello studente e la
-  cronologia scritta nella stessa chiamata si basa su quella precedente. La
-  migrazione lascia il rialzo al passaggio dello studente. Non è ancora
-  applicata al database.
+- La rimozione di un'assegnazione di piano alzava due volte la versione dello
+  studente e finiva sempre in un conflitto (PT409) quando la cronologia veniva
+  scritta nella stessa chiamata. `20261120090000_italfit_removal_student_version.sql`
+  (applicata il 19 novembre 2026) lascia il rialzo al passaggio dello studente.
