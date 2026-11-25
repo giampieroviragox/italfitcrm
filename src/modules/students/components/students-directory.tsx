@@ -237,138 +237,144 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
                       ? "Filtra studenti"
                       : "Raggruppa studenti"
                 }
-                className="z-50 max-h-[min(650px,var(--radix-popover-content-available-height))] w-[440px] max-w-[calc(100vw-24px)] space-y-4 overflow-y-auto rounded-xl border bg-card p-4 shadow-xl outline-none"
+                className="z-50 flex max-h-[min(650px,var(--radix-popover-content-available-height))] w-[440px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border bg-card shadow-xl outline-none"
               >
-                <h2 className="text-sm font-semibold">
-                  {kind === "columns"
-                    ? "Campi della tabella"
-                    : kind === "filters"
-                      ? "Filtra studenti"
-                      : "Raggruppa studenti"}
-                </h2>
-                {kind === "columns" ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInteraction({ kind: "property" })}
-                    >
-                      <Plus className="size-3.5" />
-                      Aggiungi campo
-                    </Button>
-                    <div className="divide-y">
-                      {[
-                        ...draft.columns.flatMap((id) => {
-                          const column = columns.find((c) => c.id === id);
-                          return column ? [column] : [];
-                        }),
-                        ...columns.filter((c) => !draft.columns.includes(c.id)),
-                      ].map((column) => (
-                        <div
-                          key={column.id}
-                          className="flex items-center gap-2 py-2"
-                        >
-                          <label className="flex min-h-8 min-w-0 flex-1 items-center gap-2 text-xs">
-                            <CheckboxControl
-                              checked={draft.columns.includes(column.id)}
-                              onChange={(e) =>
-                                setDraft({
-                                  ...draft,
-                                  columns: e.target.checked
-                                    ? [...draft.columns, column.id]
-                                    : draft.columns.filter(
-                                        (id) => id !== column.id,
-                                      ),
-                                })
-                              }
-                            />
-                            <span className="truncate">{column.name}</span>
-                          </label>
-                          {draft.columns.includes(column.id) &&
-                            [-1, 1].map((direction) => (
-                              <Button
-                                key={direction}
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Sposta ${column.name} ${direction < 0 ? "prima" : "dopo"}`}
-                                disabled={
-                                  draft.columns.indexOf(column.id) + direction <
-                                    0 ||
-                                  draft.columns.indexOf(column.id) +
-                                    direction >=
-                                    draft.columns.length
+                {/* The fields scroll; the actions stay below them, edge to edge. */}
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+                  <h2 className="text-sm font-semibold">
+                    {kind === "columns"
+                      ? "Campi della tabella"
+                      : kind === "filters"
+                        ? "Filtra studenti"
+                        : "Raggruppa studenti"}
+                  </h2>
+                  {kind === "columns" ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInteraction({ kind: "property" })}
+                      >
+                        <Plus className="size-3.5" />
+                        Aggiungi campo
+                      </Button>
+                      <div className="divide-y">
+                        {[
+                          ...draft.columns.flatMap((id) => {
+                            const column = columns.find((c) => c.id === id);
+                            return column ? [column] : [];
+                          }),
+                          ...columns.filter(
+                            (c) => !draft.columns.includes(c.id),
+                          ),
+                        ].map((column) => (
+                          <div
+                            key={column.id}
+                            className="flex items-center gap-2 py-2"
+                          >
+                            <label className="flex min-h-8 min-w-0 flex-1 items-center gap-2 text-xs">
+                              <CheckboxControl
+                                checked={draft.columns.includes(column.id)}
+                                onChange={(e) =>
+                                  setDraft({
+                                    ...draft,
+                                    columns: e.target.checked
+                                      ? [...draft.columns, column.id]
+                                      : draft.columns.filter(
+                                          (id) => id !== column.id,
+                                        ),
+                                  })
                                 }
-                                onClick={() => {
-                                  const next = [...draft.columns],
-                                    from = next.indexOf(column.id),
-                                    to = from + direction;
-                                  [next[from], next[to]] = [
-                                    next[to]!,
-                                    next[from]!,
-                                  ];
-                                  setDraft({ ...draft, columns: next });
-                                }}
-                              >
-                                {direction < 0 ? (
-                                  <ChevronUp className="size-3.5" />
-                                ) : (
-                                  <ChevronDown className="size-3.5" />
-                                )}
-                              </Button>
-                            ))}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : kind === "filters" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Field label="Tier">
-                        <SelectControl
-                          className={control}
-                          value={draft.tier}
-                          onChange={(e) =>
-                            setDraft({ ...draft, tier: e.target.value })
-                          }
-                        >
-                          <option value="all">Tutti i tier</option>
-                          {state.tiers
-                            .filter((t) => !t.archived || t.id === draft.tier)
-                            .map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.name}
-                              </option>
-                            ))}
-                        </SelectControl>
-                      </Field>
-                    </div>
-                    <DirectoryFilters
-                      filters={draft.filters}
-                      properties={properties}
-                      onChange={(filters) => setDraft({ ...draft, filters })}
-                    />
-                  </>
-                ) : (
-                  <Field label="Raggruppa per">
-                    <SelectControl
-                      className={control}
-                      value={draft.groupBy ?? ""}
-                      onChange={(e) =>
-                        setDraft({ ...draft, groupBy: e.target.value })
-                      }
-                    >
-                      <option value="">Nessun raggruppamento</option>
-                      {groupColumns.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </SelectControl>
-                  </Field>
-                )}
-                <FormError message={error} />
-                <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3">
+                              />
+                              <span className="truncate">{column.name}</span>
+                            </label>
+                            {draft.columns.includes(column.id) &&
+                              [-1, 1].map((direction) => (
+                                <Button
+                                  key={direction}
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Sposta ${column.name} ${direction < 0 ? "prima" : "dopo"}`}
+                                  disabled={
+                                    draft.columns.indexOf(column.id) +
+                                      direction <
+                                      0 ||
+                                    draft.columns.indexOf(column.id) +
+                                      direction >=
+                                      draft.columns.length
+                                  }
+                                  onClick={() => {
+                                    const next = [...draft.columns],
+                                      from = next.indexOf(column.id),
+                                      to = from + direction;
+                                    [next[from], next[to]] = [
+                                      next[to]!,
+                                      next[from]!,
+                                    ];
+                                    setDraft({ ...draft, columns: next });
+                                  }}
+                                >
+                                  {direction < 0 ? (
+                                    <ChevronUp className="size-3.5" />
+                                  ) : (
+                                    <ChevronDown className="size-3.5" />
+                                  )}
+                                </Button>
+                              ))}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : kind === "filters" ? (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label="Tier">
+                          <SelectControl
+                            className={control}
+                            value={draft.tier}
+                            onChange={(e) =>
+                              setDraft({ ...draft, tier: e.target.value })
+                            }
+                          >
+                            <option value="all">Tutti i tier</option>
+                            {state.tiers
+                              .filter((t) => !t.archived || t.id === draft.tier)
+                              .map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name}
+                                </option>
+                              ))}
+                          </SelectControl>
+                        </Field>
+                      </div>
+                      <DirectoryFilters
+                        filters={draft.filters}
+                        properties={properties}
+                        onChange={(filters) => setDraft({ ...draft, filters })}
+                      />
+                    </>
+                  ) : (
+                    <Field label="Raggruppa per">
+                      <SelectControl
+                        className={control}
+                        value={draft.groupBy ?? ""}
+                        onChange={(e) =>
+                          setDraft({ ...draft, groupBy: e.target.value })
+                        }
+                      >
+                        <option value="">Nessun raggruppamento</option>
+                        {groupColumns.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </SelectControl>
+                    </Field>
+                  )}
+                  <FormError message={error} />
+                </div>
+                <div className="flex shrink-0 items-center justify-end gap-2 border-t bg-card px-4 py-3">
                   {kind === "filters" && (
                     <Button
                       variant="ghost"
