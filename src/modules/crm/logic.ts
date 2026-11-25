@@ -2,6 +2,7 @@ import { coachName } from "./student-coach.ts";
 import { studentAccessLabel } from "./student-access.ts";
 import { studentTierIds, studentTierLabel } from "./student-tiers.ts";
 import { assertFitnessTransition } from "./fitness-logic.ts";
+import { ageColumn, hasBirthDate, studentAge } from "./student-age.ts";
 import {
   emptyValue,
   normalize,
@@ -110,6 +111,15 @@ export function sanitizeDirectory(
   const ids = new Set(
     state.properties.filter((p) => !p.archived).map((p) => p.id),
   );
+  const system = [
+    "email",
+    "tier",
+    "access",
+    "joinedAt",
+    "phone",
+    "coach",
+    ...(hasBirthDate(state.properties) ? [ageColumn] : []),
+  ];
   return {
     ...config,
     status: "all",
@@ -121,9 +131,7 @@ export function sanitizeDirectory(
       ...new Set(config.columns.map((id) => (id === "status" ? "access" : id))),
     ].filter(
       (id) =>
-        ["email", "tier", "access", "joinedAt", "phone", "coach"].includes(
-          id,
-        ) ||
+        system.includes(id) ||
         (id.startsWith("property:") && ids.has(id.slice(9))),
     ),
     ...(config.columnWidths
@@ -136,15 +144,7 @@ export function sanitizeDirectory(
               )
               .filter(
                 ([id]) =>
-                  [
-                    "name",
-                    "email",
-                    "tier",
-                    "access",
-                    "joinedAt",
-                    "phone",
-                    "coach",
-                  ].includes(id) ||
+                  ["name", ...system].includes(id) ||
                   (id.startsWith("property:") && ids.has(id.slice(9))),
               ),
           ),
@@ -153,9 +153,7 @@ export function sanitizeDirectory(
     ...(config.groupBy !== undefined
       ? {
           groupBy:
-            ["tier", "access", "coach", "email", "phone", "joinedAt"].includes(
-              config.groupBy,
-            ) ||
+            system.includes(config.groupBy) ||
             (config.groupBy.startsWith("property:") &&
               ids.has(config.groupBy.slice(9)))
               ? config.groupBy
@@ -164,8 +162,9 @@ export function sanitizeDirectory(
       : {}),
     filters: config.filters.filter((f) => ids.has(f.propertyId)),
     sortKey:
-      config.sortKey.startsWith("property:") &&
-      !ids.has(config.sortKey.slice(9))
+      (config.sortKey.startsWith("property:") &&
+        !ids.has(config.sortKey.slice(9))) ||
+      (config.sortKey === ageColumn && !system.includes(ageColumn))
         ? "joinedAt"
         : config.sortKey === "status"
           ? "access"
@@ -226,7 +225,9 @@ export function selectStudents(
                 ? s.email
                 : config.sortKey === "phone"
                   ? s.phone
-                  : s.joinedAt;
+                  : config.sortKey === ageColumn
+                    ? (studentAge(s) ?? undefined)
+                    : s.joinedAt;
   const collator = new Intl.Collator("it", {
     numeric: true,
     sensitivity: "base",

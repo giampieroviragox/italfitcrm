@@ -6,6 +6,7 @@ import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
 import { useFormChanged } from "@/components/ui/form-change-context";
 import { control, Field } from "./ui";
 import type { CrmProperty, PropertyValue } from "./model";
+import { ageOn, birthDatePropertyId, formatAge } from "./student-age";
 export function PropertyField({
   property: p,
   value,
@@ -70,8 +71,13 @@ export function PropertyField({
     );
   const stringValue =
     typeof value === "string" || typeof value === "number" ? String(value) : "";
+  const age = p.id === birthDatePropertyId ? ageOn(value) : null;
+  const hint =
+    [p.description, age === null ? "" : `Età: ${formatAge(age)}`]
+      .filter(Boolean)
+      .join(" · ") || undefined;
   return (
-    <Field label={label} hint={p.description}>
+    <Field label={label} hint={hint}>
       {p.type === "textarea" ? (
         <textarea
           aria-label={label}

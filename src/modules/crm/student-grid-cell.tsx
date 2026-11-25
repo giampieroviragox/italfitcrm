@@ -9,6 +9,7 @@ import { PropertyField } from "./property-fields";
 import { Field, FormError, control } from "./ui";
 import { updateCrm, useSaving } from "./store";
 import { editStudentCell } from "./student-grid";
+import { ageColumn } from "./student-age";
 import type { CrmProperty, CrmStudent, CrmTier, PropertyValue } from "./model";
 
 export function StudentGridCell({
@@ -38,6 +39,7 @@ export function StudentGridCell({
   const readOnly =
     student.archived ||
     column === "joinedAt" ||
+    column === ageColumn ||
     column === "access" ||
     (column === "email" && !!student.access);
   return (

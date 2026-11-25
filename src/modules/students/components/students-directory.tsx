@@ -27,7 +27,7 @@ import { StudentProfileSheet } from "@/modules/crm/student-profile-sheet";
 import {
   groupStudents,
   pageStudentGroups,
-  studentColumns,
+  availableStudentColumns,
 } from "@/modules/crm/student-grid";
 import {
   defaultDirectory,
@@ -83,7 +83,7 @@ export function StudentsDirectory({ onAdd }: { onAdd?: () => void }) {
   );
   const properties = state.properties.filter((p) => !p.archived);
   const columns = [
-    ...studentColumns,
+    ...availableStudentColumns(state.properties),
     ...properties.map((p) => ({ id: `property:${p.id}`, name: p.name })),
   ];
   const groupColumns = columns.filter((c) => {

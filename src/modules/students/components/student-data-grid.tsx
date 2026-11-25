@@ -34,6 +34,7 @@ import {
   columnDragScrollSpeed,
 } from "@/modules/crm/column-drag";
 import { formatDate } from "@/lib/format";
+import { ageColumn, formatAge, studentAge } from "@/modules/crm/student-age";
 
 const defaultWidths: Record<string, number> = {
   name: 220,
@@ -41,6 +42,7 @@ const defaultWidths: Record<string, number> = {
   tier: 150,
   access: 140,
   joinedAt: 140,
+  age: 96,
 };
 const menuItem =
   "flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[13px] outline-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-40";
@@ -721,6 +723,8 @@ export function StudentDataGrid({
                     else if (id === "joinedAt")
                       value = formatDate(student.joinedAt);
                     else if (id === "coach") value = coachName(student.coach);
+                    else if (id === ageColumn)
+                      value = formatAge(studentAge(student));
                     else value = student[id as "email" | "phone"] || "—";
                     return (
                       <td

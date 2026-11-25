@@ -10,6 +10,12 @@ import {
 } from "./model.ts";
 import { formatDate } from "../../lib/format.ts";
 import { studentAccessLabel } from "./student-access.ts";
+import {
+  ageColumn,
+  formatAge,
+  hasBirthDate,
+  studentAge,
+} from "./student-age.ts";
 
 export const studentColumns = [
   { id: "email", name: "Email", type: "email" },
@@ -18,7 +24,15 @@ export const studentColumns = [
   { id: "joinedAt", name: "Aggiunto il", type: "date" },
   { id: "phone", name: "Telefono", type: "phone" },
   { id: "coach", name: "Coach", type: "text" },
+  { id: ageColumn, name: "Età", type: "number" },
 ] as const;
+
+/** System columns available now: Età only while there is a birth date field. */
+export function availableStudentColumns(properties: readonly CrmProperty[]) {
+  return studentColumns.filter(
+    (c) => c.id !== ageColumn || hasBirthDate(properties),
+  );
+}
 
 export function moveColumn(
   columns: readonly string[],
@@ -123,7 +137,11 @@ export function groupStudents(
   const property = properties.find(
     (p) => `property:${p.id}` === groupBy && !p.archived,
   );
-  if (!groupBy || (!property && !studentColumns.some((c) => c.id === groupBy)))
+  if (
+    !groupBy ||
+    (!property &&
+      !availableStudentColumns(properties).some((c) => c.id === groupBy))
+  )
     return [
       {
         key: "all",
@@ -136,13 +154,15 @@ export function groupStudents(
   for (const student of students) {
     const value = property
       ? student.properties[property.id]
-      : groupBy === "access"
-        ? studentAccessLabel(student)
-        : groupBy === "tier"
-          ? studentTierIds(student).toSorted()
-          : student[
-              groupBy as "status" | "coach" | "email" | "phone" | "joinedAt"
-            ];
+      : groupBy === ageColumn
+        ? (studentAge(student) ?? undefined)
+        : groupBy === "access"
+          ? studentAccessLabel(student)
+          : groupBy === "tier"
+            ? studentTierIds(student).toSorted()
+            : student[
+                groupBy as "status" | "coach" | "email" | "phone" | "joinedAt"
+              ];
     const empty = emptyValue(value);
     const key = empty
       ? "empty"
@@ -151,13 +171,15 @@ export function groupStudents(
       ? "Non compilato"
       : property
         ? formatPropertyValue(property, value)
-        : groupBy === "tier"
-          ? studentTierLabel(student, tiers)
-          : groupBy === "access"
-            ? studentAccessLabel(student)
-            : groupBy === "joinedAt"
-              ? formatDate(String(value))
-              : String(value);
+        : groupBy === ageColumn
+          ? formatAge(value as number)
+          : groupBy === "tier"
+            ? studentTierLabel(student, tiers)
+            : groupBy === "access"
+              ? studentAccessLabel(student)
+              : groupBy === "joinedAt"
+                ? formatDate(String(value))
+                : String(value);
     const group = groups.get(key) ?? { key, label, students: [], total: 0 };
     group.students.push(student);
     group.total++;
@@ -170,7 +192,8 @@ export function groupStudents(
   return [...groups.values()].sort((a, b) => {
     if (a.key === "empty") return 1;
     if (b.key === "empty") return -1;
-    if (property?.type === "number") return Number(a.key) - Number(b.key);
+    if (property?.type === "number" || groupBy === ageColumn)
+      return Number(a.key) - Number(b.key);
     if (property?.type === "date" || groupBy === "joinedAt")
       return a.key.localeCompare(b.key);
     return collator.compare(a.label, b.label);

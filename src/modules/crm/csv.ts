@@ -1,6 +1,7 @@
 import { coachName } from "./student-coach.ts";
 import { studentAccessLabel } from "./student-access.ts";
 import { studentTierLabel } from "./student-tiers.ts";
+import { ageColumn, studentAge } from "./student-age.ts";
 import type { Student } from "../../types/domain.ts";
 import {
   formatPropertyValue,
@@ -28,6 +29,7 @@ export function studentsCsv(
     joinedAt: "Aggiunto il",
     coach: "Coach",
     phone: "Telefono",
+    [ageColumn]: "Età",
   };
   const headers = [
     "Nome",
@@ -61,6 +63,8 @@ export function studentsCsv(
             return s.joinedAt;
           case "coach":
             return coachName(s.coach);
+          case ageColumn:
+            return studentAge(s) ?? "";
           default:
             return "";
         }
