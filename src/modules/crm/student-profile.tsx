@@ -168,7 +168,14 @@ export function StudentProfile({
                 });
               }
             }}
-            className="flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-card p-1 [scrollbar-width:none]"
+            className={cn(
+              // The tabs stay in view while the content scrolls, and wrap
+              // instead of hiding the last tabs off to the right. In the side
+              // sheet they stop 12px under its top edge; on the full page,
+              // 12px under the 64px app header (which stays above them).
+              "sticky z-10 flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-card p-1 shadow-[0_0_0_12px_var(--background)] [scrollbar-width:none] sm:flex-wrap",
+              embedded ? "top-3" : "top-[76px]",
+            )}
           >
             {[
               { id: "overview", label: "Panoramica" },

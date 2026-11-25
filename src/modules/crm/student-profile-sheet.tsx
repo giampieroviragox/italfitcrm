@@ -56,8 +56,12 @@ export function StudentProfileSheet({
             </Link>
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto bg-background p-4 sm:p-6">
-          <StudentProfile id={id} embedded />
+        {/* Vertical padding sits inside the scroll box: on the box itself it
+            would offset the sticky tabs and the sticky form actions. */}
+        <div className="min-h-0 flex-1 overflow-y-auto bg-background px-4 sm:px-6">
+          <div className="py-4 sm:py-6">
+            <StudentProfile id={id} embedded />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

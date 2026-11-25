@@ -156,7 +156,9 @@ export function Editor({
   useUnsavedChanges(dirty, close);
   const body = (
     <div
-      className="crm-editor-body min-h-0 flex-1 overflow-y-auto px-5 pt-5 sm:px-6 sm:pt-6"
+      // Inline, the editor scrolls with the page or panel around it: a scroll
+      // box of its own would catch the wheel without having anything to scroll.
+      className={`crm-editor-body px-5 pt-5 sm:px-6 sm:pt-6 ${inline ? "crm-editor-body-inline pb-5 sm:pb-6" : "min-h-0 flex-1 overflow-y-auto"}`}
       data-validation-error={validationError ? "true" : undefined}
       onInvalidCapture={(e) => {
         e.preventDefault();

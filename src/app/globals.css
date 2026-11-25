@@ -134,6 +134,19 @@ textarea.crm-control {
   scrollbar-gutter: stable;
   scroll-padding-block: 24px 120px;
 }
+.crm-editor-body-inline {
+  overscroll-behavior: auto;
+  scrollbar-gutter: auto;
+}
+/* Inline, the actions float like the profile tabs: a bordered card kept
+   12px off the bottom, with the page colour masking what scrolls beneath. */
+.crm-editor-body-inline .crm-form-actions {
+  bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 8px;
+  box-shadow: 0 0 0 12px var(--background);
+}
 .crm-editor-form {
   display: flex;
   min-height: 100%;
