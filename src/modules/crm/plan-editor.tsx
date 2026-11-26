@@ -1,6 +1,5 @@
 "use client";
-import { DatePicker, MonthPicker } from "@/components/ui/date-time-picker";
-import { CheckboxControl } from "@/components/ui/checkbox-control";
+import { DatePicker } from "@/components/ui/date-time-picker";
 import { studentAccess } from "./tier-access";
 import { SelectControl } from "@/components/ui/select-control";
 import { useState } from "react";
@@ -19,7 +18,17 @@ import type {
   PlanAssignment,
 } from "./fitness-model";
 import { todayRome, validateSessions } from "./fitness-logic";
-import { assignmentCoachId, defaultPlanCoachId } from "./online-coaching";
+import { currentSubscription, defaultPlanCoachId } from "./online-coaching";
+import type { CrmStudent } from "./model";
+import {
+  assignmentPeriod,
+  cycleEnd,
+  formatDay,
+  guidedLabel,
+  nextCycleStart,
+  periodLabel,
+  periodsOverlap,
+} from "./plan-cycles";
 const exercise = (): WorkoutExercise => ({
   id: crypto.randomUUID(),
   name: "",
@@ -36,10 +45,13 @@ const session = (): WorkoutSession => ({
 });
 export function PlanEditor({
   plan,
+  owner,
   close,
   saved,
 }: {
   plan?: WorkoutPlan;
+  /** Where a new plan belongs: a client or a guided program. */
+  owner?: Pick<WorkoutPlan, "studentId" | "guidedCategory">;
   close: () => void;
   saved?: (id: string) => void;
 }) {
@@ -52,6 +64,10 @@ export function PlanEditor({
           description: "",
           status: "draft",
           sessions: [session()],
+          ...(owner?.studentId ? { studentId: owner.studentId } : {}),
+          ...(owner?.guidedCategory
+            ? { guidedCategory: owner.guidedCategory }
+            : {}),
         },
   );
   const [original] = useState(JSON.stringify(plan)),
@@ -128,10 +144,14 @@ export function PlanEditor({
                 throw new Error(
                   "Il piano è stato modificato altrove. Riapri il form.",
                 );
-              const next = {
+              const next: WorkoutPlan = {
                 ...draft,
                 title: draft.title.trim(),
                 description: draft.description.trim(),
+                // A newly published version becomes the current one.
+                ...(draft.status === "published" && plan?.status !== "published"
+                  ? { publishedAt: new Date().toISOString() }
+                  : {}),
               };
               return {
                 ...s,
@@ -641,28 +661,63 @@ export function AssignmentEditor({
   close: () => void;
 }) {
   const state = useCrm();
+  const today = todayRome();
   const [student, setStudent] = useState(studentId ?? ""),
     [plan, setPlan] = useState(planId ?? ""),
-    [month, setMonth] = useState(todayRome().slice(0, 7)),
-    [replace, setReplace] = useState(false),
+    [startChoice, setStartChoice] = useState<string | null>(null),
     [coachChoice, setCoachChoice] = useState<string | null>(null),
     [error, setError] = useState("");
-  const [confirmedAssignment, setConfirmedAssignment] = useState("");
-  const existing = state.assignments?.find(
-    (a) => a.studentId === student && a.month === month,
-  );
+  const source = state.plans?.find((p) => p.id === plan);
   const selectedStudent = state.students.find((s) => s.id === student);
-  // Follows the subscription of the chosen month until the admin picks someone else.
-  const suggestedCoach = existing
-    ? assignmentCoachId(state, existing)
-    : selectedStudent
-      ? defaultPlanCoachId(state, selectedStudent, month)
-      : undefined;
+  const fixedPlan = planId
+    ? state.plans?.find((p) => p.id === planId)
+    : undefined;
+  // A plan belongs to one client or to one guided program: only they can receive it.
+  const fits = (p: WorkoutPlan, s: CrmStudent) =>
+    p.studentId
+      ? p.studentId === s.id
+      : p.guidedCategory
+        ? Boolean(
+            s.guidedPrograms?.some((g) => g.category === p.guidedCategory),
+          )
+        : true;
+  const students = state.students.filter(
+    (s) =>
+      !s.archived &&
+      studentAccess(state, s).plans &&
+      (!fixedPlan || fits(fixedPlan, s)),
+  );
+  const plans = (state.plans ?? []).filter(
+    (p) =>
+      p.status === "published" &&
+      (!selectedStudent || fits(p, selectedStudent)),
+  );
+  const category = source?.guidedCategory;
+  const track = (state.assignments ?? []).filter(
+    (a) =>
+      a.studentId === student &&
+      (a.guidedCategory ?? null) === (category ?? null),
+  );
+  // Rhythm anchor: the guided enrollment day, or the Coaching online subscription start.
+  const enrolledOn = category
+    ? selectedStudent?.guidedPrograms?.find((g) => g.category === category)
+        ?.startsOn
+    : currentSubscription(selectedStudent?.onlineSubscriptions, today)
+        ?.startsOn;
+  // Next cycle of the same track, until the admin picks another day.
+  const startsOn = startChoice ?? nextCycleStart(track, today, enrolledOn);
+  const endsOn = cycleEnd(startsOn);
+  const clash = track.find((a) =>
+    periodsOverlap(assignmentPeriod(a), { startsOn, endsOn }),
+  );
+  const suggestedCoach = selectedStudent
+    ? defaultPlanCoachId(state, selectedStudent, startsOn)
+    : undefined;
   const coach = coachChoice ?? suggestedCoach ?? "";
   return (
     <Editor
-      title="Assegna piano mensile"
-      description="Ogni studente ha un piano per mese. Viene conservata una copia del piano al momento dell’assegnazione."
+      title="Assegna piano"
+      description="Ogni piano dura un ciclo di 4 settimane. Viene conservata una copia del piano al momento dell’assegnazione."
       close={close}
     >
       <form
@@ -671,43 +726,33 @@ export function AssignmentEditor({
           e.preventDefault();
           try {
             await updateCrm((s) => {
-              const source = s.plans?.find((p) => p.id === plan),
-                old = s.assignments?.find(
-                  (a) => a.studentId === student && a.month === month,
-                );
-              if (!source || !student)
+              const from = s.plans?.find((p) => p.id === plan);
+              if (!from || !student)
                 throw new Error(
                   "Seleziona uno studente e un piano pubblicato.",
                 );
-              if (old && replace && JSON.stringify(old) !== confirmedAssignment)
-                throw new Error(
-                  "Il piano mensile è cambiato altrove. Togli e rimetti la conferma per verificare la versione attuale.",
-                );
-              if (old && !replace)
-                throw new Error(
-                  "Conferma la sostituzione del piano già assegnato.",
-                );
               const item: PlanAssignment = {
-                id: old?.id ?? crypto.randomUUID(),
+                id: crypto.randomUUID(),
                 studentId: student,
                 planId: plan,
-                month,
+                month: startsOn.slice(0, 7),
+                startsOn,
+                endsOn,
+                ...(from.guidedCategory
+                  ? { guidedCategory: from.guidedCategory }
+                  : {}),
                 ...(coach ? { coachId: coach } : {}),
                 createdAt: new Date().toISOString(),
                 snapshot: structuredClone({
-                  title: source.title,
-                  description: source.description,
-                  sessions: source.sessions,
-                  ...(source.program ? { program: source.program } : {}),
+                  title: from.title,
+                  description: from.description,
+                  sessions: from.sessions,
+                  ...(from.program ? { program: from.program } : {}),
                 }),
               };
               return {
                 ...s,
-                assignments: old
-                  ? (s.assignments ?? []).map((a) =>
-                      a.id === old.id ? item : a,
-                    )
-                  : [...(s.assignments ?? []), item],
+                assignments: [...(s.assignments ?? []), item],
               };
             });
             close();
@@ -720,57 +765,62 @@ export function AssignmentEditor({
           <SelectControl
             className={control}
             required
+            disabled={Boolean(studentId)}
             value={student}
             onChange={(e) => {
               setStudent(e.target.value);
-              setReplace(false);
+              setStartChoice(null);
               setCoachChoice(null);
             }}
           >
             <option value="">Seleziona studente…</option>
-            {state.students
-              .filter((s) => !s.archived && studentAccess(state, s).plans)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.firstName} {s.lastName}
-                </option>
-              ))}
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.firstName} {s.lastName}
+              </option>
+            ))}
           </SelectControl>
-        </Field>
-        <Field label="Mese *">
-          <MonthPicker
-            required
-            value={month}
-            onChange={(v) => {
-              setMonth(v);
-              setReplace(false);
-              setCoachChoice(null);
-            }}
-          />
         </Field>
         <Field label="Piano *">
           <SelectControl
             className={control}
             required
+            disabled={Boolean(planId)}
             value={plan}
-            onChange={(e) => setPlan(e.target.value)}
+            onChange={(e) => {
+              setPlan(e.target.value);
+              setStartChoice(null);
+            }}
           >
             <option value="">Seleziona piano…</option>
-            {state.plans
-              ?.filter((p) => p.status === "published")
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.guidedCategory
+                  ? `${guidedLabel(p.guidedCategory)} · ${p.title}`
+                  : p.title}
+              </option>
+            ))}
           </SelectControl>
+        </Field>
+        <Field
+          label="Inizio del ciclo *"
+          hint={`Fine del ciclo: ${formatDay(endsOn)} (4 settimane).`}
+        >
+          <DatePicker
+            required
+            value={startsOn}
+            onChange={(v) => {
+              setStartChoice(v);
+              setCoachChoice(null);
+            }}
+          />
         </Field>
         <Field
           label="Coach del piano"
           hint={
             coachChoice === null && suggestedCoach
-              ? "Predefinito dall’abbonamento Coaching online del mese, se presente."
-              : "Il coach che segue questo piano mensile."
+              ? "Predefinito dall’abbonamento Coaching online attivo all’inizio del ciclo."
+              : "Il coach che segue questo piano."
           }
         >
           <SelectControl
@@ -786,27 +836,20 @@ export function AssignmentEditor({
             ))}
           </SelectControl>
         </Field>
-        {existing && (
-          <div className="space-y-3 rounded-xl bg-muted p-4 text-xs">
-            <p>
-              Piano attuale: <strong>{existing.snapshot.title}</strong>
-            </p>
-            <label className="flex items-start gap-2">
-              <CheckboxControl
-                checked={replace}
-                onChange={(e) => {
-                  setReplace(e.target.checked);
-                  setConfirmedAssignment(JSON.stringify(existing));
-                }}
-              />
-              Sostituisci il piano e la sua copia per questo mese.
-            </label>
-          </div>
+        {clash && (
+          <p className="rounded-xl bg-muted p-4 text-xs" role="status">
+            Si sovrappone a <strong>{clash.snapshot.title}</strong> (
+            {periodLabel(clash)}): scegli un inizio dopo il{" "}
+            {formatDay(assignmentPeriod(clash).endsOn)} o rimuovi
+            quell’assegnazione.
+          </p>
         )}
         <FormError message={error} />
         <div className="crm-form-actions">
           <EditorCancel />
-          <Button type="submit">Assegna piano</Button>
+          <Button type="submit" disabled={Boolean(clash)}>
+            Assegna piano
+          </Button>
         </div>
       </form>
     </Editor>

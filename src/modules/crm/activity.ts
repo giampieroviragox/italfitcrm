@@ -13,9 +13,24 @@ import {
   type OnlineSubscription,
 } from "./online-coaching.ts";
 import { formatKg, type MaxRecord } from "./workout-log.ts";
+import {
+  formatDay,
+  guidedLabel,
+  periodLabel,
+  type GuidedEnrollment,
+} from "./plan-cycles.ts";
 import { overallRatings, sessionLengths, type Race } from "./cycle-feedback.ts";
 
 type Change = { text: string; details?: string[] };
+const guidedText = (list: GuidedEnrollment[] | undefined) =>
+  list?.length
+    ? list
+        .map((g) => `${guidedLabel(g.category)} dal ${formatDay(g.startsOn)}`)
+        .join(", ")
+    : "—";
+/** Cycle dates when known; older plans keep their month. */
+const planWhen = (a: PlanAssignment) =>
+  a.startsOn ? periodLabel(a) : `mese ${a.month}`;
 const different = (a: unknown, b: unknown) =>
   JSON.stringify(a) !== JSON.stringify(b);
 const change = (
@@ -32,7 +47,7 @@ const dateTime = (iso: string) =>
 const lessonLabel = (lesson: Lesson) =>
   `“${lesson.title}” · ${dateTime(lesson.startsAt)}`;
 const assignmentDetails = (a: PlanAssignment) => [
-  `Piano: “${a.snapshot.title}” · mese ${a.month}`,
+  `Piano: “${a.snapshot.title}” · ${planWhen(a)}`,
   ...(a.snapshot.description ? [a.snapshot.description] : []),
   ...a.snapshot.sessions.flatMap((s) => [
     s.name,
@@ -89,6 +104,17 @@ export function studentChanges(
             "Stato",
             statusLabels[old.status],
             statusLabels[student.status],
+          ),
+        ],
+      });
+    if (different(old.guidedPrograms ?? [], student.guidedPrograms ?? []))
+      changes.push({
+        text: "Programmi guidati aggiornati",
+        details: [
+          change(
+            "Programmi guidati",
+            guidedText(old.guidedPrograms),
+            guidedText(student.guidedPrograms),
           ),
         ],
       });
@@ -267,14 +293,14 @@ export function studentChanges(
         changes.push({
           text: "Coach del piano aggiornato",
           details: [
-            `Piano: “${a.snapshot.title}” · mese ${a.month}`,
+            `Piano: “${a.snapshot.title}” · ${planWhen(a)}`,
             `${coachLine(coachBefore, current)} → ${coachLine(coachAfter, next).slice(7)}`,
           ],
         });
       continue;
     }
     changes.push({
-      text: before ? "Piano mensile aggiornato" : "Piano mensile assegnato",
+      text: before ? "Piano aggiornato" : "Piano assegnato",
       details: [
         ...(before
           ? [
@@ -461,7 +487,7 @@ function feedbackChanges(
           : "Questionario di fine piano compilato",
         details: [
           ...(plan
-            ? [`Piano: “${plan.snapshot.title}” · mese ${plan.month}`]
+            ? [`Piano: “${plan.snapshot.title}” · ${planWhen(plan)}`]
             : []),
           `Com’è andato: ${overallRatings[f.rating as keyof typeof overallRatings]}`,
           `Durata delle sessioni: ${sessionLengths[f.sessionLength]}`,

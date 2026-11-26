@@ -7,6 +7,7 @@ import {
 } from "./model.ts";
 import type { PlanAssignment } from "./fitness-model.ts";
 import { coachName } from "./student-coach.ts";
+import { assignmentPeriod } from "./plan-cycles.ts";
 import { receipt, type Receipt, type ReceiptInput } from "./lesson-wallet.ts";
 
 /** Online coaching subscriptions: each month of the period includes one four-week plan. */
@@ -137,21 +138,25 @@ export function subscriptionStatus(
     : "active";
 }
 
-/** One four-week plan for each month purchased. */
+/** One four-week cycle for each month purchased. */
 export const includedPlans = (s: Pick<OnlineSubscription, "durationMonths">) =>
   s.durationMonths;
 
-/** Assignments whose plan month falls inside the subscription period. */
+/** Personalized plans whose cycle starts inside the subscription period. */
 export function assignmentsInPeriod(
   assignments: PlanAssignment[],
   studentId: string,
   s: Pick<OnlineSubscription, "startsOn" | "endsOn">,
 ) {
-  const from = s.startsOn.slice(0, 7),
-    to = s.endsOn.slice(0, 7);
-  return assignments.filter(
-    (a) => a.studentId === studentId && a.month >= from && a.month <= to,
-  );
+  return assignments.filter((a) => {
+    if (a.studentId !== studentId || a.guidedCategory) return false;
+    if (!a.startsOn)
+      return (
+        a.month >= s.startsOn.slice(0, 7) && a.month <= s.endsOn.slice(0, 7)
+      );
+    const start = assignmentPeriod(a).startsOn;
+    return s.startsOn <= start && start <= s.endsOn;
+  });
 }
 
 /** The subscription that matters today: the running one, else the next, else the latest. */
@@ -184,22 +189,43 @@ export function subscriptionForMonth(
   );
 }
 
+/** The subscription running on a day. */
+export function subscriptionForDate(
+  subscriptions: OnlineSubscription[] | undefined,
+  day: string,
+) {
+  return (subscriptions ?? []).find(
+    (s) => s.startsOn <= day && day <= s.endsOn,
+  );
+}
+/** The subscription of a plan: the one running when its cycle starts (older plans: by month). */
+export function subscriptionForAssignment(
+  subscriptions: OnlineSubscription[] | undefined,
+  assignment: Pick<PlanAssignment, "month" | "startsOn">,
+) {
+  return assignment.startsOn
+    ? subscriptionForDate(subscriptions, assignment.startsOn)
+    : subscriptionForMonth(subscriptions, assignment.month);
+}
+
 /** The team member matching the student's reference coach, by name. */
 export function referenceCoachId(state: CrmState, student: CrmStudent) {
   const name = normalize(coachName(student.coach));
   return state.admins.find((a) => normalize(coachName(a.name)) === name)?.id;
 }
 
-/** Default coach for a monthly plan: the subscription coach, else the reference coach. */
+/** Default coach for a plan starting on a day (or in a month): the subscription coach, else the reference coach. */
 export function defaultPlanCoachId(
   state: CrmState,
   student: CrmStudent,
-  month: string,
+  dayOrMonth: string | undefined,
 ) {
-  return (
-    subscriptionForMonth(student.onlineSubscriptions, month)?.coachId ??
-    referenceCoachId(state, student)
-  );
+  const subscription = !dayOrMonth
+    ? undefined
+    : dayOrMonth.length === 7
+      ? subscriptionForMonth(student.onlineSubscriptions, dayOrMonth)
+      : subscriptionForDate(student.onlineSubscriptions, dayOrMonth);
+  return subscription?.coachId ?? referenceCoachId(state, student);
 }
 
 /** Coach who follows (and is credited for) an assigned plan. */
@@ -207,7 +233,11 @@ export function assignmentCoachId(state: CrmState, assignment: PlanAssignment) {
   if (assignment.coachId) return assignment.coachId;
   const student = state.students.find((s) => s.id === assignment.studentId);
   return student
-    ? defaultPlanCoachId(state, student, assignment.month)
+    ? defaultPlanCoachId(
+        state,
+        student,
+        assignment.startsOn ?? assignment.month,
+      )
     : undefined;
 }
 

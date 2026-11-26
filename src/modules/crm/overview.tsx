@@ -20,7 +20,8 @@ import { useCan, useCrm, useRecentActivity, useViewer } from "./store";
 import { validPropertyValue } from "./model";
 import { romeLocal, todayRome } from "./fitness-logic";
 import { LocalNotice } from "./ui";
-import { formatDate, formatMonth } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { runningAssignments } from "./plan-cycles";
 import { daysUntil, racesSoon } from "./cycle-feedback";
 import { pendingOnlineReceipts, pendingReceipts } from "./payments-workspace";
 
@@ -48,14 +49,14 @@ export default function OverviewPage() {
   const can = useCan();
   const now = new Date();
   const today = todayRome();
-  const month = today.slice(0, 7);
   const students = state.students.filter((s) => !s.archived);
   const required = state.properties.filter((p) => !p.archived && p.required);
   const incomplete = students.filter((s) =>
     required.some((p) => !validPropertyValue(p, s.properties[p.id])),
   );
+  // Students with a plan running today.
   const assigned = new Set(
-    state.assignments?.filter((a) => a.month === month).map((a) => a.studentId),
+    runningAssignments(state.assignments ?? [], today).map((a) => a.studentId),
   );
   const races = racesSoon(state, today, 14);
   const unassigned = students.filter(
@@ -308,9 +309,9 @@ export default function OverviewPage() {
                 {
                   title: "Studenti senza piano",
                   items: unassigned,
-                  hint: formatMonth(month),
+                  hint: "Nessun ciclo in corso oggi",
                   icon: Dumbbell,
-                  href: "/admin/piani",
+                  href: "/admin/coaching-online",
                 },
                 {
                   title: "Pagamenti da verificare",

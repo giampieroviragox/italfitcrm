@@ -28,6 +28,8 @@ import {
 import { useCrm, useHydrated } from "./store";
 import { studentAccess } from "./tier-access";
 import { LocalNotice, control } from "./ui";
+import { formatDay, shiftDay, trackDue, type CycleDue } from "./plan-cycles";
+import { dueText } from "./coaching-client";
 
 type Filter = "all" | SubscriptionStatus;
 const order: Record<SubscriptionStatus, number> = {
@@ -72,8 +74,34 @@ export function OnlineCoachingWorkspace() {
     (s) =>
       !s.archived &&
       !s.onlineSubscriptions?.length &&
+      !s.guidedPrograms?.length &&
       studentAccess(state, s).plans,
   );
+  // Clients whose next four-week cycle has to be prepared, soonest first.
+  const todo = rows
+    .flatMap((r) => {
+      if (r.status === "expired") return [];
+      if (
+        r.status === "upcoming" &&
+        r.subscription.startsOn > shiftDay(today, 7)
+      )
+        return [];
+      const due = trackDue(
+        (state.assignments ?? []).filter(
+          (a) => a.studentId === r.student.id && !a.guidedCategory,
+        ),
+        today,
+        r.subscription.startsOn,
+      );
+      if (
+        due.state !== "due" ||
+        due.dueOn > r.subscription.endsOn ||
+        r.assigned.length >= includedPlans(r.subscription)
+      )
+        return [];
+      return [{ ...r, due: due as Extract<CycleDue, { state: "due" }> }];
+    })
+    .toSorted((a, b) => a.due.dueOn.localeCompare(b.due.dueOn));
   const coaches = state.admins.filter((a) =>
     rows.some((r) => r.subscription.coachId === a.id),
   );
@@ -115,9 +143,43 @@ export function OnlineCoachingWorkspace() {
     <>
       <PageHeading
         title="Coaching online"
-        description="Abbonamenti attivi, scadenze e coach assegnato. Ogni mese include un piano da quattro settimane."
+        description="Clienti, scadenze e coach. Ogni mese di abbonamento include un piano da quattro settimane: apri un cliente per il piano in corso, le bozze e lo storico."
       />
       <LocalNotice />
+      {todo.length > 0 && (
+        <section
+          aria-labelledby="todo-heading"
+          className="mb-6 overflow-hidden rounded-2xl border bg-card"
+        >
+          <div className="flex items-center justify-between border-b bg-subtle px-4 py-2.5">
+            <h2 id="todo-heading" className="text-sm font-semibold">
+              Programmi da fare
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {todo.length} {todo.length === 1 ? "cliente" : "clienti"}
+            </span>
+          </div>
+          <ul className="divide-y">
+            {todo.map(({ student, subscription: s, due, assigned }, i) => (
+              <li key={student.id}>
+                <Link
+                  href={`/admin/coaching-online/${encodeURIComponent(student.id)}`}
+                  className="grid gap-x-4 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-subtle sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_auto] sm:items-center"
+                >
+                  <StudentIdentity student={student} index={i} />
+                  <p className="text-muted-foreground">{dueText(due, today)}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {due.dueOn <= today
+                      ? "Da fare subito"
+                      : `Entro il ${formatDay(due.dueOn)}`}{" "}
+                    · piano {assigned.length + 1} di {includedPlans(s)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {rows.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-2 sm:px-3">
           <PageTabs
@@ -219,7 +281,7 @@ export function OnlineCoachingWorkspace() {
                 return (
                   <li key={student.id}>
                     <Link
-                      href={`/admin/studenti/${encodeURIComponent(student.id)}?tab=coaching`}
+                      href={`/admin/coaching-online/${encodeURIComponent(student.id)}`}
                       className="grid gap-x-4 gap-y-2 px-4 py-3.5 text-sm transition-colors hover:bg-subtle sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center"
                     >
                       <StudentIdentity student={student} index={i} />

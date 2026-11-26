@@ -12,7 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { formatDate, formatMonth } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import {
   daysUntil,
   feedbackFor,
@@ -41,6 +41,7 @@ import { studentAccessLabel } from "./student-access";
 import { coachName } from "./student-coach";
 import { studentTierLabel } from "./student-tiers";
 import { loggedSessions } from "./workout-log";
+import { currentAssignment, periodLabel } from "./plan-cycles";
 
 const dateTime = (iso: string) =>
   new Intl.DateTimeFormat("it-IT", {
@@ -123,9 +124,7 @@ export function StudentOverview({
     (a) => a.studentId === student.id,
   );
   const subscription = currentSubscription(student.onlineSubscriptions, today);
-  const plan =
-    assignments.find((a) => a.month === today.slice(0, 7)) ??
-    assignments.toSorted((a, b) => b.month.localeCompare(a.month))[0];
+  const plan = currentAssignment(assignments, today);
   const entries = student.workoutEntries ?? [];
   const history = loggedSessions(assignments, entries);
   const planDone = plan
@@ -235,7 +234,7 @@ export function StudentOverview({
           <>
             <Row label="Piano">
               <span className="first-letter:uppercase">
-                {plan.snapshot.title} · {formatMonth(plan.month)}
+                {plan.snapshot.title} · {periodLabel(plan)}
               </span>
             </Row>
             <Row label="Coach del piano">
@@ -364,7 +363,9 @@ export function StudentOverview({
           <>
             <Row label="Piano">
               <span className="first-letter:uppercase">
-                {feedbackPlan ? formatMonth(feedbackPlan.month) : "—"}
+                {feedbackPlan
+                  ? `${feedbackPlan.snapshot.title} · ${periodLabel(feedbackPlan)}`
+                  : "—"}
               </span>
             </Row>
             <Row label="Com’è andato">

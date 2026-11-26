@@ -46,14 +46,26 @@ export interface WorkoutPlan {
   status: "draft" | "published" | "archived";
   program?: WorkoutProgram;
   sessions: WorkoutSession[];
+  /** Client a personalized plan belongs to. */
+  studentId?: string;
+  /** Guided program this plan is a version of. */
+  guidedCategory?: import("./plan-cycles.ts").GuidedCategory;
+  /** When the plan was last published: the newest guided version is the current one. */
+  publishedAt?: string;
 }
 export interface PlanAssignment {
   id: string;
   studentId: string;
   planId: string;
+  /** Month of the cycle start (accounting month). */
   month: string;
+  /** Four-week cycle: start day and start + 27 days. Older records have only `month`. */
+  startsOn?: string;
+  endsOn?: string;
+  /** Set when the plan is a guided program version. */
+  guidedCategory?: import("./plan-cycles.ts").GuidedCategory;
   createdAt: string;
-  /** Coach who follows this monthly plan; defaults to the subscription coach. */
+  /** Coach who follows this plan; defaults to the subscription coach. */
   coachId?: string;
   snapshot: {
     title: string;

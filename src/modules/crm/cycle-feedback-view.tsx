@@ -29,12 +29,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatDate, formatMonth } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { assignmentPeriod, formatDay, periodLabel } from "./plan-cycles";
 import { cn } from "@/lib/utils";
 import type { PlanAssignment } from "./fitness-model";
 import {
   daysUntil,
   overallRatings,
+  planEndDate,
   plannedSessionsPerWeek,
   sessionLengths,
   upcomingRaces,
@@ -66,7 +68,7 @@ export function FeedbackPrompt({
       </span>
       <div className="min-w-0 flex-1 basis-56">
         <p className="text-sm text-muted-foreground first-letter:uppercase">
-          Fine piano · {formatMonth(assignment.month)}
+          Fine piano · {formatDay(planEndDate(assignment))}
         </p>
         <h2 className="text-lg font-semibold tracking-tight">
           Com’è andato “{assignment.snapshot.title}”?
@@ -373,7 +375,7 @@ export function FeedbackWizard({
             Questionario di fine piano
           </SheetTitle>
           <SheetDescription className="first-letter:uppercase">
-            {assignment.snapshot.title} · {formatMonth(assignment.month)}
+            {assignment.snapshot.title} · {periodLabel(assignment)}
           </SheetDescription>
         </SheetHeader>
         <Button
@@ -946,8 +948,9 @@ export function FeedbackHistory({
     }))
     .toSorted(
       (a, b) =>
-        (b.plan?.month ?? "").localeCompare(a.plan?.month ?? "") ||
-        b.f.submittedAt.localeCompare(a.f.submittedAt),
+        (b.plan ? assignmentPeriod(b.plan).startsOn : "").localeCompare(
+          a.plan ? assignmentPeriod(a.plan).startsOn : "",
+        ) || b.f.submittedAt.localeCompare(a.f.submittedAt),
     );
   return (
     <section aria-labelledby="feedback-title" className="space-y-3">
@@ -956,7 +959,7 @@ export function FeedbackHistory({
           Feedback di fine piano
         </h2>
         <p className="text-sm text-muted-foreground">
-          Le risposte al questionario di ogni piano mensile.
+          Le risposte al questionario di fine piano.
         </p>
       </div>
       {items.length ? (
@@ -969,7 +972,7 @@ export function FeedbackHistory({
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h3 className="font-semibold first-letter:uppercase">
                   {plan
-                    ? `${plan.snapshot.title} · ${formatMonth(plan.month)}`
+                    ? `${plan.snapshot.title} · ${periodLabel(plan)}`
                     : "Piano rimosso"}
                 </h3>
                 <time

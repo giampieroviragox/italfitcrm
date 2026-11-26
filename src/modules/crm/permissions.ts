@@ -242,6 +242,15 @@ export function restrictUpdate(
         ))
   )
     deny("i piani");
+  if (
+    !scope.can("plans") &&
+    proposed.students.some(
+      (s) =>
+        json(s.guidedPrograms) !==
+        json(current.students.find((x) => x.id === s.id)?.guidedPrograms),
+    )
+  )
+    deny("i programmi guidati");
   let lessons = proposed.lessons,
     bookings = proposed.bookings;
   if (!scope.can("lessons")) {

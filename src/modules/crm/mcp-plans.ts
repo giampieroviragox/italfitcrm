@@ -13,6 +13,13 @@ import type {
   WorkoutSession,
 } from "./fitness-model.ts";
 import type { CrmState } from "./model.ts";
+import {
+  assignmentPeriod,
+  byStart,
+  guidedLabel,
+  isGuidedCategory,
+  type GuidedCategory,
+} from "./plan-cycles.ts";
 import { studentTierLabel } from "./student-tiers.ts";
 import { studentAccess } from "./tier-access.ts";
 
@@ -27,8 +34,28 @@ export interface McpStudentSummary {
   nome: string;
   tier: string;
   pianiAbilitati: boolean;
-  mesiConPiano: string[];
+  /** Assigned four-week cycles, oldest first. */
+  cicli: McpCycle[];
+  /** Guided programs the student follows. */
+  programmiGuidati: string[];
 }
+export interface McpCycle {
+  inizio: string;
+  fine: string;
+  titolo: string;
+  programmaGuidato?: string;
+}
+const cycleSummary = (a: PlanAssignment): McpCycle => {
+  const p = assignmentPeriod(a);
+  return {
+    inizio: p.startsOn,
+    fine: p.endsOn,
+    titolo: a.snapshot.title,
+    ...(a.guidedCategory
+      ? { programmaGuidato: guidedLabel(a.guidedCategory) }
+      : {}),
+  };
+};
 
 export interface McpStudentList {
   /** Students matching the search, before the limit. */
@@ -67,20 +94,26 @@ export function mcpStudents(
       nome: `${student.firstName} ${student.lastName}`.trim(),
       tier: studentTierLabel(student, state.tiers),
       pianiAbilitati: studentAccess(state, student).plans,
-      mesiConPiano: (state.assignments ?? [])
-        .filter((assignment) => assignment.studentId === student.id)
-        .map((assignment) => assignment.month)
-        .sort(),
+      cicli: byStart(
+        (state.assignments ?? []).filter(
+          (assignment) => assignment.studentId === student.id,
+        ),
+      ).map(cycleSummary),
+      programmiGuidati: (student.guidedPrograms ?? []).map((g) =>
+        guidedLabel(g.category),
+      ),
     };
   }
 }
 
 export type McpStudentPlan =
-  | { trovato: false; motivo: string; mesiDisponibili?: string[] }
+  | { trovato: false; motivo: string; cicliDisponibili?: McpCycle[] }
   | {
       trovato: true;
       studente: string;
-      mese: string;
+      /** The four-week cycle (start and end day). */
+      periodo: { inizio: string; fine: string };
+      programmaGuidato?: string;
       modelloId: string;
       piano: PlanAssignment["snapshot"];
       /** Questionnaire answers for this plan, when submitted. */
@@ -108,10 +141,14 @@ export type McpStudentPlan =
       }[];
     };
 
+/**
+ * A student's plan: the cycle covering a day (AAAA-MM-GG), the latest cycle
+ * starting in a month (AAAA-MM), or the latest cycle. Personalized plans first.
+ */
 export function mcpStudentPlan(
   state: CrmState,
   studentId: string,
-  month?: string,
+  when?: string,
 ): McpStudentPlan {
   const student = state.students.find(
     (item) => item.id === studentId && !item.archived,
@@ -121,26 +158,47 @@ export function mcpStudentPlan(
       trovato: false,
       motivo: "Studente non trovato. Usa cerca_studenti per ottenere l’ID.",
     };
-  const assignments = (state.assignments ?? [])
-    .filter((assignment) => assignment.studentId === student.id)
-    .sort((a, b) => a.month.localeCompare(b.month));
-  const months = assignments.map((assignment) => assignment.month);
-  const assignment = month
-    ? assignments.find((item) => item.month === month)
-    : assignments.at(-1);
+  const assignments = byStart(
+    (state.assignments ?? []).filter(
+      (assignment) => assignment.studentId === student.id,
+    ),
+  );
+  const matching = assignments.filter((item) => {
+    if (!when) return true;
+    const p = assignmentPeriod(item);
+    return when.length === 7
+      ? p.startsOn.startsWith(when)
+      : p.startsOn <= when && when <= p.endsOn;
+  });
+  // Latest start wins; at equal start the personalized plan comes last, so it wins.
+  const assignment = byStart(matching)
+    .toSorted(
+      (a, b) =>
+        assignmentPeriod(a).startsOn.localeCompare(
+          assignmentPeriod(b).startsOn,
+        ) ||
+        Number(Boolean(b.guidedCategory)) - Number(Boolean(a.guidedCategory)),
+    )
+    .at(-1);
   if (!assignment)
     return {
       trovato: false,
-      motivo: month
-        ? `Nessun piano assegnato per ${month}.`
+      motivo: when
+        ? `Nessun piano assegnato per ${when}.`
         : "Lo studente non ha ancora piani assegnati.",
-      mesiDisponibili: months,
+      cicliDisponibili: byStart(assignments).map(cycleSummary),
     };
   const feedback = feedbackFor(student, assignment);
   return {
     trovato: true,
     studente: `${student.firstName} ${student.lastName}`.trim(),
-    mese: assignment.month,
+    periodo: {
+      inizio: assignmentPeriod(assignment).startsOn,
+      fine: assignmentPeriod(assignment).endsOn,
+    },
+    ...(assignment.guidedCategory
+      ? { programmaGuidato: guidedLabel(assignment.guidedCategory) }
+      : {}),
     modelloId: assignment.planId,
     piano: assignment.snapshot,
     ...(feedback
@@ -190,6 +248,9 @@ export interface McpPlanSummary {
   stato: WorkoutPlan["status"];
   sessioni: number;
   obiettivo?: string;
+  /** Client the plan belongs to, or guided program it is a version of. */
+  studenteId?: string;
+  programmaGuidato?: GuidedCategory;
 }
 
 export function mcpPlanTemplates(state: CrmState): McpPlanSummary[] {
@@ -201,6 +262,8 @@ export function mcpPlanTemplates(state: CrmState): McpPlanSummary[] {
       stato: plan.status,
       sessioni: plan.sessions.length,
       ...(plan.program?.goal ? { obiettivo: plan.program.goal } : {}),
+      ...(plan.studentId ? { studenteId: plan.studentId } : {}),
+      ...(plan.guidedCategory ? { programmaGuidato: plan.guidedCategory } : {}),
     }));
 }
 
@@ -236,12 +299,19 @@ Esercizio: { id?, name, sets, reps, restSeconds, notes?, videoUrl? }
 - restSeconds: intero da 0 a 900.
 - notes: testo, anche vuoto. videoUrl: link http/https facoltativo.
 
-Date e mesi nel fuso Europe/Rome; il mese di assegnazione è nel formato "AAAA-MM".
+Date nel fuso Europe/Rome, formato "AAAA-MM-GG". Ogni piano dura un ciclo di 4 settimane (28 giorni): l'admin sceglie il giorno di inizio quando lo assegna, di norma il giorno dopo la fine del ciclo precedente.
 
-Salvataggio: salva_bozza_piano crea una nuova bozza oppure, con modelloId, sostituisce il contenuto di una bozza esistente. I piani pubblicati non si modificano: si crea una nuova bozza (anche partendo da leggi_modello_piano). La pubblicazione e l’assegnazione allo studente le fa l’admin nel CRM dal link restituito.`;
+Destinatario: ogni nuova bozza appartiene a un cliente del Coaching online { studenteId } (ID da cerca_studenti) oppure a un programma guidato { programmaGuidato: "hyrox" | "old-school" | "hybrid" | "home-edition" }. La bozza compare subito nella pagina del cliente o del programma.
 
+Salvataggio: salva_bozza_piano crea una nuova bozza oppure, con modelloId, sostituisce il contenuto di una bozza esistente. I piani pubblicati non si modificano: si crea una nuova bozza (anche partendo da leggi_modello_piano). La pubblicazione e l’assegnazione del ciclo le fa l’admin nel CRM dal link restituito.`;
+
+/** Where a new draft belongs. */
+export type McpRecipient =
+  | { studenteId: string; programmaGuidato?: undefined }
+  | { programmaGuidato: string; studenteId?: undefined };
 export interface McpDraftInput {
   modelloId?: string;
+  destinatario?: McpRecipient;
   title: string;
   description: string;
   program?: WorkoutPlan["program"];
@@ -274,6 +344,7 @@ export function applyDraftPlan(
     throw new Error(
       "Questo modello è già pubblicato o archiviato e non si modifica: ometti modelloId per salvarlo come nuova bozza.",
     );
+  const owner = draftOwner(state, input.destinatario, existing);
   const sessionIds = new Set<string>();
   const sessions: WorkoutSession[] = input.sessions.map((session) => {
     const id = session.id?.trim() || newId();
@@ -299,11 +370,60 @@ export function applyDraftPlan(
     status: "draft",
     sessions,
     ...(input.program ? { program: input.program } : {}),
+    ...owner,
   };
   const plans = existing
     ? (state.plans ?? []).map((item) => (item.id === plan.id ? plan : item))
     : [...(state.plans ?? []), plan];
   return { state: { ...state, plans }, plan, created: !existing };
+}
+
+/** The client or guided program of a draft; a new draft must have one. */
+function draftOwner(
+  state: CrmState,
+  recipient: McpRecipient | undefined,
+  existing: WorkoutPlan | undefined,
+): Pick<WorkoutPlan, "studentId" | "guidedCategory"> {
+  const kept = existing
+    ? {
+        ...(existing.studentId ? { studentId: existing.studentId } : {}),
+        ...(existing.guidedCategory
+          ? { guidedCategory: existing.guidedCategory }
+          : {}),
+      }
+    : {};
+  if (!recipient) {
+    if (existing) return kept;
+    throw new Error(
+      "Indica il destinatario: { studenteId } per un cliente oppure { programmaGuidato } per un programma guidato.",
+    );
+  }
+  let owner: Pick<WorkoutPlan, "studentId" | "guidedCategory">;
+  if (recipient.studenteId) {
+    const student = state.students.find(
+      (s) => s.id === recipient.studenteId && !s.archived,
+    );
+    if (!student)
+      throw new Error("Studente non trovato. Usa cerca_studenti per l’ID.");
+    if (!studentAccess(state, student).plans)
+      throw new Error("Il tier dello studente non include i piani.");
+    owner = { studentId: student.id };
+  } else if (isGuidedCategory(recipient.programmaGuidato)) {
+    owner = { guidedCategory: recipient.programmaGuidato };
+  } else
+    throw new Error(
+      'Programma guidato non valido: usa "hyrox", "old-school", "hybrid" o "home-edition".',
+    );
+  if (
+    existing &&
+    (existing.studentId || existing.guidedCategory) &&
+    (existing.studentId !== owner.studentId ||
+      existing.guidedCategory !== owner.guidedCategory)
+  )
+    throw new Error(
+      "La bozza appartiene a un altro destinatario: ometti modelloId per crearne una nuova.",
+    );
+  return owner;
 }
 
 type NewExercise = Omit<WorkoutExercise, "id" | "notes"> & { notes?: string };

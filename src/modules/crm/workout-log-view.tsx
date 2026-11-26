@@ -4,7 +4,8 @@ import { useId, useMemo, useState, type FormEvent } from "react";
 import { Copy, History, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-time-picker";
-import { formatDate, formatMonth } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { periodLabel } from "./plan-cycles";
 import { cn } from "@/lib/utils";
 import type {
   PlanAssignment,
@@ -364,7 +365,7 @@ export function WorkoutHistory({
                   </time>
                 </div>
                 <p className="text-xs text-muted-foreground first-letter:uppercase">
-                  {assignment.snapshot.title} · {formatMonth(assignment.month)}
+                  {assignment.snapshot.title} · {periodLabel(assignment)}
                   {entry.rpe
                     ? ` · RPE ${entry.rpe} (${rpeLabels[entry.rpe]})`
                     : ""}

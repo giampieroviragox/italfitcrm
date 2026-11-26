@@ -10,6 +10,13 @@ import { maxAvailabilityCapacity } from "./availability.ts";
 import { normalize, validDate, type CrmState } from "./model.ts";
 import type { WorkoutPlan, Lesson } from "./fitness-model.ts";
 import { studentAccess, bookingRestriction } from "./tier-access.ts";
+import {
+  assignmentPeriod,
+  assignmentTrack,
+  cycleEnd,
+  isGuidedCategory,
+  periodsOverlap,
+} from "./plan-cycles.ts";
 export const todayRome = () =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(
     new Date(),
@@ -115,6 +122,11 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
             obj(p) &&
             ["id", "title", "description"].every((k) => string(p[k])) &&
             ["draft", "published", "archived"].includes(String(p.status)) &&
+            (p.studentId === undefined || string(p.studentId)) &&
+            (p.guidedCategory === undefined ||
+              isGuidedCategory(p.guidedCategory)) &&
+            !(p.studentId !== undefined && p.guidedCategory !== undefined) &&
+            (p.publishedAt === undefined || string(p.publishedAt)) &&
             sessionsValid(p.sessions) &&
             programValid(p.program),
         ))) &&
@@ -127,6 +139,10 @@ export function isFitnessData(v: Record<string, unknown>): boolean {
               string(a[k]),
             ) &&
             (a.coachId === undefined || string(a.coachId)) &&
+            ((a.startsOn === undefined && a.endsOn === undefined) ||
+              (validDate(String(a.startsOn)) && validDate(String(a.endsOn)))) &&
+            (a.guidedCategory === undefined ||
+              isGuidedCategory(a.guidedCategory)) &&
             obj(a.snapshot) &&
             string(a.snapshot.title) &&
             string(a.snapshot.description) &&
@@ -249,11 +265,19 @@ export function assertFitnessTransition(
     if (!programValid(plan.program))
       throw new Error("Periodo o dettagli del programma non validi.");
   }
-  if (
-    new Set(assignments.map((a) => `${a.studentId}:${a.month}`)).size !==
-    assignments.length
-  )
-    throw new Error("Ogni studente può avere un solo piano per mese.");
+  const tracks = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const key = `${a.studentId}:${assignmentTrack(a)}`;
+    const others = tracks.get(key) ?? [];
+    const clash = others.find((o) =>
+      periodsOverlap(assignmentPeriod(o), assignmentPeriod(a)),
+    );
+    if (clash)
+      throw new Error(
+        `Il ciclo si sovrappone a un piano già assegnato (${assignmentPeriod(clash).startsOn} → ${assignmentPeriod(clash).endsOn}).`,
+      );
+    tracks.set(key, [...others, a]);
+  }
   for (const a of assignments) {
     const plan = plans.find((p) => p.id === a.planId),
       student = next.students.find((s) => s.id === a.studentId),
@@ -263,6 +287,11 @@ export function assertFitnessTransition(
       JSON.stringify(withoutCoach(old)) !== JSON.stringify(withoutCoach(a));
     if (a.coachId !== undefined && !next.admins.some((x) => x.id === a.coachId))
       throw new Error("Il coach del piano non fa parte del team.");
+    if (
+      a.startsOn !== undefined &&
+      (a.endsOn !== cycleEnd(a.startsOn) || a.month !== a.startsOn.slice(0, 7))
+    )
+      throw new Error("Il ciclo deve durare 4 settimane.");
     if (
       !plan ||
       !student ||
@@ -275,6 +304,19 @@ export function assertFitnessTransition(
       throw new Error(
         "Assegna solo piani pubblicati a studenti non archiviati.",
       );
+    if (contentChanged && plan.studentId && plan.studentId !== a.studentId)
+      throw new Error("Questo piano appartiene a un altro cliente.");
+    if (
+      contentChanged &&
+      (plan.guidedCategory ?? null) !== (a.guidedCategory ?? null)
+    )
+      throw new Error("Il programma guidato del piano non corrisponde.");
+    if (
+      contentChanged &&
+      a.guidedCategory &&
+      !student.guidedPrograms?.some((g) => g.category === a.guidedCategory)
+    )
+      throw new Error("Lo studente non segue questo programma guidato.");
     validateSessions({ sessions: a.snapshot.sessions, status: "published" });
     if (!programValid(a.snapshot.program))
       throw new Error("Programma assegnato non valido.");

@@ -4,7 +4,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-time-picker";
 import { SelectControl } from "@/components/ui/select-control";
-import { formatDate, formatMonth } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { byStart, periodLabel } from "./plan-cycles";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "./confirm-dialog";
 import { todayRome } from "./fitness-logic";
@@ -271,7 +272,7 @@ function SubscriptionForm({
           </Field>
         </div>
         <p className="text-sm text-muted-foreground">
-          Include {duration} piani mensili da quattro settimane.
+          Include {duration} piani da quattro settimane.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" size="sm">
@@ -339,7 +340,8 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
               state.assignments ?? [],
               student.id,
               s,
-            ).toSorted((a, b) => a.month.localeCompare(b.month));
+            );
+            const sorted = byStart(assigned);
             return (
               <li
                 key={s.id}
@@ -368,7 +370,7 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
                   )}
                   {assigned.length > 0 && (
                     <ul className="flex flex-wrap gap-1.5 pt-1">
-                      {assigned.map((a) => {
+                      {sorted.map((a) => {
                         const coachId = assignmentCoachId(state, a);
                         return (
                           <li
@@ -379,7 +381,7 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
                                 "border-foreground/40 font-medium",
                             )}
                           >
-                            {formatMonth(a.month)} ·{" "}
+                            {periodLabel(a)} ·{" "}
                             {coachId ? coachLabel(state, coachId) : "—"}
                           </li>
                         );
@@ -467,7 +469,7 @@ export function OnlineCoachingPanel({ student }: { student: CrmStudent }) {
   );
 }
 
-/** Reassigns the coach of one monthly plan; the coach is credited for that month. */
+/** Reassigns the coach of one plan; the coach is credited in the month the cycle starts. */
 export function PlanCoachSelect({
   assignment,
 }: {
@@ -480,7 +482,7 @@ export function PlanCoachSelect({
   return (
     <div className="min-w-48 space-y-1">
       <SelectControl
-        aria-label={`Coach del piano di ${assignment.month}`}
+        aria-label={`Coach del piano ${periodLabel(assignment)}`}
         className={control}
         value={effective}
         disabled={pending}

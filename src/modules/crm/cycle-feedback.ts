@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { validDate, type CrmState, type CrmStudent } from "./model.ts";
 import type { PlanAssignment, WorkoutEntry } from "./fitness-model.ts";
+import { assignmentPeriod } from "./plan-cycles.ts";
 
 /** End-of-cycle questionnaire (one per monthly plan) and the student's race calendar. */
 const identifier = z.string().min(1).max(200);
@@ -75,12 +76,9 @@ const shift = (date: string, days: number) => {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 };
-/** Last day of a plan: the program end date, else the end of its month. */
+/** Last day of a plan: its cycle end, else the program end date, else the end of its month. */
 export function planEndDate(assignment: PlanAssignment) {
-  if (assignment.snapshot.program?.endsOn)
-    return assignment.snapshot.program.endsOn;
-  const [y, m] = assignment.month.split("-").map(Number) as [number, number];
-  return new Date(Date.UTC(y, m, 0, 12)).toISOString().slice(0, 10);
+  return assignmentPeriod(assignment).endsOn;
 }
 /** Planned sessions per week, as a starting point for the next plan. */
 export function plannedSessionsPerWeek(assignment: PlanAssignment) {
@@ -140,7 +138,7 @@ export function pendingFeedback(
     .filter(
       (a) => feedbackIsOpen(a, entries, today) && !feedbackFor(student, a),
     )
-    .toSorted((a, b) => b.month.localeCompare(a.month))[0];
+    .toSorted((a, b) => planEndDate(b).localeCompare(planEndDate(a)))[0];
 }
 export const upcomingRaces = (list: Race[] | undefined, today: string) =>
   (list ?? [])

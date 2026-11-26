@@ -16,7 +16,8 @@ import { requestJson, RequestError } from "@/lib/request-json";
 import { StudentCalendar } from "./student-calendar";
 import { Button } from "@/components/ui/button";
 import { FormError } from "./ui";
-import { PlanMonthSelect } from "./plan-month-select";
+import { PlanSelect } from "./plan-select";
+import { currentAssignment } from "./plan-cycles";
 import { StudentPlan } from "./student-plan";
 import type { WorkoutInput } from "./workout-progress";
 import { todayRome } from "./fitness-logic";
@@ -48,7 +49,7 @@ const views: Record<string, StudentView> = {
 export function StudentPortal({ initial }: { initial: StudentPortalData }) {
   const view = views[usePathname().replace(/\/$/, "")] ?? "home";
   const [data, setData] = useState(initial),
-    [month, setMonth] = useState(todayRome().slice(0, 7)),
+    [planId, setPlanId] = useState(""),
     [pending, setPending] = useState<string | null>(null),
     [refreshing, setRefreshing] = useState(false),
     [message, setMessage] = useState(""),
@@ -198,7 +199,10 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
       pendingRef.current = false;
     }
   };
-  const assignment = data.assignments.find((a) => a.month === month);
+  // The chosen plan, else the cycle running today (personalized first).
+  const assignment =
+    data.assignments.find((a) => a.id === planId) ??
+    currentAssignment(data.assignments, todayRome());
   const titles = {
     home: `Ciao, ${data.student.firstName}`,
     piano: "Il mio piano",
@@ -239,17 +243,20 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
             {titles[view]}
           </h1>
         </div>
-        {view === "piano" && data.services.plans && (
-          <div className="w-40 max-w-full sm:w-56">
-            <PlanMonthSelect
-              value={month}
-              months={data.assignments.map((a) => a.month)}
-              onChange={setMonth}
-              aria-label="Mese del piano"
-              student
-            />
-          </div>
-        )}
+        {view === "piano" &&
+          data.services.plans &&
+          assignment &&
+          data.assignments.length > 1 && (
+            <div className="w-56 max-w-full sm:w-72">
+              <PlanSelect
+                value={assignment.id}
+                assignments={data.assignments}
+                onChange={setPlanId}
+                aria-label="Piano da visualizzare"
+                student
+              />
+            </div>
+          )}
       </header>
       {view === "home" && feedbackDue && (
         <div>
@@ -337,8 +344,8 @@ export function StudentPortal({ initial }: { initial: StudentPortalData }) {
             />
           ) : (
             <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Nessun piano per questo mese. Il team ti assegnerà il piano del
-              tuo percorso.
+              Nessun piano ancora. Il team ti assegnerà il piano del tuo
+              percorso.
             </p>
           )}
         </>

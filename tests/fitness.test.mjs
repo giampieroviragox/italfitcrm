@@ -129,7 +129,7 @@ test("publishing requires exercises, valid sets, rest and safe video links", () 
     check(s, { ...s, plans: [{ ...p, status: "draft", sessions: [] }] }),
   );
 });
-test("monthly assignments are unique, published only, and preserve snapshots after source edits/archive", () => {
+test("assignments do not overlap, are published only, and preserve snapshots after source edits/archive", () => {
   const s = { ...state(), plans: [plan()] };
   const a = {
     id: "a1",
@@ -143,7 +143,7 @@ test("monthly assignments are unique, published only, and preserve snapshots aft
   assert.doesNotThrow(() => check(s, assigned));
   assert.throws(
     () => check(s, { ...assigned, assignments: [a, { ...a, id: "a2" }] }),
-    /solo piano/,
+    /sovrappone/,
   );
   assert.throws(
     () => check(s, { ...assigned, plans: [{ ...plan(), status: "draft" }] }),
@@ -162,6 +162,77 @@ test("monthly assignments are unique, published only, and preserve snapshots aft
         students: [{ ...student("a"), archived: true }, student("b")],
       }),
     /archiviati/,
+  );
+});
+test("four-week cycles: two in the same month, exact length, owner and guided enrollment", () => {
+  const s = { ...state(), plans: [plan()] };
+  const cycle = (id, startsOn, endsOn, extra = {}) => ({
+    id,
+    studentId: "a",
+    planId: "p",
+    month: startsOn.slice(0, 7),
+    startsOn,
+    endsOn,
+    createdAt: new Date(now).toISOString(),
+    snapshot: structuredClone(plan()),
+    ...extra,
+  });
+  const first = cycle("c1", "2026-11-02", "2026-11-29");
+  const second = cycle("c2", "2026-11-30", "2026-12-27");
+  assert.doesNotThrow(() => check(s, { ...s, assignments: [first, second] }));
+  assert.throws(
+    () =>
+      check(s, {
+        ...s,
+        assignments: [first, cycle("c3", "2026-11-20", "2026-12-17")],
+      }),
+    /sovrappone/,
+  );
+  assert.throws(
+    () =>
+      check(s, {
+        ...s,
+        assignments: [cycle("c4", "2026-11-02", "2026-11-30")],
+      }),
+    /4 settimane/,
+  );
+  const owned = { ...s, plans: [{ ...plan(), studentId: "b" }] };
+  assert.throws(
+    () => check(owned, { ...owned, assignments: [first] }),
+    /altro cliente/,
+  );
+  const guided = { ...s, plans: [{ ...plan(), guidedCategory: "hyrox" }] };
+  const guidedCycle = cycle("g1", "2026-11-10", "2026-12-07", {
+    guidedCategory: "hyrox",
+  });
+  assert.throws(
+    () => check(guided, { ...guided, assignments: [guidedCycle] }),
+    /non segue/,
+  );
+  const enrolled = {
+    ...guided,
+    students: guided.students.map((x) =>
+      x.id === "a"
+        ? {
+            ...x,
+            guidedPrograms: [{ category: "hyrox", startsOn: "2026-11-10" }],
+          }
+        : x,
+    ),
+  };
+  assert.doesNotThrow(() =>
+    check(enrolled, { ...enrolled, assignments: [guidedCycle] }),
+  );
+  // A guided cycle runs in parallel with a personalized one.
+  const both = {
+    ...enrolled,
+    plans: [...enrolled.plans, { ...plan(), id: "p2" }],
+  };
+  assert.doesNotThrow(() =>
+    check(both, {
+      ...both,
+      assignments: [guidedCycle, { ...first, planId: "p2" }],
+    }),
   );
 });
 test("lessons reject past dates, coach/room overlap and capacity below enrolled students", () => {

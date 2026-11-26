@@ -8,9 +8,13 @@ import {
 import type { CrmState, CrmStudent } from "./model.ts";
 import {
   assignmentCoachId,
+  assignmentsInPeriod,
+  includedPlans,
+  subscriptionForAssignment,
   subscriptionForMonth,
   subscriptionOpen,
 } from "./online-coaching.ts";
+import { byStart } from "./plan-cycles.ts";
 
 /** Monthly figures for online coaching, lessons and coach compensation (cents). */
 const romeMonth = (iso: string) =>
@@ -30,7 +34,23 @@ const monthNumber = (month: string) =>
  * values always add up to the price.
  */
 export function planValue(state: CrmState, assignment: PlanAssignment) {
+  if (assignment.guidedCategory) return 0;
   const student = state.students.find((s) => s.id === assignment.studentId);
+  if (assignment.startsOn) {
+    // Four-week cycles: the price is split over the included plans, in start order.
+    const sub = subscriptionForAssignment(
+      student?.onlineSubscriptions,
+      assignment,
+    );
+    if (!sub) return 0;
+    const plans = includedPlans(sub);
+    const index = byStart(
+      assignmentsInPeriod(state.assignments ?? [], assignment.studentId, sub),
+    ).findIndex((a) => a.id === assignment.id);
+    if (index < 0 || index >= plans) return 0;
+    const share = Math.floor(sub.price / plans);
+    return share + (index < sub.price - share * plans ? 1 : 0);
+  }
   const sub = subscriptionForMonth(
     student?.onlineSubscriptions,
     assignment.month,
@@ -55,7 +75,7 @@ export interface PlanRow {
 /** Monthly plans with their value and the compensation of the coach following them. */
 export function planRows(state: CrmState, month: string): PlanRow[] {
   return (state.assignments ?? [])
-    .filter((a) => a.month === month)
+    .filter((a) => a.month === month && !a.guidedCategory)
     .flatMap((a) => {
       const student = state.students.find((s) => s.id === a.studentId);
       if (!student) return [];

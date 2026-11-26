@@ -1,19 +1,18 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Dumbbell, ArrowUpRight, Search, X } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PageTabs } from "@/components/ui/page-tabs";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/page-heading";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { useCrm, updateCrm, useHydrated, removeCrmRecord } from "./store";
 import { PlanEditor, AssignmentEditor } from "./plan-editor";
-import { LocalNotice, FormError, control } from "./ui";
+import { LocalNotice, FormError } from "./ui";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ExerciseThumb } from "./exercise-media-view";
 import type { WorkoutPlan, PlanAssignment } from "./fitness-model";
-import { formatMonth } from "@/lib/format";
+import { assignmentPeriod, periodLabel } from "./plan-cycles";
 const labels = {
   draft: "Bozza",
   published: "Pubblicato",
@@ -97,188 +96,21 @@ export function WorkoutContent({
     </div>
   );
 }
-export function PlansWorkspace() {
-  const state = useCrm();
-  const [editing, setEditing] = useState<WorkoutPlan | "new" | null>(null),
-    [assign, setAssign] = useState<string | null>(null),
-    [query, setQuery] = useState(""),
-    [status, setStatus] = useState("all");
-  const all = state.plans ?? [];
-  const plans = all.filter(
-    (p) =>
-      (status === "all" || p.status === status) &&
-      p.title.toLowerCase().includes(query.toLowerCase()),
-  );
-  return (
-    <>
-      <PageHeading
-        title="Piani e percorsi"
-        description="Prepara i piani di allenamento e assegnali mese per mese."
-        action={
-          <Button
-            size="lg"
-            className="rounded-full"
-            onClick={() => setEditing("new")}
-          >
-            <Plus className="size-4" />
-            Nuovo piano
-          </Button>
-        }
-      />
-      <LocalNotice />
-      {all.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-2 sm:px-3">
-          <PageTabs
-            label="Stato dei piani"
-            className="border-0 pt-0 pb-0 [&_[role=tab]]:h-10 [&_[role=tab]]:after:hidden"
-            value={status}
-            onChange={setStatus}
-            tabs={[
-              { value: "all", label: "Tutti", count: all.length },
-              {
-                value: "published",
-                label: "Pubblicati",
-                count: all.filter((p) => p.status === "published").length,
-              },
-              {
-                value: "draft",
-                label: "Bozze",
-                count: all.filter((p) => p.status === "draft").length,
-              },
-              {
-                value: "archived",
-                label: "Archiviati",
-                count: all.filter((p) => p.status === "archived").length,
-              },
-            ]}
-          />
-          <div className="relative min-w-40 flex-1 sm:max-w-64">
-            <Search
-              className="absolute top-3 left-3 size-4 text-muted-foreground"
-              aria-hidden
-            />
-            <input
-              aria-label="Cerca piani"
-              placeholder="Cerca un piano…"
-              className={`${control} rounded-xl pl-9`}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-      {!plans.length ? (
-        <div className="flex min-h-64 flex-col items-center justify-center rounded-3xl border bg-card px-6 py-12 text-center">
-          <span className="mb-4 grid size-12 place-items-center rounded-full bg-muted text-[var(--workspace-accent)]">
-            <Dumbbell className="size-5" strokeWidth={1.75} />
-          </span>
-          <h2 className="text-base font-medium">
-            {query || status !== "all"
-              ? "Nessun piano trovato"
-              : "Crea il primo piano"}
-          </h2>
-          <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-            {query || status !== "all"
-              ? "Nessun piano corrisponde alla ricerca e allo stato selezionato."
-              : "Crea le sessioni, aggiungi gli esercizi e pubblica il piano prima di assegnarlo."}
-          </p>
-          <Button
-            className="mt-5"
-            variant="outline"
-            onClick={() => {
-              if (query || status !== "all") {
-                setQuery("");
-                setStatus("all");
-              } else setEditing("new");
-            }}
-          >
-            {query || status !== "all" ? "Azzera filtri" : "Crea piano"}
-          </Button>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border bg-card">
-          <div className="flex items-center justify-between border-b bg-subtle px-4 py-2.5">
-            <h2 className="text-sm font-semibold">Libreria piani</h2>
-            <span aria-live="polite" className="text-xs text-muted-foreground">
-              {plans.length} {plans.length === 1 ? "piano" : "piani"}
-            </span>
-          </div>
-          <ul className="divide-y">
-            {plans.map((p) => {
-              const assigned =
-                state.assignments?.filter((a) => a.planId === p.id).length ?? 0;
-              return (
-                <li
-                  key={p.id}
-                  className="group relative flex min-h-16 items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted sm:px-4"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[var(--workspace-accent)]">
-                    <Dumbbell className="size-4" strokeWidth={1.75} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <Link
-                      className="block truncate text-sm font-semibold after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:outline-offset-[-3px] focus-visible:after:outline-primary"
-                      href={`/admin/piani/${encodeURIComponent(p.id)}`}
-                    >
-                      {p.title}
-                    </Link>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {p.description || "Nessuna descrizione"}
-                    </span>
-                  </span>
-                  <span className="hidden w-40 shrink-0 text-[13px] text-muted-foreground tabular-nums md:block">
-                    {p.sessions.length}{" "}
-                    {p.sessions.length === 1 ? "sessione" : "sessioni"} ·{" "}
-                    {assigned} {assigned === 1 ? "studente" : "studenti"}
-                  </span>
-                  <span className="hidden w-24 shrink-0 sm:block">
-                    <StatusChip status={p.status} />
-                  </span>
-                  <span className="relative flex shrink-0 items-center gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="hidden lg:inline-flex"
-                      onClick={() => setEditing(p)}
-                    >
-                      Modifica
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={p.status !== "published"}
-                      onClick={() => setAssign(p.id)}
-                    >
-                      Assegna
-                    </Button>
-                    <ActionMenu
-                      label={`Azioni per ${p.title}`}
-                      items={[
-                        { label: "Modifica", onSelect: () => setEditing(p) },
-                        {
-                          label: "Apri dettaglio",
-                          href: `/admin/piani/${encodeURIComponent(p.id)}`,
-                        },
-                      ]}
-                    />
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-      {editing && (
-        <PlanEditor
-          plan={editing === "new" ? undefined : editing}
-          close={() => setEditing(null)}
-        />
-      )}
-      {assign && (
-        <AssignmentEditor planId={assign} close={() => setAssign(null)} />
-      )}
-    </>
-  );
+/** Where a plan lives: its client in Coaching online, or its guided program. */
+export function planHome(
+  plan: Pick<WorkoutPlan, "studentId" | "guidedCategory">,
+) {
+  if (plan.studentId)
+    return {
+      href: `/admin/coaching-online/${encodeURIComponent(plan.studentId)}`,
+      label: "Torna al cliente",
+    };
+  if (plan.guidedCategory)
+    return {
+      href: `/admin/programmi-guidati/${plan.guidedCategory}`,
+      label: "Torna al programma guidato",
+    };
+  return { href: "/admin/coaching-online", label: "Coaching online" };
 }
 export function PlanDetail({ id }: { id: string }) {
   const state = useCrm(),
@@ -300,10 +132,10 @@ export function PlanDetail({ id }: { id: string }) {
       <>
         <h1 className="text-xl font-medium">Piano non trovato</h1>
         <Link
-          href="/admin/piani"
+          href="/admin/coaching-online"
           className="mt-4 inline-block text-sm underline"
         >
-          Tutti i piani
+          Coaching online
         </Link>
       </>
     );
@@ -312,7 +144,13 @@ export function PlanDetail({ id }: { id: string }) {
       <PageHeading
         title={plan.title}
         description={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <Link
+              href={planHome(plan).href}
+              className="underline-offset-4 hover:underline"
+            >
+              {planHome(plan).label}
+            </Link>
             <StatusChip status={plan.status} />
             {plan.sessions.length}{" "}
             {plan.sessions.length === 1 ? "sessione" : "sessioni"}
@@ -363,7 +201,11 @@ export function PlanDetail({ id }: { id: string }) {
           <div className="-mx-2">
             {(state.assignments ?? [])
               .filter((a) => a.planId === id)
-              .sort((a, b) => b.month.localeCompare(a.month))
+              .sort((a, b) =>
+                assignmentPeriod(b).startsOn.localeCompare(
+                  assignmentPeriod(a).startsOn,
+                ),
+              )
               .map((a) => {
                 const s = state.students.find((s) => s.id === a.studentId);
                 return (
@@ -376,13 +218,13 @@ export function PlanDetail({ id }: { id: string }) {
                         {s?.firstName} {s?.lastName}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground first-letter:uppercase">
-                        {formatMonth(a.month)}
+                        {periodLabel(a)}
                       </span>
                     </Link>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Rimuovi l’assegnazione di ${s?.firstName ?? ""} ${s?.lastName ?? ""} per ${formatMonth(a.month)}`}
+                      aria-label={`Rimuovi l’assegnazione di ${s?.firstName ?? ""} ${s?.lastName ?? ""} per ${periodLabel(a)}`}
                       onClick={() => {
                         setError("");
                         setRemoving(a);
@@ -417,7 +259,7 @@ export function PlanDetail({ id }: { id: string }) {
             await removeCrmRecord({ planId: id });
             setDeleting(false);
             setDeleted(true);
-            router.push("/admin/piani");
+            router.push(planHome(plan).href);
           } catch (e) {
             setError((e as Error).message);
           }
@@ -478,7 +320,7 @@ export function RemoveAssignmentDialog({
       title="Rimuovere l’assegnazione?"
       description={
         assignment
-          ? `${student?.firstName ?? "Lo studente"} ${student?.lastName ?? ""} non vedrà più “${assignment.snapshot.title}” di ${formatMonth(assignment.month)}. Anche i completamenti e le note di questo piano verranno eliminati. L’operazione resta nella cronologia dello studente e non si può annullare.`
+          ? `${student?.firstName ?? "Lo studente"} ${student?.lastName ?? ""} non vedrà più “${assignment.snapshot.title}” del ciclo ${periodLabel(assignment)}. Anche i completamenti e le note di questo piano verranno eliminati. L’operazione resta nella cronologia dello studente e non si può annullare.`
           : ""
       }
       confirmLabel="Rimuovi"
@@ -514,7 +356,7 @@ export function AssignedPlan({
         <div>
           <h2 className="text-base font-medium">{assignment.snapshot.title}</h2>
           <p className="text-[13px] text-muted-foreground first-letter:uppercase">
-            {formatMonth(assignment.month)}
+            {periodLabel(assignment)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -546,7 +388,7 @@ const chipDots = {
   published: "bg-emerald-500/100",
   archived: "bg-neutral-300",
 };
-function StatusChip({ status }: { status: WorkoutPlan["status"] }) {
+export function StatusChip({ status }: { status: WorkoutPlan["status"] }) {
   return (
     <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-foreground/[.045] px-2.5 text-xs font-medium text-foreground">
       <span

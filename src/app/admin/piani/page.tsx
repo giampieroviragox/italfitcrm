@@ -1,11 +1,5 @@
-import { PermissionGate } from "@/modules/crm/permission-gate";
-import type { Metadata } from "next";
-import { PlansWorkspace } from "@/modules/crm/plans-workspace";
-export const metadata: Metadata = { title: "Piani e percorsi" };
+import { redirect } from "next/navigation";
+// Plans now live with their client (Coaching online) or guided program.
 export default function Page() {
-  return (
-    <PermissionGate permission="plans">
-      <PlansWorkspace />
-    </PermissionGate>
-  );
+  redirect("/admin/coaching-online");
 }

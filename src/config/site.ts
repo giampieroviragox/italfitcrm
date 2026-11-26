@@ -13,8 +13,8 @@ export const navigation = [
     icon: "coaching",
   },
   {
-    href: "/admin/piani",
-    label: "Piani e percorsi",
+    href: "/admin/programmi-guidati",
+    label: "Programmi guidati",
     icon: "plans",
     permission: "plans",
   },

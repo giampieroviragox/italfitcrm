@@ -3,7 +3,13 @@ import { onlineReceipts, onlineSubscriptions } from "./online-coaching.ts";
 import { maxRecords } from "./workout-log.ts";
 import { cycleFeedbacks, races } from "./cycle-feedback.ts";
 import { isPermission, isTeamRole } from "./permissions.ts";
-import { propertyTypes, type CrmState, type PropertyValue } from "./model.ts";
+import {
+  propertyTypes,
+  validDate,
+  type CrmState,
+  type PropertyValue,
+} from "./model.ts";
+import { guidedCategories, isGuidedCategory } from "./plan-cycles.ts";
 import { validCoachImage } from "./student-coach.ts";
 import { isWorkoutEntries } from "./workout-entry-schema.ts";
 import { isFitnessData } from "./fitness-logic.ts";
@@ -143,6 +149,21 @@ export function isCrmState(v: unknown): v is CrmState {
         (s.cycleFeedback === undefined ||
           cycleFeedbacks.safeParse(s.cycleFeedback).success) &&
         (s.races === undefined || races.safeParse(s.races).success) &&
+        (s.guidedPrograms === undefined ||
+          (Array.isArray(s.guidedPrograms) &&
+            s.guidedPrograms.length <= guidedCategories.length &&
+            new Set(
+              s.guidedPrograms.map((g: unknown) =>
+                isObject(g) ? g.category : g,
+              ),
+            ).size === s.guidedPrograms.length &&
+            s.guidedPrograms.every(
+              (g: unknown) =>
+                isObject(g) &&
+                isGuidedCategory(g.category) &&
+                typeof g.startsOn === "string" &&
+                validDate(g.startsOn),
+            ))) &&
         (s.onlineReceipts === undefined ||
           onlineReceipts.safeParse(s.onlineReceipts).success) &&
         (s.onlineSubscriptions === undefined ||

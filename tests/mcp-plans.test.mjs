@@ -103,7 +103,19 @@ test("mcpStudents searches accent-insensitively and hides private data", () => {
       nome: "Élodie Rossi",
       tier: "Coaching online",
       pianiAbilitati: true,
-      mesiConPiano: ["2026-11", "2026-12"],
+      cicli: [
+        {
+          inizio: "2026-11-01",
+          fine: "2026-11-30",
+          titolo: "Novembre",
+        },
+        {
+          inizio: "2026-12-01",
+          fine: "2026-12-31",
+          titolo: "Dicembre",
+        },
+      ],
+      programmiGuidati: [],
     },
   ]);
   assert.equal(mcpStudents(state, "rossi").totale, 1, "archived excluded");
@@ -115,12 +127,23 @@ test("mcpStudents searches accent-insensitively and hides private data", () => {
     assert.ok(!serialized.includes(secret), secret);
 });
 
-test("mcpStudentPlan returns the requested or latest month", () => {
+test("mcpStudentPlan returns the cycle of a day or month, else the latest", () => {
   assert.equal(mcpStudentPlan(state, "a").piano.title, "Dicembre");
   assert.equal(mcpStudentPlan(state, "a", "2026-11").piano.title, "Novembre");
+  assert.equal(
+    mcpStudentPlan(state, "a", "2026-12-10").piano.title,
+    "Dicembre",
+  );
+  assert.deepEqual(mcpStudentPlan(state, "a", "2026-11").periodo, {
+    inizio: "2026-11-01",
+    fine: "2026-11-30",
+  });
   const missing = mcpStudentPlan(state, "a", "2027-01");
   assert.equal(missing.trovato, false);
-  assert.deepEqual(missing.mesiDisponibili, ["2026-11", "2026-12"]);
+  assert.deepEqual(
+    missing.cicliDisponibili.map((c) => c.titolo),
+    ["Novembre", "Dicembre"],
+  );
   assert.equal(mcpStudentPlan(state, "c").trovato, false, "archived");
   assert.equal(mcpStudentPlan(state, "zzz").trovato, false);
 });
@@ -140,6 +163,7 @@ test("mcpPlanTemplates skips archived plans", () => {
 });
 
 const draftInput = {
+  destinatario: { studenteId: "a" },
   title: "  Hyrox dicembre ",
   description: "Blocco base",
   sessions: [
@@ -231,6 +255,54 @@ test("applyDraftPlan replaces only drafts", () => {
         ids(),
       ),
     /duplicata/,
+  );
+});
+
+test("applyDraftPlan links a new draft to a client or a guided program", () => {
+  const { destinatario, ...withoutRecipient } = draftInput;
+  assert.ok(destinatario);
+  assert.throws(
+    () => applyDraftPlan(state, withoutRecipient, ids()),
+    /destinatario/,
+  );
+  assert.equal(applyDraftPlan(state, draftInput, ids()).plan.studentId, "a");
+  const guided = applyDraftPlan(
+    state,
+    { ...draftInput, destinatario: { programmaGuidato: "hyrox" } },
+    ids(),
+  );
+  assert.equal(guided.plan.guidedCategory, "hyrox");
+  assert.equal(guided.plan.studentId, undefined);
+  assert.throws(
+    () =>
+      applyDraftPlan(
+        state,
+        { ...draftInput, destinatario: { programmaGuidato: "yoga" } },
+        ids(),
+      ),
+    /non valido/,
+  );
+  assert.throws(
+    () =>
+      applyDraftPlan(
+        state,
+        { ...draftInput, destinatario: { studenteId: "b" } },
+        ids(),
+      ),
+    /non include i piani/,
+  );
+  // Replacing a draft keeps its owner and refuses another one.
+  const owned = guided.state;
+  const id = guided.plan.id;
+  const kept = applyDraftPlan(
+    owned,
+    { ...withoutRecipient, modelloId: id },
+    ids(),
+  );
+  assert.equal(kept.plan.guidedCategory, "hyrox");
+  assert.throws(
+    () => applyDraftPlan(owned, { ...draftInput, modelloId: id }, ids()),
+    /altro destinatario/,
   );
 });
 

@@ -57,6 +57,10 @@ record, e legge differenze: vedi `docs/data-layer.md`. La migrazione
 `20261119090000_italfit_record_sync` è stata applicata in produzione tramite la
 Management API e registrata in `supabase_migrations.schema_migrations`.
 
+## Cicli di 4 settimane
+
+La migrazione `20261126090000_italfit_plan_cycles` toglie il vincolo `unique(student_id, month)` da `crm_assignments`: due cicli possono iniziare nello stesso mese e i programmi guidati corrono in parallelo ai piani personalizzati. Le sovrapposizioni sullo stesso binario le rifiuta il server. Applicata in produzione il 26 novembre 2026 tramite la Management API e registrata in `supabase_migrations.schema_migrations`; il catalogo conferma che `crm_assignments_student_id_month_key` non esiste più e che c'è l'indice `crm_assignments_student`.
+
 ## App installabile (PWA)
 
 - Il manifest (`src/app/manifest.ts`) e le icone (`public/icons/`) rendono il CRM installabile: su iPhone da Safari con Condividi → Aggiungi alla schermata Home, su Android da Chrome con Installa app. L'app si apre da `/login`, che porta ognuno alla propria area.

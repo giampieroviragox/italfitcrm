@@ -9,7 +9,16 @@ const actions = [
   { label: "Aggiungi studente", hint: "Azione", href: "/admin/studenti/nuovo" },
   { label: "Home", hint: "Navigazione", href: "/admin" },
   { label: "Studenti", hint: "Navigazione", href: "/admin/studenti" },
-  { label: "Piani e percorsi", hint: "Navigazione", href: "/admin/piani" },
+  {
+    label: "Coaching online",
+    hint: "Navigazione",
+    href: "/admin/coaching-online",
+  },
+  {
+    label: "Programmi guidati",
+    hint: "Navigazione",
+    href: "/admin/programmi-guidati",
+  },
   { label: "Calendario", hint: "Navigazione", href: "/admin/lezioni" },
   {
     label: "Proprietà",

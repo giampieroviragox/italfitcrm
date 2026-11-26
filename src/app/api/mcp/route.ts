@@ -22,8 +22,10 @@ import { validateStaffUpdate } from "@/modules/crm/server/validation";
 import {
   projectState,
   requirePermission,
+  requireStudent,
   staffScope,
 } from "@/modules/crm/permissions";
+import { guidedCategories } from "@/modules/crm/plan-cycles";
 
 const readOnly = { readOnlyHint: true, openWorldHint: false } as const;
 const json = (value: unknown) => ({
@@ -80,11 +82,15 @@ const programSchema = z.object({
 async function commitChange<T extends { state: CrmState }>(
   authInfo: Parameters<typeof mcpPrincipal>[0],
   change: (state: CrmState) => T,
+  studentId?: string,
 ): Promise<T> {
   const { userId, access } = mcpPrincipal(authInfo);
   for (let attempt = 0; ; attempt++) {
     const current = await readCrm(userId);
-    requirePermission(staffScope(current.state, access.record_id), "plans");
+    const scope = staffScope(current.state, access.record_id);
+    requirePermission(scope, "plans");
+    // A coach saves drafts only for the students they follow.
+    if (studentId) requireStudent(scope, studentId);
     const result = change(current.state);
     try {
       await writeCrm(
@@ -110,8 +116,36 @@ const failure = (error: unknown) => ({
   isError: true,
 });
 
+const origin = (request: Request | undefined) =>
+  request ? getPublicOrigin(request) : appUrl().replace(/\/$/, "");
 const planLink = (request: Request | undefined, id: string) =>
-  `${request ? getPublicOrigin(request) : appUrl().replace(/\/$/, "")}/admin/piani/${encodeURIComponent(id)}`;
+  `${origin(request)}/admin/piani/${encodeURIComponent(id)}`;
+/** The page where a draft shows up: its client or its guided program. */
+const ownerLink = (
+  request: Request | undefined,
+  plan: { studentId?: string; guidedCategory?: string },
+) =>
+  plan.studentId
+    ? `${origin(request)}/admin/coaching-online/${encodeURIComponent(plan.studentId)}`
+    : plan.guidedCategory
+      ? `${origin(request)}/admin/programmi-guidati/${plan.guidedCategory}`
+      : undefined;
+const recipientSchema = z
+  .union([
+    z.object({
+      studenteId: text(100)
+        .min(1)
+        .describe("ID del cliente del Coaching online (da cerca_studenti)."),
+    }),
+    z.object({
+      programmaGuidato: z
+        .enum(guidedCategories.map((c) => c.id) as [string, ...string[]])
+        .describe("Programma guidato di cui la bozza è una nuova versione."),
+    }),
+  ])
+  .describe(
+    "A chi appartiene la bozza: un cliente oppure un programma guidato. Obbligatorio per una nuova bozza.",
+  );
 
 const id = text(100).min(1);
 const after = (label: string) =>
@@ -203,7 +237,7 @@ const handler = createMcpHandler(
       {
         title: "Cerca studenti",
         description:
-          "Cerca gli studenti Team Italfit per nome e cognome. Senza testo li elenca tutti (fino a 50). Restituisce il totale, se l’elenco è completo e, per ogni studente, ID, tier, se il servizio piani è attivo e i mesi che hanno già un piano.",
+          "Cerca gli studenti Team Italfit per nome e cognome. Senza testo li elenca tutti (fino a 50). Restituisce il totale, se l’elenco è completo e, per ogni studente, ID, tier, se il servizio piani è attivo, i cicli di 4 settimane già assegnati (inizio, fine, titolo) e i programmi guidati che segue.",
         inputSchema: z.object({
           testo: z
             .string()
@@ -221,9 +255,13 @@ const handler = createMcpHandler(
       {
         title: "Leggi il piano di uno studente",
         description:
-          "Restituisce il piano assegnato a uno studente per un mese (AAAA-MM), con il questionario di fine piano compilato dallo studente, il registro degli allenamenti svolti (serie, carichi, fatica e note) e le gare in programma. Senza mese restituisce il più recente. Usalo per preparare il piano successivo come bozza: il coach lo rivede prima della consegna.",
+          "Restituisce un piano assegnato a uno studente (ciclo di 4 settimane) con il questionario di fine piano compilato dallo studente, il registro degli allenamenti svolti (serie, carichi, fatica e note) e le gare in programma. Con data (AAAA-MM-GG) restituisce il ciclo che comprende quel giorno, con mese (AAAA-MM) l'ultimo ciclo iniziato in quel mese, senza nessuno dei due il più recente. Usalo per preparare il piano successivo come bozza: il coach lo rivede prima della consegna.",
         inputSchema: z.object({
           studenteId: z.string().min(1).max(100),
+          data: z.iso
+            .date()
+            .optional()
+            .describe("Un giorno del ciclo, AAAA-MM-GG."),
           mese: z
             .string()
             .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Usa il formato AAAA-MM.")
@@ -231,7 +269,7 @@ const handler = createMcpHandler(
         }),
         annotations: readOnly,
       },
-      async ({ studenteId, mese }, ctx) => {
+      async ({ studenteId, data, mese }, ctx) => {
         const state = await crmState(ctx.http?.authInfo);
         // The workout log is loaded for this one student, not for everyone.
         const detail = state.students.some((s) => s.id === studenteId)
@@ -248,7 +286,7 @@ const handler = createMcpHandler(
                 }
               : state,
             studenteId,
-            mese,
+            data ?? mese,
           ),
         );
       },
@@ -258,7 +296,7 @@ const handler = createMcpHandler(
       {
         title: "Elenca i modelli di piano",
         description:
-          "Elenca i modelli di piano non archiviati del CRM con stato e numero di sessioni.",
+          "Elenca i piani non archiviati del CRM con stato, numero di sessioni e a chi appartengono (studenteId del cliente o programmaGuidato).",
         inputSchema: z.object({}),
         annotations: readOnly,
       },
@@ -292,11 +330,12 @@ const handler = createMcpHandler(
       {
         title: "Salva una bozza di piano",
         description:
-          "Salva nel CRM un piano di allenamento come BOZZA. Senza modelloId crea una nuova bozza; con modelloId sostituisce il contenuto di una bozza esistente (i piani pubblicati non si modificano). Consulta prima formato_piano. Non pubblica e non assegna: restituisce il link che l’admin apre per controllare, pubblicare e assegnare il piano allo studente. Se l’admin ha indicato studente e mese, riportali nella risposta come promemoria.",
+          "Salva nel CRM un piano di allenamento come BOZZA per un cliente del Coaching online (destinatario.studenteId) o come nuova versione di un programma guidato (destinatario.programmaGuidato). Senza modelloId crea una nuova bozza e il destinatario è obbligatorio; con modelloId sostituisce il contenuto di una bozza esistente (i piani pubblicati non si modificano). Consulta prima formato_piano. Non pubblica e non assegna: restituisce il link alla pagina del cliente o del programma, dove l’admin controlla, pubblica e assegna il ciclo di 4 settimane.",
         inputSchema: z.object({
           modelloId: text(100)
             .optional()
             .describe("ID di una bozza esistente da sostituire."),
+          destinatario: recipientSchema.optional(),
           title: text(200).min(1).describe("Titolo del piano."),
           description: text(4000).describe("Descrizione, anche vuota."),
           program: programSchema.optional(),
@@ -314,6 +353,9 @@ const handler = createMcpHandler(
           const { plan, created } = await commitChange(
             ctx.http?.authInfo,
             (state) => applyDraftPlan(state, input, () => crypto.randomUUID()),
+            input.destinatario && "studenteId" in input.destinatario
+              ? input.destinatario.studenteId
+              : undefined,
           );
           return json({
             salvato: true,
@@ -325,9 +367,13 @@ const handler = createMcpHandler(
               (total, session) => total + session.exercises.length,
               0,
             ),
-            link: planLink(ctx.http?.req, plan.id),
-            prossimiPassi:
-              "L’admin apre il link, controlla la bozza, la pubblica e la assegna allo studente per il mese scelto.",
+            link:
+              ownerLink(ctx.http?.req, plan) ??
+              planLink(ctx.http?.req, plan.id),
+            linkPiano: planLink(ctx.http?.req, plan.id),
+            prossimiPassi: plan.guidedCategory
+              ? "L’admin apre il programma guidato, controlla la bozza, la pubblica come versione corrente e la assegna agli abbonati da rinnovare."
+              : "L’admin apre la pagina del cliente, controlla la bozza, la pubblica e assegna il prossimo ciclo di 4 settimane.",
           });
         } catch (error) {
           return failure(error);
@@ -389,9 +435,9 @@ const handler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: "team-italfit-crm", version: "0.3.0" },
+    serverInfo: { name: "team-italfit-crm", version: "0.4.0" },
     instructions:
-      "Strumenti del CRM Team Italfit per consultare studenti e piani di allenamento, salvare nuovi piani come bozze e modificare le bozze esistenti. Per piccole modifiche usa modifica_bozza_piano invece di riscrivere il piano. Rispondi in italiano. Gli ID vanno ricavati dagli strumenti, mai inventati. Prima di salvare consulta formato_piano e conferma con l’admin il contenuto del piano.",
+      "Strumenti del CRM Team Italfit per consultare studenti e piani di allenamento, salvare nuovi piani come bozze e modificare le bozze esistenti. Per piccole modifiche usa modifica_bozza_piano invece di riscrivere il piano. Rispondi in italiano. Gli ID vanno ricavati dagli strumenti, mai inventati. Prima di salvare consulta formato_piano e conferma con l’admin il contenuto del piano e il destinatario (cliente o programma guidato). I piani durano cicli di 4 settimane.",
   },
 );
 

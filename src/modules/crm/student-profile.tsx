@@ -30,6 +30,7 @@ import { paymentHistory } from "./payment-history";
 import { MaxesPanel, WorkoutHistory } from "./workout-log-view";
 import { FeedbackHistory, RacesPanel } from "./cycle-feedback-view";
 import { todayRome } from "./fitness-logic";
+import { assignmentPeriod } from "./plan-cycles";
 import { OnlineCoachingPanel, PlanCoachSelect } from "./online-coaching-view";
 const profileTabs = [
   "overview",
@@ -305,7 +306,7 @@ export function StudentProfile({
               <>
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-sm font-medium text-muted-foreground">
-                    Piani mensili
+                    Piani
                   </h2>
                   <Button
                     variant="outline"
@@ -318,7 +319,11 @@ export function StudentProfile({
                 </div>
                 {(state.assignments ?? [])
                   .filter((a) => a.studentId === id)
-                  .sort((a, b) => b.month.localeCompare(a.month))
+                  .sort((a, b) =>
+                    assignmentPeriod(b).startsOn.localeCompare(
+                      assignmentPeriod(a).startsOn,
+                    ),
+                  )
                   .map((a) => (
                     <AssignedPlan
                       key={a.id}

@@ -300,7 +300,7 @@ test("archiving atomically records cancellation and preserves comments and previ
   assert.equal(events(restored).at(-1).text, "Studente ripristinato");
 });
 
-test("monthly plan assignment and replacement preserve the original exercise prescription in history", () => {
+test("plan assignment and replacement preserve the original exercise prescription in history", () => {
   const before = state();
   const sessions = [
     {
@@ -335,7 +335,7 @@ test("monthly plan assignment and replacement preserve the original exercise pre
     snapshot: { title: "Piano A", description: "", sessions },
   });
   const saved = prepareTransition(before, next, actor);
-  assert.equal(events(saved)[0].text, "Piano mensile assegnato");
+  assert.equal(events(saved)[0].text, "Piano assegnato");
   assert.ok(
     events(saved)[0].details.includes(
       "Squat: 3 serie × 10, recupero 60s · Lento",
@@ -344,7 +344,7 @@ test("monthly plan assignment and replacement preserve the original exercise pre
   const replace = structuredClone(saved);
   replace.assignments[0].snapshot.sessions[0].exercises[0].sets = 4;
   const after = prepareTransition(saved, replace, actor);
-  assert.equal(events(after).at(-1).text, "Piano mensile aggiornato");
+  assert.equal(events(after).at(-1).text, "Piano aggiornato");
   assert.ok(
     events(after)
       .at(-1)

@@ -51,6 +51,8 @@ export interface CrmStudent extends Omit<Student, "tierId"> {
   maxes?: import("./workout-log.ts").MaxRecord[];
   cycleFeedback?: import("./cycle-feedback.ts").CycleFeedback[];
   races?: import("./cycle-feedback.ts").Race[];
+  /** Guided programs the student follows, each from its enrollment day. */
+  guidedPrograms?: import("./plan-cycles.ts").GuidedEnrollment[];
   workoutEntries?: import("./fitness-model").WorkoutEntry[];
   access?: AccountAccess | null;
   tierId: string;

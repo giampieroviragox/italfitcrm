@@ -40,6 +40,7 @@ import {
   useCan,
 } from "@/modules/crm/store";
 import type { CrmState } from "@/modules/crm/model";
+import { guidedLabel } from "@/modules/crm/plan-cycles";
 import { signOut } from "@/modules/auth/actions";
 import { CommandSearch } from "./command-search";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -154,6 +155,34 @@ function breadcrumbs(pathname: string, state: CrmState) {
       { label: "Impostazioni", href: "/admin/impostazioni" },
       { label: settingsSections[pathname] ?? "Team" },
     ];
+  // A plan page sits under its client or its guided program.
+  if (pathname.startsWith("/admin/piani/")) {
+    const id = decodeURIComponent(pathname.slice("/admin/piani/".length));
+    const plan = state.plans?.find((p) => p.id === id);
+    const owner = state.students.find((s) => s.id === plan?.studentId);
+    return [
+      ...(plan?.guidedCategory
+        ? [
+            { label: "Programmi guidati", href: "/admin/programmi-guidati" },
+            {
+              label: guidedLabel(plan.guidedCategory),
+              href: `/admin/programmi-guidati/${plan.guidedCategory}`,
+            },
+          ]
+        : [
+            { label: "Coaching online", href: "/admin/coaching-online" },
+            ...(owner
+              ? [
+                  {
+                    label: `${owner.firstName} ${owner.lastName}`,
+                    href: `/admin/coaching-online/${encodeURIComponent(owner.id)}`,
+                  },
+                ]
+              : []),
+          ]),
+      { label: plan?.title ?? "Piano" },
+    ];
+  }
   const section = navigation.find(
     (i) => i.href !== "/admin" && pathname.startsWith(i.href),
   );
@@ -171,9 +200,14 @@ function breadcrumbs(pathname: string, state: CrmState) {
             const s = state.students.find((x) => x.id === id);
             return s ? `${s.firstName} ${s.lastName}` : "Scheda";
           })()
-        : section.icon === "plans"
-          ? (state.plans?.find((p) => p.id === id)?.title ?? "Piano")
-          : (state.lessons?.find((l) => l.id === id)?.title ?? "Lezione");
+        : section.icon === "coaching"
+          ? (() => {
+              const s = state.students.find((x) => x.id === id);
+              return s ? `${s.firstName} ${s.lastName}` : "Cliente";
+            })()
+          : section.icon === "plans"
+            ? guidedLabel(id)
+            : (state.lessons?.find((l) => l.id === id)?.title ?? "Lezione");
   return [{ label: section.label, href: section.href }, { label: detail }];
 }
 function initials(name?: string) {

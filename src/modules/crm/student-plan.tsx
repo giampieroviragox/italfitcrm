@@ -31,7 +31,7 @@ import type {
   WorkoutEntry,
 } from "./fitness-model";
 import type { WorkoutInput } from "./workout-progress";
-import { formatMonth } from "@/lib/format";
+import { periodLabel } from "./plan-cycles";
 import { DatePicker } from "@/components/ui/date-time-picker";
 import { todayRome } from "./fitness-logic";
 import { lastLoggedSets, type LoggedSession } from "./workout-log";
@@ -463,9 +463,9 @@ export function StudentPlan({
       <div className="grid gap-4 overflow-hidden rounded-3xl border bg-card px-5 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(13rem,26%)] sm:items-end sm:gap-10 sm:p-8 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-500">
         <div>
           <p className="mb-2 text-sm font-medium text-muted-foreground first-letter:uppercase">
-            {plan.program
-              ? `${period(plan.program.startsOn)} – ${period(plan.program.endsOn)}`
-              : formatMonth(assignment.month)}
+            {assignment.startsOn || !plan.program
+              ? periodLabel(assignment)
+              : `${period(plan.program.startsOn)} – ${period(plan.program.endsOn)}`}
           </p>
           <h2 className="text-pretty text-[1.75rem] leading-[1.1] font-bold tracking-[-0.045em] break-words sm:text-[2.65rem]">
             {plan.title}
