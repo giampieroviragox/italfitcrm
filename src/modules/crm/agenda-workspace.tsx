@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
 import { CalendarClock, MapPin, Pencil, Plus, X } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Button } from "@/components/ui/button";
@@ -42,18 +41,19 @@ const isUrl = (v: string) => /^https?:\/\//i.test(v);
 
 interface Entry {
   key: string;
-  kind: "event" | "lesson";
   title: string;
   start: string;
   end: string;
   people: string;
   location?: string;
   notes?: string;
-  href?: string;
-  event?: TeamEvent;
+  event: TeamEvent;
 }
 
-/** Shared team agenda: calls and appointments, plus the member's lessons. */
+/**
+ * Shared team agenda: calls and appointments only. Lessons live in the
+ * Calendario and still count as busy time when an appointment is planned.
+ */
 export function AgendaWorkspace() {
   const state = useCrm();
   const hydrated = useHydrated();
@@ -115,38 +115,21 @@ export function AgendaWorkspace() {
     const s = state.students.find((x) => x.id === id);
     return s ? `${s.firstName} ${s.lastName}` : undefined;
   };
-  const entries: Entry[] = [
-    ...events
-      .filter((e) => !e.cancelled)
-      .map((e) => ({
-        key: `event:${e.id}`,
-        kind: "event" as const,
-        title: e.title,
-        start: e.startsAt,
-        end: eventEnd(e),
-        people: [
-          e.participants.map(name).join(", "),
-          ...(e.studentId ? [`studente ${student(e.studentId) ?? ""}`] : []),
-        ].join(" · "),
-        ...(e.location ? { location: e.location } : {}),
-        ...(e.notes ? { notes: e.notes } : {}),
-        event: e,
-      })),
-    ...(state.lessons ?? [])
-      .filter((l) => !l.cancelled)
-      .map((l) => ({
-        key: `lesson:${l.id}`,
-        kind: "lesson" as const,
-        title: `Lezione · ${l.title}`,
-        start: l.startsAt,
-        end: new Date(
-          Date.parse(l.startsAt) + l.durationMinutes * 60_000,
-        ).toISOString(),
-        people: l.coach,
-        ...(l.location ? { location: l.location } : {}),
-        href: `/admin/lezioni/${encodeURIComponent(l.id)}`,
-      })),
-  ]
+  const entries: Entry[] = events
+    .filter((e) => !e.cancelled)
+    .map((e) => ({
+      key: `event:${e.id}`,
+      title: e.title,
+      start: e.startsAt,
+      end: eventEnd(e),
+      people: [
+        e.participants.map(name).join(", "),
+        ...(e.studentId ? [`studente ${student(e.studentId) ?? ""}`] : []),
+      ].join(" · "),
+      ...(e.location ? { location: e.location } : {}),
+      ...(e.notes ? { notes: e.notes } : {}),
+      event: e,
+    }))
     .filter((e) => (showPast ? true : Date.parse(e.end) >= now - 3_600_000))
     .toSorted((a, b) => a.start.localeCompare(b.start));
   const days = [
@@ -156,7 +139,7 @@ export function AgendaWorkspace() {
     <>
       <PageHeading
         title="Agenda"
-        description="Call e appuntamenti del team, con le lezioni in calendario. Gli eventi arrivano anche nei Google Calendar collegati."
+        description="L’organizzazione del team: call e appuntamenti tra di voi. Le lezioni in sede sono nel Calendario. Gli appuntamenti arrivano anche nei Google Calendar collegati."
         action={
           remote ? (
             <Button
@@ -178,7 +161,9 @@ export function AgendaWorkspace() {
       <FormError message={error} />
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {remote && !loaded ? "Caricamento…" : `${entries.length} impegni`}
+          {remote && !loaded
+            ? "Caricamento…"
+            : `${entries.length} ${entries.length === 1 ? "appuntamento" : "appuntamenti"}`}
         </p>
         <label className="flex items-center gap-2 text-sm">
           <CheckboxControl
@@ -209,15 +194,7 @@ export function AgendaWorkspace() {
                           {time(e.start)}–{time(e.end)}
                         </span>
                         <div className="min-w-0 space-y-0.5">
-                          <p className="font-medium break-words">
-                            {e.href ? (
-                              <Link href={e.href} className="hover:underline">
-                                {e.title}
-                              </Link>
-                            ) : (
-                              e.title
-                            )}
-                          </p>
+                          <p className="font-medium break-words">{e.title}</p>
                           <p className="text-muted-foreground">{e.people}</p>
                           {e.location && (
                             <p className="flex items-center gap-1 text-muted-foreground">
@@ -243,13 +220,13 @@ export function AgendaWorkspace() {
                           )}
                         </div>
                       </div>
-                      {e.event && (e.event.createdBy === me || owner) && (
+                      {(e.event.createdBy === me || owner) && (
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             aria-label={`Modifica ${e.title}`}
-                            onClick={() => setEditing(e.event!)}
+                            onClick={() => setEditing(e.event)}
                           >
                             <Pencil className="size-4" />
                           </Button>
@@ -257,7 +234,7 @@ export function AgendaWorkspace() {
                             variant="ghost"
                             size="icon"
                             aria-label={`Annulla ${e.title}`}
-                            onClick={() => setCancelling(e.event!)}
+                            onClick={() => setCancelling(e.event)}
                           >
                             <X className="size-4" />
                           </Button>
@@ -275,7 +252,7 @@ export function AgendaWorkspace() {
             <CalendarClock className="size-5" strokeWidth={1.75} />
           </span>
           <p className="text-sm text-muted-foreground">
-            Nessun impegno in programma.
+            Nessun appuntamento in programma.
           </p>
         </div>
       )}

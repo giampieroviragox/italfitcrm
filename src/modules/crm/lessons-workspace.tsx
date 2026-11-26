@@ -284,7 +284,7 @@ export function LessonsWorkspace() {
     <>
       <PageHeading
         title="Calendario"
-        description="Disponibilità, lezioni e prenotazioni in sede."
+        description="La palestra: lezioni in sede, disponibilità dei coach e iscritti. Call e appuntamenti del team sono nell’Agenda."
         action={
           <>
             <Button
